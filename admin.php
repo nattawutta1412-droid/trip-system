@@ -1,10 +1,15 @@
 <?php
 require_once 'config.php';
 
-// 1. ตรวจสอบและสร้างคอลัมน์ status อัตโนมัติหากยังไม่มี
+// 1. ตรวจสอบและสร้างคอลัมน์ status และ cancel_reason อัตโนมัติหากยังไม่มีในฐานข้อมูล
 $check_status = $conn->query("SHOW COLUMNS FROM official_trips LIKE 'status'");
 if ($check_status && $check_status->num_rows == 0) {
     $conn->query("ALTER TABLE official_trips ADD COLUMN status VARCHAR(50) DEFAULT 'ปกติ'");
+}
+
+$check_reason = $conn->query("SHOW COLUMNS FROM official_trips LIKE 'cancel_reason'");
+if ($check_reason && $check_reason->num_rows == 0) {
+    $conn->query("ALTER TABLE official_trips ADD COLUMN cancel_reason TEXT NULL");
 }
 
 $message = "";
@@ -14,12 +19,13 @@ $message_type = "success";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $trip_id = isset($_POST['trip_id']) ? intval($_POST['trip_id']) : 0;
+    $cancel_reason = trim($_POST['cancel_reason'] ?? 'ยกเลิกโดยผู้ดูแลระบบ');
 
     if ($trip_id > 0) {
         if ($action === 'cancel') {
-            // ยกเลิกคำร้อง (เปลี่ยนสถานะเป็น ยกเลิก)
-            $stmt = $conn->prepare("UPDATE official_trips SET status = 'ยกเลิก' WHERE id = ?");
-            $stmt->bind_param("i", $trip_id);
+            // ยกเลิกคำร้อง พร้อมบันทึกเหตุผล
+            $stmt = $conn->prepare("UPDATE official_trips SET status = 'ยกเลิก', cancel_reason = ? WHERE id = ?");
+            $stmt->bind_param("si", $cancel_reason, $trip_id);
             if ($stmt->execute()) {
                 $message = "ยกเลิกคำร้องเรียบร้อยแล้ว";
             } else {
@@ -28,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'restore') {
             // คืนค่าสถานะให้กลับมาเป็นปกติ
-            $stmt = $conn->prepare("UPDATE official_trips SET status = 'ปกติ' WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE official_trips SET status = 'ปกติ', cancel_reason = NULL WHERE id = ?");
             $stmt->bind_param("i", $trip_id);
             if ($stmt->execute()) {
                 $message = "คืนสถานะคำร้องเป็นปกติเรียบร้อยแล้ว";
@@ -122,7 +128,7 @@ function thai_date_short($date_str) {
                         <th>เรื่อง / ปลายทาง</th>
                         <th>ช่วงวันที่</th>
                         <th class="text-center">สถานะ</th>
-                        <th class="text-center" style="width: 240px;">การจัดการ</th>
+                        <th class="text-center" style="width: 250px;">การจัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -130,6 +136,7 @@ function thai_date_short($date_str) {
                         <?php while ($row = $result->fetch_assoc()): 
                             $status = $row['status'] ?? 'ปกติ';
                             $is_cancelled = ($status === 'ยกเลิก');
+                            $reason = $row['cancel_reason'] ?? '';
                         ?>
                             <tr class="<?php echo $is_cancelled ? 'table-light text-muted' : ''; ?>">
                                 <td>#<?php echo $row['id']; ?></td>
@@ -159,7 +166,10 @@ function thai_date_short($date_str) {
                                 </td>
                                 <td class="text-center">
                                     <?php if ($is_cancelled): ?>
-                                        <span class="badge bg-danger">ยกเลิกแล้ว</span>
+                                        <span class="badge bg-danger" title="<?php echo htmlspecialchars($reason); ?>">ยกเลิกแล้ว</span>
+                                        <?php if (!empty($reason)): ?>
+                                            <br><small class="text-muted" style="font-size: 11px;">(<?php echo htmlspecialchars($reason); ?>)</small>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="badge bg-success">ปกติ</span>
                                     <?php endif; ?>
@@ -173,9 +183,10 @@ function thai_date_short($date_str) {
 
                                         <!-- ปุ่มสลับสถานะ ยกเลิก / คืนสถานะ -->
                                         <?php if (!$is_cancelled): ?>
-                                            <form method="POST" action="admin.php" style="display:inline;" onsubmit="return confirm('ยืนยันที่จะยกเลิกคำร้องของ <?php echo htmlspecialchars($row['applicant_name']); ?> หรือไม่?');">
+                                            <form method="POST" action="admin.php" style="display:inline;" onsubmit="return confirmCancel(this, '<?php echo htmlspecialchars(addslashes($row['applicant_name'])); ?>');">
                                                 <input type="hidden" name="action" value="cancel">
                                                 <input type="hidden" name="trip_id" value="<?php echo $row['id']; ?>">
+                                                <input type="hidden" name="cancel_reason" value="">
                                                 <button type="submit" class="btn btn-sm btn-outline-warning text-dark" title="ยกเลิกคำร้องนี้">
                                                     <i class="bi bi-x-circle"></i> ยกเลิก
                                                 </button>
@@ -215,6 +226,16 @@ function thai_date_short($date_str) {
     </div>
 </div>
 
+<script>
+function confirmCancel(form, name) {
+    let reason = prompt('กรุณาระบุเหตุผลการยกเลิกคำร้องของคุณ ' + name + ' (ถ้าไม่ระบุให้กดตกลงได้เลย):', 'ยกเลิกภารกิจ');
+    if (reason === null) {
+        return false; // กดยกเลิกใน prompt
+    }
+    form.cancel_reason.value = reason;
+    return true;
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
