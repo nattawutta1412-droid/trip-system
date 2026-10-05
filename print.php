@@ -98,7 +98,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             width: 210mm;
             height: 297mm;
             max-height: 297mm;
-            padding: 15mm 20mm 15mm 25mm; /* ตั้งขอบตามระเบียบงานสารบรรณ พอดีในหน้าเดียว */
+            padding: 12mm 20mm 12mm 25mm; /* ตั้งระยะตามระเบียบงานสารบรรณ พอดีในหน้าเดียว */
             margin: 0 auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
@@ -110,11 +110,11 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .header-box {
             position: relative;
             height: 55px;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             text-align: center;
         }
 
-        /* ตราครุฑ 1.5 ซม. ด้านซ้ายบนตามระเบียบ */
+        /* ตราครุฑ 1.5 ซม. ด้านซ้ายบน */
         .garuda-img {
             position: absolute;
             left: 0;
@@ -134,7 +134,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             width: 100%;
             border-collapse: collapse;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
         }
 
         .meta-table td {
@@ -145,13 +145,13 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .divider-line {
             border: 0;
             border-top: 1.5px solid #000;
-            margin: 3px 0 8px 0;
+            margin: 3px 0 6px 0;
         }
 
         .to-line {
             font-size: 16pt;
             font-weight: bold;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .prose-body {
@@ -159,43 +159,43 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.25;
-            margin-top: 4px;
+            line-height: 1.22;
+            margin-top: 2px;
         }
 
-        /* กล่องลายเซ็นผู้ขอ (ชิดขวา) */
+        /* 1. ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) */
         .applicant-sign-wrap {
-            margin-top: 12px;
+            margin-top: 8px;
             margin-left: auto;
             width: 50%;
             text-align: center;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
         }
 
-        /* กล่องความเห็นหัวหน้าฝ่าย (ลำดับ 2) */
+        /* 2. ความเห็นและลายเซ็นหัวหน้าฝ่าย */
         .head-opinion-box {
-            margin-top: 10px;
-            border-top: 1px dashed #666;
-            padding-top: 6px;
+            margin-top: 6px;
+            border-top: 1px dashed #777;
+            padding-top: 4px;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
         }
 
         .head-sign-wrap {
             margin-left: auto;
             width: 50%;
             text-align: center;
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
-        /* กล่องคำสั่ง ผอ. (ลำดับ 3 ล่างสุด) */
+        /* 3. คำสั่งและคำอนุมัติของผู้อำนวยการ (ล่างสุด) */
         .director-frame {
-            margin-top: 10px;
+            margin-top: 6px;
             border: 1px solid #000;
-            padding: 8px 14px;
+            padding: 6px 14px;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
         }
 
         @media print {
@@ -208,7 +208,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 15mm 20mm 15mm 25mm;
+                padding: 12mm 20mm 12mm 25mm;
             }
             .no-print {
                 display: none !important;
@@ -227,9 +227,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 </div>
 
 <div class="sheet">
-    <!-- ตราครุฑมาตรฐานทางราชการ (ความสูง 1.5 ซม. อยู่มุมบนซ้าย) -->
+    <!-- ส่วนหัวหนังสือ + ตราครุฑแท้มาตรฐานสำนักนายกรัฐมนตรี -->
     <div class="header-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Garuda_Emblem_of_Thailand.svg/200px-Garuda_Emblem_of_Thailand.svg.png" alt="ตราครุฑ" class="garuda-img">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Garuda_Emblem_of_Thailand.svg/300px-Garuda_Emblem_of_Thailand.svg.png" alt="ตราครุฑ" class="garuda-img" crossorigin="anonymous">
         <span class="doc-title">บันทึกข้อความ</span>
     </div>
     
@@ -250,17 +250,16 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- ย่อหน้าที่ 1: เนื้อความร้อยแก้วสมบูรณ์ -->
+    <!-- เนื้อความร้อยแก้ว -->
     <div class="prose-body">
         <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
 
-    <!-- ย่อหน้าที่ 2: ลงท้าย -->
     <div class="prose-body">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) -->
+    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ -->
     <div class="applicant-sign-wrap">
         ลงชื่อ......................................................................<br>
         ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
@@ -283,7 +282,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 6px;">
+        <div style="text-align: center; margin-top: 4px;">
             ลงชื่อ......................................................................<br>
             ( ...................................................................... )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
