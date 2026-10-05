@@ -24,7 +24,7 @@
         </div>
 
         <form action="save.php" method="POST">
-            <!-- 1. ข้อมูลบันทึกข้อความ (ตัดเลขที่หนังสือออก เหลือเฉพาะวันที่ยื่น) -->
+            <!-- 1. ข้อมูลบันทึกข้อความ -->
             <div class="section-header">1. วันที่ยื่นคำร้อง</div>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <!-- 2. ข้อมูลผู้ขออนุมัติและกลุ่มงาน -->
+            <!-- 2. ข้อมูลผู้ขออนุมัติและกลุ่มงาน (เพิ่มผู้บริหารสถานศึกษา) -->
             <div class="section-header">2. ข้อมูลผู้ขออนุมัติและกลุ่มงานต้นสังกัด</div>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -42,18 +42,47 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">ตำแหน่ง:</label>
-                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู, ครูผู้ช่วย" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">วิทยฐานะ (ถ้ามี):</label>
-                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ (ถ้าไม่มีเว้นว่างได้)">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">กลุ่มสาระการเรียนรู้ / งานสังกัด:</label>
-                    <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ ภาษาต่างประเทศ" required>
+                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู, รองผู้อำนวยการสถานศึกษา, ผู้อำนวยการสถานศึกษา" required>
                 </div>
 
-                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน -->
+                <!-- Dropdown วิทยฐานะ -->
+                <div class="col-md-6">
+                    <label class="form-label">วิทยฐานะ:</label>
+                    <select name="academic_standing" class="form-select">
+                        <option value="">-- ไม่มีวิทยฐานะ / ครูผู้ช่วย --</option>
+                        <option value="ชำนาญการ">ชำนาญการ</option>
+                        <option value="ชำนาญการพิเศษ">ชำนาญการพิเศษ</option>
+                        <option value="เชี่ยวชาญ">เชี่ยวชาญ</option>
+                        <option value="เชี่ยวชาญพิเศษ">เชี่ยวชาญพิเศษ</option>
+                    </select>
+                </div>
+
+                <!-- Dropdown กลุ่มสาระการเรียนรู้ / กลุ่มงาน / ผู้บริหาร -->
+                <div class="col-md-6">
+                    <label class="form-label">กลุ่มสาระการเรียนรู้ / กลุ่มงาน:</label>
+                    <select name="department" class="form-select" required>
+                        <option value="">-- เลือกกลุ่มสาระการเรียนรู้ / ฝ่าย / ผู้บริหาร --</option>
+                        <optgroup label="ผู้บริหารสถานศึกษา">
+                            <option value="ฝ่ายบริหารสถานศึกษา">ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
+                        </optgroup>
+                        <optgroup label="กลุ่มสาระการเรียนรู้">
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาไทย">กลุ่มสาระการเรียนรู้ภาษาไทย</option>
+                            <option value="กลุ่มสาระการเรียนรู้คณิตศาสตร์">กลุ่มสาระการเรียนรู้คณิตศาสตร์</option>
+                            <option value="กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี">กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม">กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                            <option value="กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา">กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา</option>
+                            <option value="กลุ่มสาระการเรียนรู้ศิลปะ">กลุ่มสาระการเรียนรู้ศิลปะ</option>
+                            <option value="กลุ่มสาระการเรียนรู้การงานอาชีพ">กลุ่มสาระการเรียนรู้การงานอาชีพ</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ">กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ</option>
+                            <option value="กิจกรรมพัฒนาผู้เรียน">กิจกรรมพัฒนาผู้เรียน</option>
+                        </optgroup>
+                        <optgroup label="สายสนับสนุนและบุคลากร">
+                            <option value="บุคลากรทางการศึกษา/เจ้าหน้าที่">บุคลากรทางการศึกษา / เจ้าหน้าที่</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน (มีตัวเลือกระดับฝ่ายบริหาร/เสนอ ผอ. โดยตรง) -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border border-primary-subtle">
                         <div class="row g-3">
@@ -61,6 +90,7 @@
                                 <label class="form-label fw-bold text-primary">สังกัดกลุ่มงานที่เสนอ:</label>
                                 <select name="work_group" class="form-select" required>
                                     <option value="">-- เลือกกลุ่มงาน --</option>
+                                    <option value="ฝ่ายบริหารสถานศึกษา">ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
                                     <option value="กลุ่มงานบริหารวิชาการ">กลุ่มงานบริหารวิชาการ</option>
                                     <option value="กลุ่มงานบริหารงบประมาณและแผนงาน">กลุ่มงานบริหารงบประมาณและแผนงาน</option>
                                     <option value="กลุ่มงานบริหารงานบุคคล">กลุ่มงานบริหารงานบุคคล</option>
@@ -69,8 +99,8 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้ากลุ่มงาน:</label>
-                                <input type="text" name="head_group_name" class="form-control" placeholder="ระบุคำนำหน้าและชื่อ-สกุล หัวหน้ากลุ่มงาน" required>
+                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้ากลุ่มงาน / ผู้บังคับบัญชาชั้นต้น:</label>
+                                <input type="text" name="head_group_name" class="form-control" placeholder="ระบุชื่อ-สกุล หัวหน้ากลุ่มงาน หรือเว้นขีดไว้กรณีเป็นผู้บริหาร" required>
                             </div>
                         </div>
                     </div>
@@ -105,7 +135,7 @@
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
 
-                <!-- ส่วนกรณีไปครึ่งวัน -->
+                <!-- กรณีไปครึ่งวัน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border">
                         <label class="form-label fw-bold text-secondary">ลักษณะช่วงเวลาการเดินทาง:</label>
