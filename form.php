@@ -24,13 +24,9 @@
         </div>
 
         <form action="save.php" method="POST">
-            <!-- 1. ข้อมูลบันทึกข้อความ -->
-            <div class="section-header">1. ข้อมูลบันทึกข้อความ</div>
+            <!-- 1. ข้อมูลบันทึกข้อความ (ตัดเลขที่หนังสือออก เหลือเฉพาะวันที่ยื่น) -->
+            <div class="section-header">1. วันที่ยื่นคำร้อง</div>
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">เลขที่หนังสือ / ที่:</label>
-                    <input type="text" name="doc_number" class="form-control" placeholder="เช่น ศธ 04xxx/..." required>
-                </div>
                 <div class="col-md-6">
                     <label class="form-label">ลงวันที่:</label>
                     <input type="date" name="created_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
@@ -229,9 +225,7 @@
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="addParticipant('student')">+ เพิ่มนักเรียน</button>
                 </div>
             </div>
-            <div id="participant-container">
-                <!-- รายชื่อจะถูกแทรกเข้ามาตรงนี้เมื่อกดปุ่ม -->
-            </div>
+            <div id="participant-container"></div>
 
             <div class="mt-4 pt-3 border-top text-center">
                 <button type="submit" class="btn btn-primary px-5 py-2 fs-5">บันทึกข้อมูลและสร้างบันทึกข้อความ</button>
