@@ -249,7 +249,7 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
             line-height: 1.15;
         }
 
-        /* กล่องรับเรื่อง/ออกเลขหนังสือ กลุ่มงานบริหารทั่วไป มุมขวาล่าง */
+        /* กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง */
         .admin-stamp-box {
             position: absolute;
             right: 20mm;
@@ -357,10 +357,10 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
         </div>
     </div>
 
-    <!-- กล่องบันทึกรับเรื่อง/ออกเลขหนังสือราชการ มุมขวาล่าง -->
+    <!-- กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง -->
     <div class="admin-stamp-box">
         <div style="font-weight: bold; text-align: center; border-bottom: 0.5px solid #666; margin-bottom: 3px; padding-bottom: 1px;">
-            กลุ่มงานบริหารทั่วไป (งานสารบรรณ)
+            สำหรับเจ้าหน้าที่งานบุคคล
         </div>
         <div>เลขที่รับ / ออกเลข: ...................................</div>
         <div>วันที่ขอเลข: ........./........./..........................</div>
