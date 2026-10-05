@@ -30,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     $conn->query($create_participants_table);
 
-    // 3. รับค่าจากฟอร์ม
-    $doc_number            = $_POST['doc_number'] ?? '';
+    // 3. รับค่าจากฟอร์ม (doc_number เว้นว่างไว้รอสารบรรณออกเลข)
+    $doc_number            = '';
     $created_date          = $_POST['created_date'] ?? date('Y-m-d');
     $applicant_name        = $_POST['applicant_name'] ?? '';
     $position              = $_POST['position'] ?? '';
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $end_date              = $_POST['end_date'] ?? '';
     $half_day_time         = trim($_POST['half_day_time'] ?? '');
 
-    // 4. จัดการข้อมูลค่าใช้จ่าย
+    // 4. ค่าใช้จ่าย
     $expense_parts = [];
     if (!empty($_POST['expense_option_no'])) {
         $expense_parts[] = "ไม่ขอเบิกค่าใช้จ่าย";
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $expense_parts[] = "ขอเบิกเฉพาะค่าใช้จ่าย (" . $specific_items . ")";
     }
     
-    // 5. พาหนะ
+    // 5. ยานพาหนะ
     $vehicle_type = "";
     if (!empty($_POST['expense_option_vehicle'])) {
         $vehicle_type = $_POST['vehicle_select'] ?? 'รถยนต์ส่วนตัว';
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
     $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
 
-    // 7. บันทึกคำร้องหลัก
+    // 7. บันทึกคำร้อง
     $stmt = $conn->prepare("INSERT INTO official_trips 
         (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, expense_other) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
 
-        // 8. บันทึกรายชื่อผู้ร่วมเดินทางลงตาราง trip_participants
+        // 8. บันทึกรายชื่อผู้ร่วมเดินทาง
         if (!empty($_POST['participants']) && is_array($_POST['participants'])) {
             $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, detail, position, type) VALUES (?, ?, ?, ?, ?)");
             foreach ($_POST['participants'] as $p) {
