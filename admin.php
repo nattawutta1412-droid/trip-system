@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// 1. ตรวจสอบสิทธิ์การเข้าใช้งาน ถ้ายังไม่ล็อกอินให้เด้งไปหน้า login.php
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header("Location: login.php");
     exit();
@@ -9,7 +8,6 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once 'config.php';
 
-// 2. ตรวจสอบและสร้างคอลัมน์ status และ cancel_reason อัตโนมัติ
 $check_status = $conn->query("SHOW COLUMNS FROM official_trips LIKE 'status'");
 if ($check_status && $check_status->num_rows == 0) {
     $conn->query("ALTER TABLE official_trips ADD COLUMN status VARCHAR(50) DEFAULT 'ปกติ'");
@@ -23,7 +21,6 @@ if ($check_reason && $check_reason->num_rows == 0) {
 $message = "";
 $message_type = "success";
 
-// 3. จัดการคำสั่ง ยกเลิก / คืนสถานะ / ลบคำร้อง
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $trip_id = isset($_POST['trip_id']) ? intval($_POST['trip_id']) : 0;
@@ -62,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 4. ดึงข้อมูลคำร้องทั้งหมด
 $sql = "SELECT * FROM official_trips ORDER BY id DESC";
 $result = $conn->query($sql);
 
@@ -93,7 +89,6 @@ function thai_date_short($date_str) {
 <body class="py-3">
 
 <div class="container-fluid px-4">
-    <!-- แถบด้านบน -->
     <div class="header-panel d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3">
             <img src="logo.png" alt="Logo" style="height: 50px;" onerror="this.src='https://placehold.co/50x50?text=YKR';">
@@ -119,7 +114,6 @@ function thai_date_short($date_str) {
         </div>
     <?php endif; ?>
 
-    <!-- ตารางคำร้อง -->
     <div class="main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="fw-bold mb-0"><i class="bi bi-table"></i> รายการคำร้องและสถานะการดำเนินการ</h6>
@@ -136,7 +130,7 @@ function thai_date_short($date_str) {
                         <th>เรื่อง / ปลายทาง</th>
                         <th>ช่วงวันที่</th>
                         <th class="text-center">สถานะ</th>
-                        <th class="text-center" style="width: 250px;">การจัดการ</th>
+                        <th class="text-center" style="width: 270px;">การจัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -184,19 +178,24 @@ function thai_date_short($date_str) {
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-1">
+                                        <!-- ปุ่มแก้ไขข้อมูล -->
+                                        <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning text-dark" title="แก้ไขข้อมูลคำร้อง">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
                                         <!-- ปุ่มพิมพ์เอกสาร -->
                                         <a href="print.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="เปิดพิมพ์บันทึกข้อความ">
                                             <i class="bi bi-printer"></i>
                                         </a>
 
-                                        <!-- ปุ่มสลับสถานะ ยกเลิก / คืนสถานะ -->
+                                        <!-- ปุ่มยกเลิก / คืนสถานะ -->
                                         <?php if (!$is_cancelled): ?>
                                             <form method="POST" action="admin.php" style="display:inline;" onsubmit="return confirmCancel(this, '<?php echo htmlspecialchars(addslashes($row['applicant_name'])); ?>');">
                                                 <input type="hidden" name="action" value="cancel">
                                                 <input type="hidden" name="trip_id" value="<?php echo $row['id']; ?>">
                                                 <input type="hidden" name="cancel_reason" value="">
-                                                <button type="submit" class="btn btn-sm btn-outline-warning text-dark" title="ยกเลิกคำร้องนี้">
-                                                    <i class="bi bi-x-circle"></i> ยกเลิก
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="ยกเลิกคำร้องนี้">
+                                                    <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </form>
                                         <?php else: ?>
@@ -204,7 +203,7 @@ function thai_date_short($date_str) {
                                                 <input type="hidden" name="action" value="restore">
                                                 <input type="hidden" name="trip_id" value="<?php echo $row['id']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-outline-success" title="คืนสถานะให้เป็นปกติ">
-                                                    <i class="bi bi-arrow-counterclockwise"></i> คืนสถานะ
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
                                                 </button>
                                             </form>
                                         <?php endif; ?>
@@ -223,9 +222,7 @@ function thai_date_short($date_str) {
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
-                                ยังไม่มีข้อมูลคำร้องในระบบ
-                            </td>
+                            <td colspan="8" class="text-center py-5 text-muted">ยังไม่มีข้อมูลคำร้องในระบบ</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -237,9 +234,7 @@ function thai_date_short($date_str) {
 <script>
 function confirmCancel(form, name) {
     let reason = prompt('กรุณาระบุเหตุผลการยกเลิกคำร้องของคุณ ' + name + ' (ถ้าไม่ระบุให้กดตกลงได้เลย):', 'ยกเลิกภารกิจ');
-    if (reason === null) {
-        return false;
-    }
+    if (reason === null) return false;
     form.cancel_reason.value = reason;
     return true;
 }
