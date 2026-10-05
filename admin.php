@@ -1,7 +1,15 @@
 <?php
+session_start();
+
+// 1. ตรวจสอบสิทธิ์การเข้าใช้งาน ถ้ายังไม่ล็อกอินให้เด้งไปหน้า login.php
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 require_once 'config.php';
 
-// 1. ตรวจสอบและสร้างคอลัมน์ status และ cancel_reason อัตโนมัติหากยังไม่มีในฐานข้อมูล
+// 2. ตรวจสอบและสร้างคอลัมน์ status และ cancel_reason อัตโนมัติ
 $check_status = $conn->query("SHOW COLUMNS FROM official_trips LIKE 'status'");
 if ($check_status && $check_status->num_rows == 0) {
     $conn->query("ALTER TABLE official_trips ADD COLUMN status VARCHAR(50) DEFAULT 'ปกติ'");
@@ -15,7 +23,7 @@ if ($check_reason && $check_reason->num_rows == 0) {
 $message = "";
 $message_type = "success";
 
-// 2. จัดการคำสั่ง ยกเลิกคำร้อง / ลบคำร้อง / คืนสถานะคำร้อง
+// 3. จัดการคำสั่ง ยกเลิก / คืนสถานะ / ลบคำร้อง
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $trip_id = isset($_POST['trip_id']) ? intval($_POST['trip_id']) : 0;
@@ -23,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($trip_id > 0) {
         if ($action === 'cancel') {
-            // ยกเลิกคำร้อง พร้อมบันทึกเหตุผล
             $stmt = $conn->prepare("UPDATE official_trips SET status = 'ยกเลิก', cancel_reason = ? WHERE id = ?");
             $stmt->bind_param("si", $cancel_reason, $trip_id);
             if ($stmt->execute()) {
@@ -33,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message_type = "danger";
             }
         } elseif ($action === 'restore') {
-            // คืนค่าสถานะให้กลับมาเป็นปกติ
             $stmt = $conn->prepare("UPDATE official_trips SET status = 'ปกติ', cancel_reason = NULL WHERE id = ?");
             $stmt->bind_param("i", $trip_id);
             if ($stmt->execute()) {
@@ -43,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message_type = "danger";
             }
         } elseif ($action === 'delete') {
-            // ลบคำร้องและข้อมูลผู้ร่วมเดินทางออกจากระบบถาวร
             $conn->query("DELETE FROM trip_participants WHERE trip_id = {$trip_id}");
             $stmt = $conn->prepare("DELETE FROM official_trips WHERE id = ?");
             $stmt->bind_param("i", $trip_id);
@@ -57,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 3. ดึงรายการคำร้องทั้งหมดมาแสดง
+// 4. ดึงข้อมูลคำร้องทั้งหมด
 $sql = "SELECT * FROM official_trips ORDER BY id DESC";
 $result = $conn->query($sql);
 
@@ -97,9 +102,12 @@ function thai_date_short($date_str) {
                 <small class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</small>
             </div>
         </div>
-        <div>
+        <div class="d-flex gap-2">
             <a href="index.php" class="btn btn-outline-secondary px-3 py-2 fw-medium">
                 <i class="bi bi-arrow-left"></i> กลับหน้ารายการหลัก
+            </a>
+            <a href="logout.php" class="btn btn-danger px-3 py-2 fw-medium">
+                <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
             </a>
         </div>
     </div>
@@ -111,7 +119,7 @@ function thai_date_short($date_str) {
         </div>
     <?php endif; ?>
 
-    <!-- ตารางคำร้องและเครื่องมือจัดการ -->
+    <!-- ตารางคำร้อง -->
     <div class="main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="fw-bold mb-0"><i class="bi bi-table"></i> รายการคำร้องและสถานะการดำเนินการ</h6>
@@ -230,7 +238,7 @@ function thai_date_short($date_str) {
 function confirmCancel(form, name) {
     let reason = prompt('กรุณาระบุเหตุผลการยกเลิกคำร้องของคุณ ' + name + ' (ถ้าไม่ระบุให้กดตกลงได้เลย):', 'ยกเลิกภารกิจ');
     if (reason === null) {
-        return false; // กดยกเลิกใน prompt
+        return false;
     }
     form.cancel_reason.value = reason;
     return true;
