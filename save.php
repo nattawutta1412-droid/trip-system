@@ -2,15 +2,17 @@
 require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 1. ปรับขนาดคอลัมน์ใน official_trips ให้รองรับข้อความยาว
     $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_type TEXT NULL");
     $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_specific_details TEXT NULL");
 
-    // 2. ตรวจสอบและเพิ่มคอลัมน์ที่จำเป็นใน official_trips
+    // ตรวจสอบและเพิ่มคอลัมน์ sign_mode และ acting_name อัตโนมัติ
     $required_columns = [
         'work_group' => 'VARCHAR(150) NULL',
         'head_group_name' => 'VARCHAR(255) NULL',
         'half_day_time' => 'VARCHAR(100) NULL',
+        'driver_name' => 'VARCHAR(255) NULL',
+        'sign_mode' => "VARCHAR(50) DEFAULT 'director'",
+        'acting_name' => 'VARCHAR(255) NULL',
         'expense_other' => 'TEXT NULL'
     ];
 
@@ -21,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 3. จัดการโครงสร้างตาราง trip_participants แก้ปัญหา full_name ขาดค่า
+    // จัดการตาราง trip_participants
     $create_participants_table = "CREATE TABLE IF NOT EXISTS trip_participants (
         id INT AUTO_INCREMENT PRIMARY KEY,
         trip_id INT NOT NULL,
@@ -34,22 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     $conn->query($create_participants_table);
 
-    // ปลดล็อค full_name ให้ยอมรับค่า NULL หรือมีคอลัมน์ name/full_name ครบถ้วน
     $conn->query("ALTER TABLE trip_participants MODIFY COLUMN full_name VARCHAR(255) NULL DEFAULT NULL");
     $check_name = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'name'");
     if ($check_name && $check_name->num_rows == 0) {
         $conn->query("ALTER TABLE trip_participants ADD COLUMN name VARCHAR(255) NULL DEFAULT NULL");
     }
-    $check_type = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'type'");
-    if ($check_type && $check_type->num_rows == 0) {
-        $conn->query("ALTER TABLE trip_participants ADD COLUMN type VARCHAR(50) DEFAULT 'teacher'");
-    }
-    $check_detail = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'detail'");
-    if ($check_detail && $check_detail->num_rows == 0) {
-        $conn->query("ALTER TABLE trip_participants ADD COLUMN detail VARCHAR(255) NULL DEFAULT NULL");
-    }
 
-    // 4. รับค่าจากฟอร์ม
+    // รับค่าจากฟอร์ม
     $doc_number            = '';
     $created_date          = $_POST['created_date'] ?? date('Y-m-d');
     $applicant_name        = $_POST['applicant_name'] ?? '';
@@ -66,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $end_date              = $_POST['end_date'] ?? '';
     $half_day_time         = trim($_POST['half_day_time'] ?? '');
 
-    // 5. ค่าใช้จ่าย
+    // ค่าใช้จ่าย
     $expense_parts = [];
     if (!empty($_POST['expense_option_no'])) {
         $expense_parts[] = "ไม่ขอเบิกค่าใช้จ่าย";
@@ -79,14 +72,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $expense_parts[] = "ขอเบิกเฉพาะค่าใช้จ่าย (" . $specific_items . ")";
     }
     
-    // 6. ยานพาหนะ
+    // ยานพาหนะ
     $vehicle_type = "";
+    $driver_name = "";
     if (!empty($_POST['expense_option_vehicle'])) {
         $vehicle_type = $_POST['vehicle_select'] ?? 'รถยนต์ส่วนตัว';
+        if ($vehicle_type === 'รถยนต์ราชการ') {
+            $driver_name = trim($_POST['driver_name'] ?? '');
+        }
     }
     $vehicle_license_plate = $_POST['vehicle_license_plate'] ?? '';
 
-    // 7. อื่นๆ
+    // ผู้มีอำนาจลงนาม
+    $sign_mode = $_POST['sign_mode'] ?? 'director';
+    $acting_name = ($sign_mode === 'acting') ? trim($_POST['acting_name'] ?? '') : '';
+
     $expense_other = "";
     if (!empty($_POST['expense_option_other']) && !empty($_POST['expense_other'])) {
         $expense_other = trim($_POST['expense_other']);
@@ -96,18 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
     $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
 
-    // 8. บันทึกคำร้องหลัก
     $stmt = $conn->prepare("INSERT INTO official_trips 
-        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, expense_other) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, driver_name, sign_mode, acting_name, expense_other) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    $stmt->bind_param("ssssssssssssssssssss", 
-        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $expense_other);
+    $stmt->bind_param("sssssssssssssssssssssss", 
+        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $driver_name, $sign_mode, $acting_name, $expense_other);
 
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
 
-        // 9. บันทึกรายชื่อผู้ร่วมเดินทาง (ใส่ทั้ง full_name และ name ป้องกัน Error ทุกรูปแบบ)
         if (!empty($_POST['participants']) && is_array($_POST['participants'])) {
             $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, full_name, detail, position, type) VALUES (?, ?, ?, ?, ?, ?)");
             foreach ($_POST['participants'] as $p) {
