@@ -14,8 +14,9 @@
 <body class="py-4">
 <div class="container" style="max-width: 800px;">
     <div class="card p-4">
-        <h4 class="text-center mb-4 font-weight-bold">แบบฟอร์มขออนุมัติเดินทางไปราชการ</h4>
-        <form action="save.php" method="POST">
+        <h4 class="text-center mb-4 fw-bold">แบบฟอร์มขออนุมัติเดินทางไปราชการ</h4>
+        <!-- จุดสำคัญ: ต้องมี enctype="multipart/form-data" เสมอสำหรับการอัปโหลดไฟล์ -->
+        <form action="save.php" method="POST" enctype="multipart/form-data">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">เลขที่หนังสือ / ที่:</label>
@@ -100,10 +101,19 @@
                     <label class="form-label">ทะเบียนรถ (ถ้ามี):</label>
                     <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
                 </div>
+
+                <!-- ช่องอัปโหลดไฟล์เอกสารแนบ (PDF / รูปภาพ) -->
+                <div class="col-md-12">
+                    <div class="p-3 bg-light rounded border border-secondary border-dashed">
+                        <label class="form-label fw-bold text-success">แนบเอกสารคำสั่ง / หนังสือเชิญ (PDF หรือ รูปภาพ):</label>
+                        <input type="file" name="attachment" class="form-control" accept=".pdf,image/*">
+                        <small class="text-muted">* รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 10MB</small>
+                    </div>
+                </div>
             </div>
 
             <div class="mt-4 text-center">
-                <button type="submit" class="btn btn-primary px-5 py-2">บันทึกข้อมูลและพิมพ์เอกสาร</button>
+                <button type="submit" class="btn btn-primary px-5 py-2">บันทึกข้อมูลและส่งเอกสาร</button>
             </div>
         </form>
     </div>
