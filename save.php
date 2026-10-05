@@ -2,11 +2,11 @@
 require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 1. ขยายขนาดคอลัมน์ expense_type และ expense_specific_details เป็น TEXT อัตโนมัติ เพื่อรองรับข้อความยาว
+    // 1. ปรับขนาดคอลัมน์ใน official_trips ให้รองรับข้อความยาว
     $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_type TEXT NULL");
     $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_specific_details TEXT NULL");
 
-    // 2. ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติหากยังไม่มี
+    // 2. ตรวจสอบและเพิ่มคอลัมน์ที่จำเป็นใน official_trips
     $required_columns = [
         'work_group' => 'VARCHAR(150) NULL',
         'head_group_name' => 'VARCHAR(255) NULL',
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 3. ตรวจสอบและสร้างตารางเก็บผู้ร่วมเดินทางอัตโนมัติ
+    // 3. จัดการตาราง trip_participants ให้มีคอลัมน์ครบถ้วน
     $create_participants_table = "CREATE TABLE IF NOT EXISTS trip_participants (
         id INT AUTO_INCREMENT PRIMARY KEY,
         trip_id INT NOT NULL,
@@ -32,6 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         INDEX (trip_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     $conn->query($create_participants_table);
+
+    // ตรวจสอบและเพิ่มคอลัมน์ name, detail, type กรณีตารางเดิมมีอยู่แล้วแต่โครงสร้างไม่ตรง
+    $p_cols = [
+        'name' => 'VARCHAR(255) NOT NULL',
+        'detail' => 'VARCHAR(255) NULL',
+        'position' => 'VARCHAR(255) NULL',
+        'type' => "VARCHAR(50) DEFAULT 'teacher'"
+    ];
+    foreach ($p_cols as $p_col => $p_def) {
+        $check_p = $conn->query("SHOW COLUMNS FROM trip_participants LIKE '{$p_col}'");
+        if ($check_p && $check_p->num_rows == 0) {
+            $conn->query("ALTER TABLE trip_participants ADD COLUMN {$p_col} {$p_def}");
+        }
+    }
 
     // 4. รับค่าจากฟอร์ม
     $doc_number            = '';
