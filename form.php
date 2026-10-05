@@ -10,6 +10,7 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
         .form-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 30px; margin-top: 25px; margin-bottom: 40px; }
         .section-header { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 20px; margin-top: 15px; font-weight: 600; color: #0d6efd; }
+        .expense-box { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 18px; }
     </style>
 </head>
 <body>
@@ -55,7 +56,7 @@
                     <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ ภาษาต่างประเทศ" required>
                 </div>
 
-                <!-- ส่วนกลุ่มงานและหัวหน้ากลุ่มงาน -->
+                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border border-primary-subtle">
                         <div class="row g-3">
@@ -106,35 +107,95 @@
                     <label class="form-label">ถึงวันที่:</label>
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">เวลาเดินทาง (กรณีครึ่งวัน / ไป-กลับ):</label>
-                    <input type="text" name="half_day_time" class="form-control" placeholder="เช่น ช่วงเช้า, เวลา 08.30 - 12.00 น.">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">การเบิกค่าใช้จ่าย:</label>
-                    <select name="expense_type" class="form-select" required>
-                        <option value="ไม่ขอเบิกงบประมาณ">ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ</option>
-                        <option value="ขอเบิกจากต้นสังกัด">ขอเบิกค่าใช้จ่ายจากโรงเรียน</option>
-                        <option value="ขอเบิกจากผู้จัด">ขอเบิกค่าใช้จ่ายจากหน่วยงานผู้จัด</option>
-                    </select>
-                </div>
             </div>
 
-            <!-- 4. ยานพาหนะ -->
-            <div class="section-header">4. พาหนะที่ใช้เดินทาง</div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">ยานพาหนะ:</label>
-                    <select name="vehicle_type" class="form-select" required>
-                        <option value="รถยนต์ส่วนบุคคล">รถยนต์ส่วนบุคคล</option>
-                        <option value="รถยนต์ส่วนกลางของสถานศึกษา">รถยนต์ส่วนกลางของโรงเรียน</option>
-                        <option value="รถโดยสารประจำทาง">รถโดยสารประจำทาง</option>
-                        <option value="เครื่องบินโดยสาร">เครื่องบินโดยสาร</option>
-                    </select>
+            <!-- 4. รายละเอียดการเบิกจ่ายและการเดินทาง (ตรงตามแม่แบบ) -->
+            <div class="section-header">4. รายละเอียดค่าใช้จ่ายและยานพาหนะ</div>
+            <div class="expense-box">
+                <div class="fw-bold mb-2">โดยข้าพเจ้า:</div>
+
+                <!-- ข้อ 1: ไม่ขอเบิกค่าใช้จ่าย -->
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="expense_option_no" id="exp_no" value="1">
+                    <label class="form-check-label" for="exp_no">
+                        ไม่ขอเบิกค่าใช้จ่าย
+                    </label>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">หมายเลขทะเบียนรถ (ถ้ามี):</label>
-                    <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
+
+                <!-- ข้อ 2: ขอเบิกตามสิทธิจากงบประมาณสถานศึกษา -->
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="expense_option_school" id="exp_school" value="1">
+                    <label class="form-check-label" for="exp_school">
+                        ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ
+                    </label>
+                </div>
+
+                <!-- ข้อ 3: ขอเบิกเฉพาะค่าใช้จ่าย -->
+                <div class="mb-3 ps-4 border-start border-2 border-primary">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="expense_option_specific" id="exp_specific" value="1">
+                        <label class="form-check-label fw-bold" for="exp_specific">
+                            ขอเบิกเฉพาะค่าใช้จ่าย:
+                        </label>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 ms-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="specific_items[]" id="item_vehicle" value="ค่าพาหนะเดินทาง">
+                            <label class="form-check-label" for="item_vehicle">ค่าพาหนะเดินทาง</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="specific_items[]" id="item_fuel" value="ค่าน้ำมัน">
+                            <label class="form-check-label" for="item_fuel">ค่าน้ำมัน</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="specific_items[]" id="item_allowance" value="ค่าเบี้ยเลี้ยง">
+                            <label class="form-check-label" for="item_allowance">ค่าเบี้ยเลี้ยง</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="specific_items[]" id="item_room" value="ค่าที่พัก">
+                            <label class="form-check-label" for="item_room">ค่าที่พัก</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ข้อ 4: ไปราชการด้วยยานพาหนะ -->
+                <div class="mb-3 ps-4 border-start border-2 border-success">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="expense_option_vehicle" id="exp_vehicle" value="1">
+                        <label class="form-check-label fw-bold" for="exp_vehicle">
+                            ไปราชการด้วย:
+                        </label>
+                    </div>
+                    <div class="row g-2 align-items-center ms-1">
+                        <div class="col-auto">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_gov" value="รถยนต์ราชการ">
+                                <label class="form-check-label" for="v_gov">รถยนต์ราชการ</label>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_priv" value="รถยนต์ส่วนตัว">
+                                <label class="form-check-label" for="v_priv">รถยนต์ส่วนตัว</label>
+                            </div>
+                        </div>
+                        <div class="col-md-5 col-sm-12">
+                            <input type="text" name="vehicle_license_plate" class="form-control form-control-sm" placeholder="หมายเลขทะเบียน เช่น กข 1234 ตรัง">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ข้อ 5: อื่นๆ -->
+                <div class="mb-1">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" name="expense_option_other" id="exp_other" value="1">
+                        <label class="form-check-label fw-bold" for="exp_other">
+                            อื่น ๆ
+                        </label>
+                    </div>
+                    <div class="ms-3">
+                        <input type="text" name="expense_other" class="form-control form-control-sm" placeholder="ระบุรายละเอียดเพิ่มเติม...">
+                    </div>
                 </div>
             </div>
 
