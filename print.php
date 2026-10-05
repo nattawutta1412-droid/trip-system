@@ -12,19 +12,6 @@ if (!$trip) {
     die("ไม่พบข้อมูลเอกสาร");
 }
 
-// ดึงข้อมูลผู้ร่วมเดินทาง
-$participants = [];
-$p_check = $conn->query("SHOW TABLES LIKE 'trip_participants'");
-if ($p_check && $p_check->num_rows > 0) {
-    $p_stmt = $conn->prepare("SELECT * FROM trip_participants WHERE trip_id = ? ORDER BY id ASC");
-    $p_stmt->bind_param("i", $id);
-    $p_stmt->execute();
-    $p_res = $p_stmt->get_result();
-    while ($p_row = $p_res->fetch_assoc()) {
-        $participants[] = $p_row;
-    }
-}
-
 function thai_date($date_str) {
     if (!$date_str) return "";
     $thai_months = [
@@ -67,8 +54,15 @@ if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบ
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
-$head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
-$head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
+// หัวหน้ากลุ่มงาน
+$group_title = !empty($trip['work_group']) ? "หัวหน้า" . $trip['work_group'] : "หัวหน้ากลุ่มงาน";
+$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
+
+// หัวหน้าฝ่าย
+$dept_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
+$head_dept_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
+
+$director_name = "ว่าที่ร้อยโทจักรเพชร์ พรมยศ";
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -99,19 +93,19 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         body {
             font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 16pt;
-            line-height: 1.15;
+            font-size: 15pt;
+            line-height: 1.12;
             background-color: #525659;
             margin: 0;
-            padding: 20px 0;
+            padding: 15px 0;
             color: #000;
         }
 
         .sheet {
             width: 210mm;
             min-height: 297mm;
-            padding: 12mm 20mm 12mm 25mm;
-            margin: 0 auto 20px auto;
+            padding: 10mm 18mm 10mm 22mm;
+            margin: 0 auto 15px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
@@ -121,7 +115,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         .header-box {
             position: relative;
-            height: 55px;
+            height: 52px;
             margin-bottom: 2px;
             text-align: center;
         }
@@ -130,22 +124,22 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             position: absolute;
             left: 0;
             top: -2px;
-            height: 55px;
+            height: 52px;
             width: auto;
         }
 
         .doc-title {
-            font-size: 29pt;
+            font-size: 28pt;
             font-weight: bold;
-            line-height: 50px;
+            line-height: 48px;
             letter-spacing: 0.5px;
         }
 
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 16pt;
-            line-height: 1.18;
+            font-size: 15pt;
+            line-height: 1.15;
         }
 
         .meta-table td {
@@ -156,11 +150,11 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .divider-line {
             border: 0;
             border-top: 1.5px solid #000;
-            margin: 3px 0 6px 0;
+            margin: 2px 0 5px 0;
         }
 
         .to-line {
-            font-size: 16pt;
+            font-size: 15pt;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -168,42 +162,42 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .prose-body {
             text-align: justify;
             text-justify: inter-cluster;
-            text-indent: 2.5cm;
-            font-size: 16pt;
-            line-height: 1.22;
+            text-indent: 2.2cm;
+            font-size: 15pt;
+            line-height: 1.18;
             margin-top: 2px;
         }
 
         .applicant-sign-wrap {
-            margin-top: 8px;
+            margin-top: 5px;
             margin-left: auto;
-            width: 50%;
+            width: 48%;
             text-align: center;
-            font-size: 16pt;
-            line-height: 1.18;
+            font-size: 15pt;
+            line-height: 1.15;
         }
 
-        .head-opinion-box {
-            margin-top: 6px;
+        /* ตารางแบ่ง 2 ช่องสำหรับ หัวหน้ากลุ่มงาน และ หัวหน้าฝ่าย */
+        .middle-sign-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 14.5pt;
+            line-height: 1.15;
+        }
+        .middle-sign-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 3px 6px;
             border-top: 1px dashed #777;
-            padding-top: 4px;
-            font-size: 16pt;
-            line-height: 1.18;
-        }
-
-        .head-sign-wrap {
-            margin-left: auto;
-            width: 50%;
-            text-align: center;
-            margin-top: 3px;
         }
 
         .director-frame {
-            margin-top: 6px;
+            margin-top: 5px;
             border: 1px solid #000;
-            padding: 6px 14px;
-            font-size: 16pt;
-            line-height: 1.18;
+            padding: 5px 12px;
+            font-size: 14.5pt;
+            line-height: 1.15;
         }
 
         .attachment-table {
@@ -224,7 +218,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         @media print {
             body { background: transparent; padding: 0; }
-            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 12mm 20mm 12mm 25mm; page-break-after: always; }
+            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 10mm 18mm 10mm 22mm; page-break-after: always; }
             .no-print { display: none !important; }
         }
     </style>
@@ -232,11 +226,8 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 <body>
 
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
-    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ สั่งพิมพ์เอกสาร (Print)</button>
+    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️️ สั่งพิมพ์เอกสาร (Print)</button>
     <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
-    <?php if (!empty($trip['approved_file'])): ?>
-        <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
-    <?php endif; ?>
 </div>
 
 <!-- ================= หน้าที่ 1: บันทึกข้อความ ================= -->
@@ -271,30 +262,44 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลำดับที่ 1: ผู้ขออนุมัติ -->
+    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) -->
     <div class="applicant-sign-wrap">
         ลงชื่อ......................................................................<br>
         ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: หัวหน้าฝ่าย -->
-    <div class="head-opinion-box">
-        <strong>ความเห็นของ<?php echo htmlspecialchars($head_title); ?>:</strong><br>
-        ..................................................................................................................................................................................<br>
-        <div class="head-sign-wrap">
-            ลงชื่อ......................................................................<br>
-            ( <?php echo htmlspecialchars($head_name_display); ?> )<br>
-            <?php echo htmlspecialchars($head_title); ?><br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
-        </div>
-    </div>
+    <!-- ลำดับที่ 2 และ 3: ความเห็นหัวหน้ากลุ่มงาน (ซ้าย) และ หัวหน้าฝ่าย (ขวา) -->
+    <table class="middle-sign-table">
+        <tr>
+            <td>
+                <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong><br>
+                ...................................................................................<br>
+                <div style="text-align: center; margin-top: 3px;">
+                    ลงชื่อ............................................................<br>
+                    ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
+                    <?php echo htmlspecialchars($group_title); ?><br>
+                    วันที่ ........ เดือน .................... พ.ศ. ........
+                </div>
+            </td>
+            <td>
+                <strong>ความเห็นของ<?php echo htmlspecialchars($dept_title); ?>:</strong><br>
+                ...................................................................................<br>
+                <div style="text-align: center; margin-top: 3px;">
+                    ลงชื่อ............................................................<br>
+                    ( <?php echo htmlspecialchars($head_dept_display); ?> )<br>
+                    <?php echo htmlspecialchars($dept_title); ?><br>
+                    วันที่ ........ เดือน .................... พ.ศ. ........
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    <!-- ลำดับที่ 3: ผู้อำนวยการโรงเรียน (ใส่ชื่อตรงๆ ในวงเล็บ) -->
+    <!-- ลำดับที่ 4: ผู้อำนวยการโรงเรียน (ล่างสุด) -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 4px;">
+        <div style="text-align: center; margin-top: 3px;">
             ลงชื่อ......................................................................<br>
             ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
@@ -326,29 +331,18 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
                 <td><?php echo htmlspecialchars($trip['position'] ?? ''); ?></td>
                 <td style="text-align: center;">ผู้ขออนุมัติ</td>
             </tr>
-            <?php if (!empty($participants)): ?>
-                <?php $i = 2; foreach ($participants as $p): ?>
-                <tr>
-                    <td style="text-align: center;"><?php echo $i++; ?></td>
-                    <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
-                    <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
-                    <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td style="text-align: center;">2</td>
-                    <td>..............................................................................</td>
-                    <td>...................................................</td>
-                    <td style="text-align: center;">-</td>
-                </tr>
-                <tr>
-                    <td style="text-align: center;">3</td>
-                    <td>..............................................................................</td>
-                    <td>...................................................</td>
-                    <td style="text-align: center;">-</td>
-                </tr>
-            <?php endif; ?>
+            <tr>
+                <td style="text-align: center;">2</td>
+                <td>..............................................................................</td>
+                <td>...................................................</td>
+                <td style="text-align: center;">-</td>
+            </tr>
+            <tr>
+                <td style="text-align: center;">3</td>
+                <td>..............................................................................</td>
+                <td>...................................................</td>
+                <td style="text-align: center;">-</td>
+            </tr>
         </tbody>
     </table>
 
