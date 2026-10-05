@@ -289,3 +289,12 @@ function thai_date_short($date_str) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<!-- ปุ่มส่งออกเป็น Excel -->
+<a href="export_excel.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-success fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
+    <i class="bi bi-file-earmark-excel-fill"></i> ส่งออกเป็น Excel (CSV)
+</a>
+
+<!-- ปุ่มสั่งพิมพ์สรุปหน้ารายงาน -->
+<button onclick="window.print()" class="btn btn-outline-secondary fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
+    <i class="bi bi-printer-fill"></i> พิมพ์รายงานสรุป
+</button>
