@@ -15,7 +15,6 @@
 <div class="container" style="max-width: 800px;">
     <div class="card p-4">
         <h4 class="text-center mb-4 fw-bold">แบบฟอร์มขออนุมัติเดินทางไปราชการ</h4>
-        <!-- จุดสำคัญ: ต้องมี enctype="multipart/form-data" เสมอสำหรับการอัปโหลดไฟล์ -->
         <form action="save.php" method="POST" enctype="multipart/form-data">
             <div class="row g-3">
                 <div class="col-md-6">
@@ -45,10 +44,10 @@
                     <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ วิทยาศาสตร์และเทคโนโลยี" required>
                 </div>
 
-                <!-- ช่องกรอกชื่อหัวหน้าฝ่าย -->
+                <!-- ช่องกรอกชื่อหัวหน้าฝ่าย (ใช้เฉพาะหัวหน้าฝ่าย) -->
                 <div class="col-md-12">
                     <div class="p-3 bg-light rounded border">
-                        <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย / หัวหน้ากลุ่มสาระการเรียนรู้:</label>
+                        <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
                         <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล เช่น นางสาวใจดี สุขสมบัติ" required>
                     </div>
                 </div>
@@ -102,7 +101,7 @@
                     <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
                 </div>
 
-                <!-- ช่องอัปโหลดไฟล์เอกสารแนบ (PDF / รูปภาพ) -->
+                <!-- ช่องแนบไฟล์ -->
                 <div class="col-md-12">
                     <div class="p-3 bg-light rounded border border-secondary border-dashed">
                         <label class="form-label fw-bold text-success">แนบเอกสารคำสั่ง / หนังสือเชิญ (PDF หรือ รูปภาพ):</label>
