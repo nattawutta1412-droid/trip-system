@@ -38,7 +38,7 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// 1. เลขที่หนังสือ (ถ้าไม่มีให้แสดงจุดไข่ปลาไว้เขียน)
+// 1. เลขที่หนังสือ
 $doc_number_display = !empty($trip['doc_number']) ? htmlspecialchars($trip['doc_number']) : '...................................................';
 
 // 2. กำหนดการวันเวลา (กรณีครึ่งวัน)
@@ -60,13 +60,15 @@ if (!empty($half_time)) {
     }
 }
 
-// 3. ยานพาหนะ
+// 3. ยานพาหนะ และ พนักงานขับรถ
 $vehicle = $trip['vehicle_type'] ?? '';
 $plate = trim($trip['vehicle_license_plate'] ?? '');
+$driver = trim($trip['driver_name'] ?? '');
 $vehicle_prose = "";
+
 if (!empty($vehicle)) {
     if ($vehicle === 'รถยนต์ราชการ') {
-        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ราชการ";
+        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ราชการ" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "") . (!empty($driver) ? " โดยมี {$driver} เป็นพนักงานขับรถ" : "");
     } elseif ($vehicle === 'รถยนต์ส่วนตัว') {
         $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ส่วนตัว" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "");
     } else {
@@ -104,7 +106,7 @@ $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มี�
 
 // ข้อมูลหัวหน้ากลุ่มงาน
 $group_name = !empty($trip['work_group']) ? $trip['work_group'] : 'กลุ่มงาน';
-$group_title = "หัวหน้า" . $group_name;
+$group_title = ($group_name === 'ฝ่ายบริหารสถานศึกษา') ? 'ผู้บริหารสถานศึกษา' : 'หัวหน้า' . $group_name;
 $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
 ?>
 <!DOCTYPE html>
@@ -211,40 +213,54 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.22;
+            line-height: 1.20;
             margin-top: 2px;
         }
 
         .applicant-sign-wrap {
-            margin-top: 8px;
+            margin-top: 6px;
             margin-left: auto;
             width: 50%;
             text-align: center;
             font-size: 16pt;
-            line-height: 1.18;
+            line-height: 1.15;
         }
 
         .head-opinion-box {
-            margin-top: 8px;
+            margin-top: 6px;
             border-top: 1px dashed #777;
-            padding-top: 6px;
+            padding-top: 4px;
             font-size: 16pt;
-            line-height: 1.18;
+            line-height: 1.15;
         }
 
         .head-sign-wrap {
             margin-left: auto;
             width: 50%;
             text-align: center;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .director-frame {
-            margin-top: 8px;
+            margin-top: 6px;
             border: 1px solid #000;
-            padding: 6px 14px;
+            padding: 5px 12px;
             font-size: 16pt;
-            line-height: 1.18;
+            line-height: 1.15;
+        }
+
+        /* กล่องรับเรื่อง/ออกเลขหนังสือ กลุ่มงานบริหารทั่วไป มุมขวาล่าง */
+        .admin-stamp-box {
+            position: absolute;
+            right: 20mm;
+            bottom: 10mm;
+            width: 65mm;
+            border: 1px solid #333;
+            padding: 4px 8px;
+            font-size: 13pt;
+            line-height: 1.25;
+            background: #fff;
+            box-sizing: border-box;
         }
 
         .attachment-table {
@@ -333,12 +349,22 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 4px;">
+        <div style="text-align: center; margin-top: 3px;">
             ลงชื่อ......................................................................<br>
             ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
             วันที่ ........ เดือน ........................ พ.ศ. ............
         </div>
+    </div>
+
+    <!-- กล่องบันทึกรับเรื่อง/ออกเลขหนังสือราชการ มุมขวาล่าง -->
+    <div class="admin-stamp-box">
+        <div style="font-weight: bold; text-align: center; border-bottom: 0.5px solid #666; margin-bottom: 3px; padding-bottom: 1px;">
+            กลุ่มงานบริหารทั่วไป (งานสารบรรณ)
+        </div>
+        <div>เลขที่รับ / ออกเลข: ...................................</div>
+        <div>วันที่ขอเลข: ........./........./..........................</div>
+        <div>ผู้ลงบันทึก: .............................................</div>
     </div>
 </div>
 
