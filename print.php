@@ -62,7 +62,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 <head>
     <meta charset="UTF-8">
     <title>บันทึกข้อความขออนุมัติไปราชการ</title>
-    <!-- ฝังชุดฟอนต์ TH Sarabun New มาตรฐาน -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
     <style>
         @font-face {
@@ -99,7 +98,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             width: 210mm;
             height: 297mm;
             max-height: 297mm;
-            padding: 15mm 20mm 15mm 25mm; /* ตั้งขอบตามระเบียบสารบรรณ เป๊ะใน 1 หน้า A4 */
+            padding: 15mm 20mm 15mm 25mm; /* ตั้งขอบตามระเบียบงานสารบรรณ พอดีในหน้าเดียว */
             margin: 0 auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
@@ -110,17 +109,18 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         .header-box {
             position: relative;
-            height: 60px;
+            height: 55px;
             margin-bottom: 5px;
             text-align: center;
         }
 
+        /* ตราครุฑ 1.5 ซม. ด้านซ้ายบนตามระเบียบ */
         .garuda-img {
             position: absolute;
             left: 0;
-            top: -5px;
-            width: 55px;
-            height: auto;
+            top: -2px;
+            height: 55px;
+            width: auto;
         }
 
         .doc-title {
@@ -163,28 +163,39 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             margin-top: 4px;
         }
 
-        .sign-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
+        /* กล่องลายเซ็นผู้ขอ (ชิดขวา) */
+        .applicant-sign-wrap {
+            margin-top: 12px;
+            margin-left: auto;
+            width: 50%;
+            text-align: center;
             font-size: 16pt;
             line-height: 1.2;
         }
 
-        .sign-table td {
-            width: 50%;
-            vertical-align: top;
-            text-align: center;
+        /* กล่องความเห็นหัวหน้าฝ่าย (ลำดับ 2) */
+        .head-opinion-box {
+            margin-top: 10px;
+            border-top: 1px dashed #666;
+            padding-top: 6px;
+            font-size: 16pt;
+            line-height: 1.2;
         }
 
-        .director-frame {
-            margin-top: 14px;
+        .head-sign-wrap {
             margin-left: auto;
-            width: 58%;
+            width: 50%;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* กล่องคำสั่ง ผอ. (ลำดับ 3 ล่างสุด) */
+        .director-frame {
+            margin-top: 10px;
             border: 1px solid #000;
             padding: 8px 14px;
             font-size: 16pt;
-            line-height: 1.25;
+            line-height: 1.2;
         }
 
         @media print {
@@ -216,11 +227,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 </div>
 
 <div class="sheet">
-    <!-- ตราครุฑและหัวเรื่องบันทึกข้อความ (ใช้ตราครุฑ SVG Vector คมชัด 100% ไม่มีปัญหาไฟล์หาย) -->
+    <!-- ตราครุฑมาตรฐานทางราชการ (ความสูง 1.5 ซม. อยู่มุมบนซ้าย) -->
     <div class="header-box">
-        <svg class="garuda-img" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 0 C45 10 38 12 30 14 C33 22 36 28 39 33 C33 34 26 36 15 34 C18 42 22 47 28 50 C21 53 14 55 5 54 C11 63 19 68 28 71 C23 76 17 80 8 83 C18 89 29 91 40 88 C38 92 35 96 32 100 C40 98 46 95 50 90 C54 95 60 98 68 100 C65 96 62 92 60 88 C71 91 82 89 92 83 C83 80 77 76 72 71 C81 68 89 63 95 54 C86 55 79 53 72 50 C78 47 82 42 85 34 C74 36 67 34 61 33 C64 28 67 22 70 14 C62 12 55 10 50 0 Z" fill="#000000"/>
-        </svg>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Garuda_Emblem_of_Thailand.svg/200px-Garuda_Emblem_of_Thailand.svg.png" alt="ตราครุฑ" class="garuda-img">
         <span class="doc-title">บันทึกข้อความ</span>
     </div>
     
@@ -241,7 +250,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- ย่อหน้าที่ 1: เนื้อความร้อยแก้วต่อเนื่องเป็นผืนเดียว -->
+    <!-- ย่อหน้าที่ 1: เนื้อความร้อยแก้วสมบูรณ์ -->
     <div class="prose-body">
         <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
@@ -251,36 +260,34 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ช่องลายเซ็นหัวหน้าฝ่าย และ ผู้ขออนุมัติ (ล็อกสัดส่วนตาราง) -->
-    <table class="sign-table">
-        <tr>
-            <!-- ฝั่งซ้าย: ความเห็นและลายเซ็นหัวหน้าฝ่าย -->
-            <td>
-                ความเห็นของ<?php echo htmlspecialchars($head_title); ?><br>
-                ...................................................................<br><br>
-                ลงชื่อ.......................................................<br>
-                ( <?php echo htmlspecialchars($head_name_display); ?> )<br>
-                <?php echo htmlspecialchars($head_title); ?>
-            </td>
+    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) -->
+    <div class="applicant-sign-wrap">
+        ลงชื่อ......................................................................<br>
+        ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
+        ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
+    </div>
 
-            <!-- ฝั่งขวา: ลายเซ็นผู้ขออนุมัติ -->
-            <td>
-                <br><br>
-                ลงชื่อ.......................................................<br>
-                ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
-                ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
-            </td>
-        </tr>
-    </table>
+    <!-- ลำดับที่ 2: ความเห็นและลายเซ็นของหัวหน้าฝ่าย -->
+    <div class="head-opinion-box">
+        <strong>ความเห็นของ<?php echo htmlspecialchars($head_title); ?>:</strong><br>
+        ..................................................................................................................................................................................<br>
+        <div class="head-sign-wrap">
+            ลงชื่อ......................................................................<br>
+            ( <?php echo htmlspecialchars($head_name_display); ?> )<br>
+            <?php echo htmlspecialchars($head_title); ?><br>
+            วันที่ ........ เดือน ........................ พ.ศ. ............
+        </div>
+    </div>
 
-    <!-- ส่วนคำสั่งและการอนุมัติของผู้อำนวยการโรงเรียน -->
+    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการ (ล่างสุด) -->
     <div class="director-frame">
-        คำสั่ง / คำอนุมัติ:<br>
-        [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก .............................<br><br>
-        <div style="text-align: center;">
-            ลงชื่อ.......................................................<br>
-            ( ....................................................... )<br>
-            ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์
+        <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
+        [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
+        <div style="text-align: center; margin-top: 6px;">
+            ลงชื่อ......................................................................<br>
+            ( ...................................................................... )<br>
+            ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
+            วันที่ ........ เดือน ........................ พ.ศ. ............
         </div>
     </div>
 </div>
