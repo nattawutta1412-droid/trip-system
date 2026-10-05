@@ -143,9 +143,10 @@ $filter_title = implode(" | ", $filter_desc);
             margin-bottom: 15px;
             position: relative;
         }
-        .garuda-img {
-            height: 48px;
-            margin-bottom: 4px;
+        .school-logo-img {
+            height: 60px;
+            width: auto;
+            margin-bottom: 6px;
         }
         .report-title {
             font-size: 20pt;
@@ -219,9 +220,9 @@ $filter_title = implode(" | ", $filter_desc);
 </div>
 
 <div class="report-page">
-    <!-- หัวรายงาน -->
+    <!-- หัวรายงาน (ใช้ตราประจำโรงเรียน) -->
     <div class="report-header">
-        <img src="garuda.png" alt="ตราครุฑ" class="garuda-img"><br>
+        <img src="logo.png" alt="ตราประจำโรงเรียนย่านตาขาวรัฐชนูปถัมภ์" class="school-logo-img" onerror="this.src='https://placehold.co/60x60?text=YKR';"><br>
         <div class="report-title">รายงานสรุปการขออนุมัติเดินทางไปราชการ</div>
         <div class="report-subtitle">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</div>
         <div class="report-filter">เงื่อนไข: <?php echo $filter_title; ?> (ข้อมูล ณ วันที่ <?php echo thai_date_full(date('Y-m-d')); ?>)</div>
