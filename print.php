@@ -12,7 +12,7 @@ if (!$trip) {
     die("ไม่พบข้อมูลเอกสาร");
 }
 
-// ดึงข้อมูลผู้ร่วมเดินทาง (ถ้ามี)
+// ดึงข้อมูลผู้ร่วมเดินทาง
 $participants = [];
 $p_check = $conn->query("SHOW TABLES LIKE 'trip_participants'");
 if ($p_check && $p_check->num_rows > 0) {
@@ -38,7 +38,7 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// แปลงคำศัพท์พาหนะเป็นภาษาเขียนร้อยแก้ว
+// แปลงคำศัพท์พาหนะ
 $vehicle = $trip['vehicle_type'] ?? '';
 if ($vehicle === 'personal_car') {
     $vehicle_text = 'รถยนต์ส่วนบุคคล';
@@ -52,7 +52,7 @@ if ($vehicle === 'personal_car') {
 
 $license_text = !empty($trip['vehicle_license_plate']) ? ' หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : '';
 
-// แปลงคำศัพท์งบประมาณเป็นภาษาเขียนร้อยแก้ว
+// แปลงคำศัพท์งบประมาณ
 $expense = $trip['expense_type'] ?? '';
 if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบประมาณ') {
     $expense_text = 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการแต่อย่างใด';
@@ -67,15 +67,11 @@ if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบ
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
-// ข้อความระบุผู้ร่วมเดินทางในร้อยแก้ว
-$participant_summary_text = "";
-if (!empty($participants)) {
-    $p_count = count($participants);
-    $participant_summary_text = " พร้อมด้วยคณะครูและบุคลากร/นักเรียน จำนวน {$p_count} คน (รายละเอียดดังบัญชีรายชื่อแนบท้าย) ";
-}
-
 $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
 $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
+
+// ชื่อผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์
+$director_name = "ว่าที่ร้อยโทจักรเพชร์ พรมยศ";
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -116,15 +112,13 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         .sheet {
             width: 210mm;
-            height: 297mm;
-            max-height: 297mm;
+            min-height: 297mm;
             padding: 12mm 20mm 12mm 25mm;
             margin: 0 auto 20px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
             position: relative;
-            overflow: hidden;
             page-break-after: always;
         }
 
@@ -135,7 +129,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             text-align: center;
         }
 
-        /* ดึงรูปครุฑ garuda.png ในโฟลเดอร์ของระบบโดยตรง */
         .garuda-img {
             position: absolute;
             left: 0;
@@ -184,7 +177,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             margin-top: 2px;
         }
 
-        /* 1. ลายเซ็นผู้ขออนุมัติ */
         .applicant-sign-wrap {
             margin-top: 8px;
             margin-left: auto;
@@ -194,7 +186,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             line-height: 1.18;
         }
 
-        /* 2. ความเห็นและลายเซ็นหัวหน้าฝ่าย */
         .head-opinion-box {
             margin-top: 6px;
             border-top: 1px dashed #777;
@@ -210,7 +201,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             margin-top: 3px;
         }
 
-        /* 3. คำสั่งและการอนุมัติของผู้อำนวยการ */
         .director-frame {
             margin-top: 6px;
             border: 1px solid #000;
@@ -219,7 +209,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             line-height: 1.18;
         }
 
-        /* ตารางแนบท้ายรายชื่อผู้ร่วมเดินทาง */
         .attachment-table {
             width: 100%;
             border-collapse: collapse;
@@ -238,7 +227,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
         @media print {
             body { background: transparent; padding: 0; }
-            .sheet { box-shadow: none; margin: 0; width: 210mm; height: 297mm; padding: 12mm 20mm 12mm 25mm; }
+            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 12mm 20mm 12mm 25mm; page-break-after: always; }
             .no-print { display: none !important; }
         }
     </style>
@@ -253,10 +242,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
     <?php endif; ?>
 </div>
 
-<!-- หน้าที่ 1: บันทึกข้อความขออนุมัติ -->
+<!-- ================= หน้าที่ 1: บันทึกข้อความ ================= -->
 <div class="sheet">
     <div class="header-box">
-        <!-- ชี้ไปที่ garuda.png ในโฟลเดอร์หลักโดยตรง -->
         <img src="garuda.png" alt="ตราครุฑ" class="garuda-img">
         <span class="doc-title">บันทึกข้อความ</span>
     </div>
@@ -278,23 +266,22 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- เนื้อความร้อยแก้ว -->
     <div class="prose-body">
-        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?><?php echo $participant_summary_text; ?>มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
+        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?> (รายละเอียดดังบัญชีรายชื่อและกำหนดการแนบท้าย)
     </div>
 
     <div class="prose-body">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ -->
+    <!-- ลำดับที่ 1: ผู้ขออนุมัติ -->
     <div class="applicant-sign-wrap">
         ลงชื่อ......................................................................<br>
         ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: ความเห็นและลายเซ็นของหัวหน้าฝ่าย -->
+    <!-- ลำดับที่ 2: หัวหน้าฝ่าย -->
     <div class="head-opinion-box">
         <strong>ความเห็นของ<?php echo htmlspecialchars($head_title); ?>:</strong><br>
         ..................................................................................................................................................................................<br>
@@ -306,21 +293,20 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการ -->
+    <!-- ลำดับที่ 3: ผู้อำนวยการโรงเรียน -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
         <div style="text-align: center; margin-top: 4px;">
             ลงชื่อ......................................................................<br>
-            ( ...................................................................... )<br>
+            ( <?php echo $director_name; ?> )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
             วันที่ ........ เดือน ........................ พ.ศ. ............
         </div>
     </div>
 </div>
 
-<!-- หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย (แสดงเฉพาะกรณีมีผู้ร่วมเดินทาง) -->
-<?php if (!empty($participants)): ?>
+<!-- ================= หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย ================= -->
 <div class="sheet">
     <div style="text-align: center; margin-bottom: 20px;">
         <h3 style="font-weight: bold; margin-bottom: 5px;">บัญชีรายชื่อผู้ขออนุมัติเดินทางไปราชการแนบท้าย</h3>
@@ -330,43 +316,88 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
     <table class="attachment-table">
         <thead>
             <tr>
-                <th style="width: 8%;">ลำดับ</th>
-                <th style="width: 40%;">ชื่อ - สกุล</th>
-                <th style="width: 32%;">ตำแหน่ง / ระดับชั้น</th>
-                <th style="width: 20%;">หมายเหตุ</th>
+                <th style="width: 10%;">ลำดับ</th>
+                <th style="width: 45%;">ชื่อ - สกุล</th>
+                <th style="width: 30%;">ตำแหน่ง / ระดับชั้น</th>
+                <th style="width: 15%;">หมายเหตุ</th>
             </tr>
         </thead>
         <tbody>
-            <!-- รายชื่อผู้ขอหลัก (ลำดับที่ 1) -->
             <tr>
                 <td style="text-align: center;">1</td>
                 <td><?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?></td>
                 <td><?php echo htmlspecialchars($trip['position'] ?? ''); ?></td>
                 <td style="text-align: center;">ผู้ขออนุมัติ</td>
             </tr>
-            <!-- รายชื่อผู้ร่วมเดินทาง -->
-            <?php 
-            $i = 2;
-            foreach ($participants as $p): 
-            ?>
-            <tr>
-                <td style="text-align: center;"><?php echo $i++; ?></td>
-                <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
-                <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
-                <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
-            </tr>
-            <?php endforeach; ?>
+            <?php if (!empty($participants)): ?>
+                <?php $i = 2; foreach ($participants as $p): ?>
+                <tr>
+                    <td style="text-align: center;"><?php echo $i++; ?></td>
+                    <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
+                    <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td style="text-align: center;">2</td>
+                    <td>..............................................................................</td>
+                    <td>...................................................</td>
+                    <td style="text-align: center;">-</td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">3</td>
+                    <td>..............................................................................</td>
+                    <td>...................................................</td>
+                    <td style="text-align: center;">-</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 
     <div style="margin-top: 40px; margin-left: auto; width: 50%; text-align: center;">
-        รับรองข้อมูลถูกต้อง<br><br>
+        รับรองข้อมูลถูกต้อง<br><br><br>
         ลงชื่อ......................................................................<br>
         ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 </div>
-<?php endif; ?>
+
+<!-- ================= หน้าที่ 3: กำหนดการเดินทางไปราชการแนบท้าย ================= -->
+<div class="sheet">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h3 style="font-weight: bold; margin-bottom: 5px;">กำหนดการเดินทางไปราชการ</h3>
+        <div>แนบท้ายบันทึกข้อความ ที่ <?php echo htmlspecialchars($trip['doc_number'] ?? '-'); ?> ลงวันที่ <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
+        <div style="margin-top: 5px;">เรื่อง: <?php echo htmlspecialchars($trip['subject'] ?? ''); ?></div>
+        <div>ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?></div>
+    </div>
+
+    <div style="font-size: 16pt; line-height: 1.6; margin-top: 25px;">
+        <p><strong>กำหนดการเดินทางระหว่างวันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?></strong></p>
+        
+        <p style="text-indent: 1.5cm;">
+            <strong>วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?></strong><br>
+            - เดินทางออกจากโรงเรียนย่านตาขาวรัฐชนูปถัมภ์ ไปยัง <?php echo htmlspecialchars($trip['destination'] ?? ''); ?><br>
+            - ปฏิบัติภารกิจราชการตามที่ได้รับมอบหมาย
+        </p>
+
+        <p style="text-indent: 1.5cm;">
+            <strong>วันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?></strong><br>
+            - เสร็จสิ้นการปฏิบัติภารกิจราชการ<br>
+            - เดินทางกลับถึงโรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โดยสวัสดิภาพ
+        </p>
+
+        <p style="color: #666; font-size: 14pt; margin-top: 20px;">
+            <em>* หมายเหตุ: กำหนดการอาจมีการเปลี่ยนแปลงตามความเหมาะสมของภารกิจงานราชการ</em>
+        </p>
+    </div>
+
+    <div style="margin-top: 50px; margin-left: auto; width: 50%; text-align: center;">
+        ลงชื่อ......................................................................ผู้รายงาน<br>
+        ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
+        ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
+    </div>
+</div>
 
 </body>
 </html>
