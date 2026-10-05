@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <!-- 2. ข้อมูลผู้ขออนุมัติและกลุ่มงาน (เพิ่มผู้บริหารสถานศึกษา) -->
+            <!-- 2. ข้อมูลผู้ขออนุมัติและกลุ่มงาน -->
             <div class="section-header">2. ข้อมูลผู้ขออนุมัติและกลุ่มงานต้นสังกัด</div>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -42,7 +42,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">ตำแหน่ง:</label>
-                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู, รองผู้อำนวยการสถานศึกษา, ผู้อำนวยการสถานศึกษา" required>
+                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู, ครูผู้ช่วย, รองผู้อำนวยการสถานศึกษา" required>
                 </div>
 
                 <!-- Dropdown วิทยฐานะ -->
@@ -82,7 +82,7 @@
                     </select>
                 </div>
 
-                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน (มีตัวเลือกระดับฝ่ายบริหาร/เสนอ ผอ. โดยตรง) -->
+                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border border-primary-subtle">
                         <div class="row g-3">
@@ -206,10 +206,10 @@
                     </div>
                 </div>
 
-                <!-- ข้อ 4: ไปราชการด้วยยานพาหนะ -->
+                <!-- ข้อ 4: ไปราชการด้วยยานพาหนะ (เพิ่มช่อง พนักงานขับรถ กรณีรถราชการ) -->
                 <div class="mb-3 ps-4 border-start border-2 border-success">
                     <div class="form-check mb-1">
-                        <input class="form-check-input" type="checkbox" name="expense_option_vehicle" id="exp_vehicle" value="1">
+                        <input class="form-check-input" type="checkbox" name="expense_option_vehicle" id="exp_vehicle" value="1" onchange="toggleVehicleInputs()">
                         <label class="form-check-label fw-bold" for="exp_vehicle">
                             ไปราชการด้วย:
                         </label>
@@ -217,18 +217,21 @@
                     <div class="row g-2 align-items-center ms-1">
                         <div class="col-auto">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_gov" value="รถยนต์ราชการ">
+                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_gov" value="รถยนต์ราชการ" onchange="toggleVehicleInputs()">
                                 <label class="form-check-label" for="v_gov">รถยนต์ราชการ</label>
                             </div>
                         </div>
                         <div class="col-auto">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_priv" value="รถยนต์ส่วนตัว">
+                                <input class="form-check-input" type="radio" name="vehicle_select" id="v_priv" value="รถยนต์ส่วนตัว" checked onchange="toggleVehicleInputs()">
                                 <label class="form-check-label" for="v_priv">รถยนต์ส่วนตัว</label>
                             </div>
                         </div>
-                        <div class="col-md-5 col-sm-12">
-                            <input type="text" name="vehicle_license_plate" class="form-control form-control-sm" placeholder="หมายเลขทะเบียน เช่น กข 1234 ตรัง">
+                        <div class="col-md-4 col-sm-12">
+                            <input type="text" name="vehicle_license_plate" id="vehicle_license_plate" class="form-control form-control-sm" placeholder="หมายเลขทะเบียน เช่น นข 1234 ตรัง">
+                        </div>
+                        <div class="col-md-4 col-sm-12" id="driver_box" style="display: none;">
+                            <input type="text" name="driver_name" id="driver_name" class="form-control form-control-sm border-primary" placeholder="ชื่อ-สกุล พนักงานขับรถ">
                         </div>
                     </div>
                 </div>
@@ -275,6 +278,20 @@ function toggleHalfDay() {
     } else {
         box.style.display = 'none';
         input.value = '';
+    }
+}
+
+function toggleVehicleInputs() {
+    const isVehicleChecked = document.getElementById('exp_vehicle').checked;
+    const isGov = document.getElementById('v_gov').checked;
+    const driverBox = document.getElementById('driver_box');
+    const driverInput = document.getElementById('driver_name');
+
+    if (isVehicleChecked && isGov) {
+        driverBox.style.display = 'block';
+    } else {
+        driverBox.style.display = 'none';
+        driverInput.value = '';
     }
 }
 
