@@ -8,10 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $position              = $_POST['position'] ?? '';
     $academic_standing     = $_POST['academic_standing'] ?? '';
     $department            = $_POST['department'] ?? '';
-    $work_group            = $_POST['work_group'] ?? '';       // รับค่ากลุ่มงาน
-    $head_group_name       = $_POST['head_group_name'] ?? ''; // รับชื่อหัวหน้ากลุ่มงาน
-    $head_department       = $_POST['head_department'] ?? '';
-    $head_name             = $_POST['head_name'] ?? '';
+    $work_group            = $_POST['work_group'] ?? '';
+    $head_group_name       = $_POST['head_group_name'] ?? '';
     $subject               = $_POST['subject'] ?? '';
     $destination           = $_POST['destination'] ?? '';
     $ref_document          = $_POST['ref_document'] ?? '';
@@ -26,11 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $driver_name           = $_POST['driver_name'] ?? '';
 
     $stmt = $conn->prepare("INSERT INTO official_trips 
-        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, head_department, head_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, driver_name) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, driver_name) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    $stmt->bind_param("ssssssssssssssssssssss", 
-        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $head_department, $head_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $driver_name);
+    $stmt->bind_param("ssssssssssssssssssss", 
+        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $driver_name);
 
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
