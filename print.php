@@ -12,6 +12,19 @@ if (!$trip) {
     die("ไม่พบข้อมูลเอกสาร");
 }
 
+// ดึงข้อมูลผู้ร่วมเดินทาง
+$participants = [];
+$p_check = $conn->query("SHOW TABLES LIKE 'trip_participants'");
+if ($p_check && $p_check->num_rows > 0) {
+    $p_stmt = $conn->prepare("SELECT * FROM trip_participants WHERE trip_id = ? ORDER BY id ASC");
+    $p_stmt->bind_param("i", $id);
+    $p_stmt->execute();
+    $p_res = $p_stmt->get_result();
+    while ($p_row = $p_res->fetch_assoc()) {
+        $participants[] = $p_row;
+    }
+}
+
 function thai_date($date_str) {
     if (!$date_str) return "";
     $thai_months = [
@@ -25,7 +38,10 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// 1. เรียบเรียงกำหนดการวันเวลา (รองรับกรณีครึ่งวัน)
+// 1. เลขที่หนังสือ (ถ้าไม่มีให้แสดงจุดไข่ปลาไว้เขียน)
+$doc_number_display = !empty($trip['doc_number']) ? htmlspecialchars($trip['doc_number']) : '...................................................';
+
+// 2. กำหนดการวันเวลา (กรณีครึ่งวัน)
 $start_t = thai_date($trip['start_date'] ?? '');
 $end_t   = thai_date($trip['end_date'] ?? '');
 $half_time = trim($trip['half_day_time'] ?? '');
@@ -44,7 +60,7 @@ if (!empty($half_time)) {
     }
 }
 
-// 2. เรียบเรียงการเดินทางด้วยยานพาหนะ
+// 3. ยานพาหนะ
 $vehicle = $trip['vehicle_type'] ?? '';
 $plate = trim($trip['vehicle_license_plate'] ?? '');
 $vehicle_prose = "";
@@ -58,7 +74,7 @@ if (!empty($vehicle)) {
     }
 }
 
-// 3. เรียบเรียงเงื่อนไขการเบิกจ่ายงบประมาณ
+// 4. งบประมาณ
 $expense_raw = $trip['expense_type'] ?? '';
 $expense_prose_parts = [];
 
@@ -274,7 +290,7 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
             <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โทร. 0-7528-1288</td>
         </tr>
         <tr>
-            <td style="width: 58%;"><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number'] ?? ''); ?></td>
+            <td style="width: 58%;"><strong>ที่:</strong> <?php echo $doc_number_display; ?></td>
             <td style="width: 42%;"><strong>วันที่:</strong> <?php echo thai_date($trip['created_date'] ?? ''); ?></td>
         </tr>
         <tr>
@@ -286,7 +302,6 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- เนื้อความร้อยแก้ว (มีกำหนดการวันเวลา/ครึ่งวัน ครบถ้วน) -->
     <div class="prose-body">
         <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ โดยมีกำหนดการ<?php echo htmlspecialchars($schedule_prose); ?> <?php echo !empty($vehicle_prose) ? "ในการนี้จะ" . htmlspecialchars($vehicle_prose) . " " : ""; ?><?php echo htmlspecialchars($expense_final_prose); ?> (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
     </div>
@@ -331,7 +346,7 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
 <div class="sheet">
     <div style="text-align: center; margin-bottom: 20px;">
         <h3 style="font-weight: bold; margin-bottom: 5px;">บัญชีรายชื่อผู้ขออนุมัติเดินทางไปราชการแนบท้าย</h3>
-        <div>แนบท้ายบันทึกข้อความ ที่ <?php echo htmlspecialchars($trip['doc_number'] ?? '-'); ?> ลงวันที่ <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
+        <div>แนบท้ายบันทึกข้อความ ลงวันที่ <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
     </div>
 
     <table class="attachment-table">
@@ -350,18 +365,29 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
                 <td><?php echo htmlspecialchars($trip['position'] ?? ''); ?></td>
                 <td style="text-align: center;">ผู้ขออนุมัติ</td>
             </tr>
-            <tr>
-                <td style="text-align: center;">2</td>
-                <td>..............................................................................</td>
-                <td>...................................................</td>
-                <td style="text-align: center;">-</td>
-            </tr>
-            <tr>
-                <td style="text-align: center;">3</td>
-                <td>..............................................................................</td>
-                <td>...................................................</td>
-                <td style="text-align: center;">-</td>
-            </tr>
+            <?php if (!empty($participants)): ?>
+                <?php $i = 2; foreach ($participants as $p): ?>
+                <tr>
+                    <td style="text-align: center;"><?php echo $i++; ?></td>
+                    <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
+                    <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td style="text-align: center;">2</td>
+                    <td>..............................................................................</td>
+                    <td>...................................................</td>
+                    <td style="text-align: center;">-</td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">3</td>
+                    <td>..............................................................................</td>
+                    <td>...................................................</td>
+                    <td style="text-align: center;">-</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 
