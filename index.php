@@ -142,7 +142,7 @@ function thai_date_short($date_str) {
 <body class="py-3">
 
 <div class="container-fluid px-4">
-    <!-- ส่วนหัวระบบ -->
+    <!-- แถบหัวระบบ + ปุ่มจัดการหลังบ้าน + ปุ่มเขียนคำร้อง -->
     <div class="header-panel d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3">
             <img src="logo.png" alt="Logo" style="height: 52px;" onerror="this.src='https://placehold.co/52x52?text=YKR';">
@@ -151,14 +151,17 @@ function thai_date_short($date_str) {
                 <small class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</small>
             </div>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a href="admin.php" class="btn text-white fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2" style="background-color: #c94a29; border: none;">
+                <i class="bi bi-shield-lock-fill"></i> จัดการหลังบ้าน (เจ้าหน้าที่)
+            </a>
             <a href="form.php" class="btn btn-success fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
                 <i class="bi bi-pencil-square"></i> เขียนคำร้องใหม่
             </a>
         </div>
     </div>
 
-    <!-- แถบสถิติ -->
+    <!-- แถบการ์ดสถิติ -->
     <div class="row g-3 mb-4">
         <div class="col-md-4 col-sm-6">
             <div class="stat-card blue">
@@ -180,7 +183,7 @@ function thai_date_short($date_str) {
         </div>
     </div>
 
-    <!-- ช่องค้นหา -->
+    <!-- แผงค้นหาและตัวกรอง -->
     <div class="main-card">
         <h6 class="fw-bold mb-3 text-secondary d-flex align-items-center gap-1">
             <i class="bi bi-search"></i> ค้นหาและกรองคำร้อง
@@ -210,7 +213,7 @@ function thai_date_short($date_str) {
         </form>
     </div>
 
-    <!-- ตารางคำร้อง -->
+    <!-- ตารางรายการคำร้อง -->
     <div class="main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="fw-bold mb-0">รายการคำร้องขอไปราชการ</h6>
@@ -234,7 +237,7 @@ function thai_date_short($date_str) {
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
                             <tr>
-                                <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($row['doc_number'] ?? '-'); ?></span></td>
+                                <td><span class="badge bg-light text-dark border"><?php echo !empty($row['doc_number']) ? htmlspecialchars($row['doc_number']) : '-'; ?></span></td>
                                 <td><?php echo thai_date_short($row['created_date'] ?? ''); ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($row['applicant_name'] ?? ''); ?></strong>
