@@ -148,19 +148,20 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         body {
             font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 15pt;
-            line-height: 1.10;
+            font-size: 15.5pt;
+            line-height: 1.15;
             background-color: #525659;
             margin: 0;
-            padding: 15px 0;
+            padding: 20px 0;
             color: #000;
         }
 
         .sheet {
             width: 210mm;
             min-height: 297mm;
-            padding: 8mm 16mm 8mm 20mm;
-            margin: 0 auto 15px auto;
+            /* ขอบบน 1.5 ซม. (15mm), ขวา 2 ซม. (20mm), ล่าง 1.2 ซม. (12mm), ซ้าย 2.5 ซม. (25mm) */
+            padding: 15mm 20mm 12mm 25mm;
+            margin: 0 auto 20px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
@@ -174,8 +175,8 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         .header-box {
             position: relative;
-            height: 48px;
-            margin-bottom: 2px;
+            height: 55px;
+            margin-bottom: 4px;
             text-align: center;
         }
 
@@ -183,93 +184,92 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
             position: absolute;
             left: 0;
             top: -2px;
-            height: 48px;
+            height: 55px; /* ขนาดตราครุฑมาตรฐาน */
             width: auto;
         }
 
         .doc-title {
-            font-size: 28pt;
+            font-size: 29pt;
             font-weight: bold;
-            line-height: 44px;
+            line-height: 52px;
             letter-spacing: 0.5px;
         }
 
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 15pt;
-            line-height: 1.12;
+            font-size: 15.5pt;
+            line-height: 1.18;
         }
 
         .meta-table td {
             vertical-align: bottom;
-            padding: 0;
+            padding: 1px 0;
         }
 
         .divider-line {
             border: 0;
             border-top: 1.5px solid #000;
-            margin: 2px 0 3px 0;
+            margin: 3px 0 6px 0;
         }
 
         .to-line {
-            font-size: 15pt;
+            font-size: 15.5pt;
             font-weight: bold;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
 
         .prose-body {
             text-align: justify;
             text-justify: inter-cluster;
             text-indent: 2.2cm;
-            font-size: 15pt;
-            line-height: 1.14;
-            margin-top: 1px;
+            font-size: 15.5pt;
+            line-height: 1.18;
+            margin-top: 2px;
         }
 
         .applicant-sign-wrap {
-            margin-top: 3px;
+            margin-top: 6px;
             margin-left: auto;
             width: 52%;
             text-align: center;
-            font-size: 15pt;
-            line-height: 1.10;
+            font-size: 15.5pt;
+            line-height: 1.15;
         }
 
-        /* ลบเส้นประ (border-top) ออกแล้ว */
         .opinion-section {
-            margin-top: 6px;
+            margin-top: 8px;
             padding-top: 0;
-            font-size: 14.5pt;
-            line-height: 1.10;
+            font-size: 15pt;
+            line-height: 1.15;
         }
 
         .sign-sub-wrap {
             margin-left: auto;
             width: 52%;
             text-align: center;
-            margin-top: 10px;
-            line-height: 1.12;
+            margin-top: 12px; /* เคาะลงมา 1 บรรทัดสำหรับลงลายมือชื่อ */
+            line-height: 1.15;
         }
 
         .director-frame {
-            margin-top: 4px;
+            margin-top: 8px;
             border: 1px solid #000;
-            padding: 3px 8px;
-            font-size: 14.5pt;
-            line-height: 1.10;
+            padding: 5px 12px;
+            font-size: 15pt;
+            line-height: 1.15;
         }
 
         /* กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง */
         .admin-stamp-box {
             position: absolute;
-            right: 16mm;
-            bottom: 6mm;
-            width: 60mm;
+            right: 20mm;
+            bottom: 10mm;
+            width: 65mm;
             border: 1px solid #333;
-            padding: 2px 6px;
-            font-size: 12pt;
-            line-height: 1.18;
+            padding: 4px 8px;
+            font-size: 12.5pt;
+            line-height: 1.25;
             background: #fff;
             box-sizing: border-box;
         }
@@ -292,7 +292,14 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         @media print {
             body { background: transparent; padding: 0; }
-            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 8mm 16mm 8mm 20mm; page-break-after: always; }
+            .sheet { 
+                box-shadow: none; 
+                margin: 0; 
+                width: 210mm; 
+                min-height: 297mm; 
+                padding: 15mm 20mm 12mm 25mm; /* บังคับขอบบน 1.5 ซม. ตอนพิมพ์ */
+                page-break-after: always; 
+            }
             .sheet:last-child { page-break-after: auto; }
             .no-print { display: none !important; }
         }
@@ -344,7 +351,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน (ไม่มีเส้นประคั่นแล้ว) -->
+    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน -->
     <div class="opinion-section">
         <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong> ...........................................................................................................................<br>
         <div class="sign-sub-wrap">
@@ -355,7 +362,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (ไม่มีเส้นประคั่นแล้ว) -->
+    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล -->
     <div class="opinion-section">
         <strong>ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล:</strong> ..........................................................................................................<br>
         <div class="sign-sub-wrap">
@@ -370,7 +377,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 8px;">
+        <div style="text-align: center; margin-top: 10px;">
             ลงชื่อ......................................................................<br>
             ( <?php echo $sign_name_display; ?> )<br>
             <?php echo $sign_role_display; ?><br>
