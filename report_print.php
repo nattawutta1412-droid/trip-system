@@ -163,7 +163,6 @@ $filter_title = implode(" | ", $filter_desc);
             margin-top: 3px;
         }
 
-        /* ตารางรายงาน */
         .report-table {
             width: 100%;
             border-collapse: collapse;
@@ -184,7 +183,6 @@ $filter_title = implode(" | ", $filter_desc);
         .text-center { text-align: center; }
         .text-start { text-align: left; }
 
-        /* ส่วนลงชื่อท้ายรายงาน */
         .signature-section {
             margin-top: 25px;
             width: 100%;
@@ -193,7 +191,7 @@ $filter_title = implode(" | ", $filter_desc);
             page-break-inside: avoid;
         }
         .sign-box {
-            width: 45%;
+            width: 48%;
             text-align: center;
             font-size: 14pt;
             line-height: 1.35;
@@ -220,7 +218,6 @@ $filter_title = implode(" | ", $filter_desc);
 </div>
 
 <div class="report-page">
-    <!-- หัวรายงาน (ใช้ตราประจำโรงเรียน) -->
     <div class="report-header">
         <img src="logo.png" alt="ตราประจำโรงเรียนย่านตาขาวรัฐชนูปถัมภ์" class="school-logo-img" onerror="this.src='https://placehold.co/60x60?text=YKR';"><br>
         <div class="report-title">รายงานสรุปการขออนุมัติเดินทางไปราชการ</div>
@@ -228,7 +225,6 @@ $filter_title = implode(" | ", $filter_desc);
         <div class="report-filter">เงื่อนไข: <?php echo $filter_title; ?> (ข้อมูล ณ วันที่ <?php echo thai_date_full(date('Y-m-d')); ?>)</div>
     </div>
 
-    <!-- ตารางข้อมูล -->
     <table class="report-table">
         <thead>
             <tr>
@@ -292,7 +288,7 @@ $filter_title = implode(" | ", $filter_desc);
         </tbody>
     </table>
 
-    <!-- ส่วนลงนามผู้รายงานและผู้อำนวยการ -->
+    <!-- ส่วนลงนามท้ายรายงาน -->
     <div class="signature-section">
         <div class="sign-box">
             ลงชื่อ......................................................................ผู้รายงาน<br>
@@ -305,6 +301,7 @@ $filter_title = implode(" | ", $filter_desc);
             ลงชื่อ......................................................................<br>
             ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
+            <span style="font-size: 12pt; color: #555;">(หรือ รองผู้อำนวยการ รักษาการในตำแหน่งผู้อำนวยการโรงเรียนฯ)</span><br>
             วันที่ ........ เดือน ........................ พ.ศ. ............
         </div>
     </div>
