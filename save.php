@@ -16,19 +16,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ref_date              = !empty($_POST['ref_date']) ? $_POST['ref_date'] : NULL;
     $start_date            = $_POST['start_date'] ?? '';
     $end_date              = $_POST['end_date'] ?? '';
-    $half_day_time         = $_POST['half_day_time'] ?? '';
-    $expense_type          = $_POST['expense_type'] ?? '';
-    $expense_specific_details = $_POST['expense_specific_details'] ?? '';
-    $vehicle_type          = $_POST['vehicle_type'] ?? '';
+
+    // จัดการข้อมูลค่าใช้จ่าย
+    $expense_parts = [];
+    if (!empty($_POST['expense_option_no'])) {
+        $expense_parts[] = "ไม่ขอเบิกค่าใช้จ่าย";
+    }
+    if (!empty($_POST['expense_option_school'])) {
+        $expense_parts[] = "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ";
+    }
+    if (!empty($_POST['expense_option_specific'])) {
+        $specific_items = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
+        $expense_parts[] = "ขอเบิกเฉพาะค่าใช้จ่าย (" . $specific_items . ")";
+    }
+    
+    // พาหนะ
+    $vehicle_type = "";
+    if (!empty($_POST['expense_option_vehicle'])) {
+        $vehicle_type = $_POST['vehicle_select'] ?? 'รถยนต์ส่วนตัว';
+    }
     $vehicle_license_plate = $_POST['vehicle_license_plate'] ?? '';
-    $driver_name           = $_POST['driver_name'] ?? '';
+
+    // อื่นๆ
+    $expense_other = "";
+    if (!empty($_POST['expense_option_other']) && !empty($_POST['expense_other'])) {
+        $expense_other = trim($_POST['expense_other']);
+        $expense_parts[] = "อื่น ๆ: " . $expense_other;
+    }
+
+    $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
+    $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
 
     $stmt = $conn->prepare("INSERT INTO official_trips 
-        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, driver_name) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, expense_other) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    $stmt->bind_param("ssssssssssssssssssss", 
-        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $driver_name);
+    $stmt->bind_param("sssssssssssssssssss", 
+        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $expense_other);
 
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
