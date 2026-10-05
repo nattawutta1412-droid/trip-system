@@ -2,7 +2,7 @@
 $host = "gateway01.ap-northeast-1.prod.aws.tidbcloud.com"; 
 $user = "2mQpYdJ16hxQqLJ.root";            
 $pass = "รหัสผ่าน จาก TiDB"; 
-$db   = "<PASSWORD>";
+$db   = "$pass = "BMe2F64bvUYGg2WK";
 $port = "4000";
 
 // TiDB Cloud บังคับใช้การเชื่อมต่อแบบเข้ารหัส SSL
