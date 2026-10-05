@@ -5,23 +5,19 @@ require_once 'config.php';
 $search = trim($_GET['search'] ?? '');
 $department = trim($_GET['department'] ?? '');
 $month = trim($_GET['month'] ?? '');
-$status_filter = trim($_GET['status'] ?? '');
 
 // 1. สถิติรวม
 $total_active = 0;
 $total_month = 0;
-$total_canceled = 0;
 
 $stat_sql = "SELECT 
-    COUNT(CASE WHEN status != 'ยกเลิก' OR status IS NULL THEN 1 END) as active_count,
-    COUNT(CASE WHEN DATE_FORMAT(created_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1 END) as month_count,
-    COUNT(CASE WHEN status = 'ยกเลิก' THEN 1 END) as cancel_count
+    COUNT(*) as active_count,
+    COUNT(CASE WHEN DATE_FORMAT(created_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1 END) as month_count
 FROM official_trips";
 $stat_res = $conn->query($stat_sql);
 if ($stat_res && $stat_row = $stat_res->fetch_assoc()) {
     $total_active = $stat_row['active_count'] ?? 0;
     $total_month = $stat_row['month_count'] ?? 0;
-    $total_canceled = $stat_row['cancel_count'] ?? 0;
 }
 
 // 2. เงื่อนไขค้นหา
@@ -40,7 +36,7 @@ if ($search !== '') {
 }
 
 if ($department !== '') {
-    $where_clauses[] = "(department = ? OR head_department = ?)";
+    $where_clauses[] = "(department = ? OR work_group = ?)";
     $params[] = $department;
     $params[] = $department;
     $types .= "ss";
@@ -50,16 +46,6 @@ if ($month !== '') {
     $where_clauses[] = "DATE_FORMAT(created_date, '%Y-%m') = ?";
     $params[] = $month;
     $types .= "s";
-}
-
-if ($status_filter !== '') {
-    if ($status_filter === 'approved') {
-        $where_clauses[] = "(approved_file IS NOT NULL AND approved_file != '')";
-    } elseif ($status_filter === 'pending') {
-        $where_clauses[] = "(approved_file IS NULL OR approved_file = '') AND (status != 'ยกเลิก' OR status IS NULL)";
-    } elseif ($status_filter === 'canceled') {
-        $where_clauses[] = "status = 'ยกเลิก'";
-    }
 }
 
 $where_sql = implode(" AND ", $where_clauses);
@@ -73,13 +59,13 @@ $stmt->execute();
 $result = $stmt->get_result();
 $filtered_count = $result->num_rows;
 
-// รายชื่อกลุ่มสาระ/ฝ่ายสำหรับ Dropdown
+// รายชื่อกลุ่มสาระ/กลุ่มงาน
 $dept_list = [
     "กลุ่มสาระฯ ภาษาไทย", "กลุ่มสาระฯ คณิตศาสตร์", "กลุ่มสาระฯ วิทยาศาสตร์และเทคโนโลยี",
     "กลุ่มสาระฯ สังคมศึกษา ศาสนา และวัฒนธรรม", "กลุ่มสาระฯ สุขศึกษาและพลศึกษา",
     "กลุ่มสาระฯ ศิลปะ", "กลุ่มสาระฯ การงานอาชีพ", "กลุ่มสาระฯ ภาษาต่างประเทศ",
-    "กิจกรรมพัฒนาผู้เรียน", "ฝ่ายบริหารวิชาการ", "ฝ่ายบริหารงบประมาณและแผนงาน",
-    "ฝ่ายบริหารงานบุคคล", "ฝ่ายบริหารทั่วไป"
+    "กิจกรรมพัฒนาผู้เรียน", "กลุ่มงานบริหารวิชาการ", "กลุ่มงานบริหารงบประมาณและแผนงาน",
+    "กลุ่มงานบริหารงานบุคคล", "กลุ่มงานบริหารทั่วไป", "กลุ่มงานกิจการนักเรียน"
 ];
 
 function thai_date_short($date_str) {
@@ -121,7 +107,6 @@ function thai_date_short($date_str) {
         }
         .stat-card.blue   { border-left-color: #0dcaf0; }
         .stat-card.green  { border-left-color: #198754; }
-        .stat-card.red    { border-left-color: #dc3545; }
         .stat-card.purple { border-left-color: #6f42c1; }
         
         .stat-card .title {
@@ -157,7 +142,7 @@ function thai_date_short($date_str) {
 <body class="py-3">
 
 <div class="container-fluid px-4">
-    <!-- แถบหัวระบบ + ปุ่มด้านบน -->
+    <!-- ส่วนหัวระบบ -->
     <div class="header-panel d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3">
             <img src="logo.png" alt="Logo" style="height: 52px;" onerror="this.src='https://placehold.co/52x52?text=YKR';">
@@ -166,37 +151,28 @@ function thai_date_short($date_str) {
                 <small class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</small>
             </div>
         </div>
-        <div class="d-flex gap-2">
-            <a href="admin.php" class="btn btn-warning text-white fw-bold d-flex align-items-center gap-1 shadow-sm" style="background-color: #c94a29; border: none;">
-                <i class="bi bi-shield-lock-fill"></i> จัดการหลังบ้าน (เจ้าหน้าที่)
-            </a>
-            <a href="form.php" class="btn btn-success fw-bold d-flex align-items-center gap-1 shadow-sm">
+        <div>
+            <a href="form.php" class="btn btn-success fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
                 <i class="bi bi-pencil-square"></i> เขียนคำร้องใหม่
             </a>
         </div>
     </div>
 
-    <!-- แถวการ์ดสถิติ 4 ใบ -->
+    <!-- แถบสถิติ -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-4 col-sm-6">
             <div class="stat-card blue">
-                <div class="title">คำร้องที่ใช้งาน (ไม่รวมยกเลิก)</div>
+                <div class="title">คำร้องทั้งหมด</div>
                 <div class="number"><?php echo number_format($total_active); ?> <span class="fs-6 fw-normal text-muted">รายการ</span></div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-4 col-sm-6">
             <div class="stat-card green">
                 <div class="title">คำร้องเดือนนี้</div>
                 <div class="number"><?php echo number_format($total_month); ?> <span class="fs-6 fw-normal text-muted">รายการ</span></div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="stat-card red">
-                <div class="title">คำร้องที่ยกเลิกแล้ว</div>
-                <div class="number"><?php echo number_format($total_canceled); ?> <span class="fs-6 fw-normal text-muted">รายการ</span></div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
+        <div class="col-md-4 col-sm-12">
             <div class="stat-card purple">
                 <div class="title">ผลการค้นหาตามตัวกรอง</div>
                 <div class="number"><?php echo number_format($filtered_count); ?> <span class="fs-6 fw-normal text-muted">รายการ</span></div>
@@ -204,17 +180,17 @@ function thai_date_short($date_str) {
         </div>
     </div>
 
-    <!-- แผงค้นหาและกรองคำร้อง -->
+    <!-- ช่องค้นหา -->
     <div class="main-card">
         <h6 class="fw-bold mb-3 text-secondary d-flex align-items-center gap-1">
             <i class="bi bi-search"></i> ค้นหาและกรองคำร้อง
         </h6>
         <form method="GET" action="index.php" class="row g-2 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label small text-muted">คำค้นหา</label>
                 <input type="text" name="search" class="form-control form-control-sm" placeholder="ชื่อ / เรื่อง / สถานที่..." value="<?php echo htmlspecialchars($search); ?>">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label small text-muted">กลุ่มสาระ / กลุ่มงาน</label>
                 <select name="department" class="form-select form-select-sm">
                     <option value="">-- ทั้งหมด --</option>
@@ -227,15 +203,6 @@ function thai_date_short($date_str) {
                 <label class="form-label small text-muted">เดือนที่ยื่น</label>
                 <input type="month" name="month" class="form-control form-control-sm" value="<?php echo htmlspecialchars($month); ?>">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted">สถานะคำร้อง</label>
-                <select name="status" class="form-select form-select-sm">
-                    <option value="">-- ทุกสถานะ --</option>
-                    <option value="pending"  <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>รอคำสั่งอนุมัติ</option>
-                    <option value="approved" <?php echo $status_filter === 'approved' ? 'selected' : ''; ?>>อนุมัติแล้ว</option>
-                    <option value="canceled" <?php echo $status_filter === 'canceled' ? 'selected' : ''; ?>>ยกเลิก</option>
-                </select>
-            </div>
             <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i> ค้นหา</button>
                 <a href="index.php" class="btn btn-outline-secondary btn-sm">ล้างค่า</a>
@@ -243,7 +210,7 @@ function thai_date_short($date_str) {
         </form>
     </div>
 
-    <!-- ตารางรายการคำร้องขอไปราชการ -->
+    <!-- ตารางคำร้อง -->
     <div class="main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h6 class="fw-bold mb-0">รายการคำร้องขอไปราชการ</h6>
@@ -257,11 +224,10 @@ function thai_date_short($date_str) {
                         <th>เลขคำร้อง</th>
                         <th>วันที่ยื่น</th>
                         <th>ชื่อผู้ขออนุญาต</th>
-                        <th>กลุ่มสาระ/ฝ่าย</th>
+                        <th>กลุ่มสาระ/กลุ่มงาน</th>
                         <th>เรื่อง / สถานที่</th>
                         <th>ช่วงวันที่ไปราชการ</th>
                         <th class="text-center">บันทึกข้อความ</th>
-                        <th class="text-center">หนังสือคำสั่งอนุมัติ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -278,11 +244,11 @@ function thai_date_short($date_str) {
                                 </td>
                                 <td>
                                     <div><?php echo htmlspecialchars($row['department'] ?? '-'); ?></div>
-                                    <?php if (!empty($row['head_department'])): ?>
-                                        <small class="text-primary"><?php echo htmlspecialchars($row['head_department']); ?></small>
+                                    <?php if (!empty($row['work_group'])): ?>
+                                        <small class="text-primary"><?php echo htmlspecialchars($row['work_group']); ?></small>
                                     <?php endif; ?>
                                 </td>
-                                <td style="max-width: 280px;">
+                                <td style="max-width: 320px;">
                                     <div class="text-truncate fw-medium" title="<?php echo htmlspecialchars($row['subject'] ?? ''); ?>">
                                         <?php echo htmlspecialchars($row['subject'] ?? ''); ?>
                                     </div>
@@ -297,24 +263,15 @@ function thai_date_short($date_str) {
                                     </small>
                                 </td>
                                 <td class="text-center">
-                                    <a href="print.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <a href="print.php?id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary px-3">
                                         <i class="bi bi-printer"></i> พิมพ์บันทึกข้อความ
                                     </a>
-                                </td>
-                                <td class="text-center">
-                                    <?php if (!empty($row['approved_file'])): ?>
-                                        <a href="uploads/<?php echo htmlspecialchars($row['approved_file']); ?>" target="_blank" class="btn btn-sm btn-success">
-                                            <i class="bi bi-file-earmark-arrow-down-fill"></i> ดาวน์โหลดคำสั่ง
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> รอคำสั่งอนุมัติ</span>
-                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
                                 ไม่พบข้อมูลคำร้องที่ตรงกับเงื่อนไขการค้นหา
                             </td>
