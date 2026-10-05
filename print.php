@@ -236,25 +236,24 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
             line-height: 1.10;
         }
 
+        /* ลบเส้นประ (border-top) ออกแล้ว */
         .opinion-section {
-            margin-top: 3px;
-            border-top: 1px dashed #777;
-            padding-top: 2px;
+            margin-top: 6px;
+            padding-top: 0;
             font-size: 14.5pt;
             line-height: 1.10;
         }
 
-        /* กล่องลายเซ็นเคาะเว้นระยะห่าง 1 บรรทัด */
         .sign-sub-wrap {
             margin-left: auto;
             width: 52%;
             text-align: center;
-            margin-top: 12px; /* เคาะลงมา 1 บรรทัดเต็มสำหรับลงลายมือชื่อ */
+            margin-top: 10px;
             line-height: 1.12;
         }
 
         .director-frame {
-            margin-top: 3px;
+            margin-top: 4px;
             border: 1px solid #000;
             padding: 3px 8px;
             font-size: 14.5pt;
@@ -345,7 +344,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน (เคาะเว้นช่องเซ็นลงมา 1 บรรทัด) -->
+    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน (ไม่มีเส้นประคั่นแล้ว) -->
     <div class="opinion-section">
         <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong> ...........................................................................................................................<br>
         <div class="sign-sub-wrap">
@@ -356,7 +355,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (เคาะเว้นช่องเซ็นลงมา 1 บรรทัด) -->
+    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (ไม่มีเส้นประคั่นแล้ว) -->
     <div class="opinion-section">
         <strong>ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล:</strong> ..........................................................................................................<br>
         <div class="sign-sub-wrap">
@@ -371,7 +370,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 10px;">
+        <div style="text-align: center; margin-top: 8px;">
             ลงชื่อ......................................................................<br>
             ( <?php echo $sign_name_display; ?> )<br>
             <?php echo $sign_role_display; ?><br>
