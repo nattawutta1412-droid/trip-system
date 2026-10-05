@@ -54,15 +54,10 @@ if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบ
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
-// หัวหน้ากลุ่มงาน
-$group_title = !empty($trip['work_group']) ? "หัวหน้า" . $trip['work_group'] : "หัวหน้ากลุ่มงาน";
-$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
-
-// หัวหน้าฝ่าย
-$dept_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
-$head_dept_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
-
-$director_name = "ว่าที่ร้อยโทจักรเพชร์ พรมยศ";
+// ข้อมูลหัวหน้ากลุ่มงาน (ดึงจาก work_group หรือ head_department เดิมถ้ามี)
+$group_name = !empty($trip['work_group']) ? $trip['work_group'] : (!empty($trip['head_department']) ? $trip['head_department'] : 'กลุ่มงาน');
+$group_title = "หัวหน้า" . $group_name;
+$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : (!empty($trip['head_name']) ? $trip['head_name'] : '.......................................................');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -93,19 +88,19 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
 
         body {
             font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 15pt;
-            line-height: 1.12;
+            font-size: 16pt;
+            line-height: 1.15;
             background-color: #525659;
             margin: 0;
-            padding: 15px 0;
+            padding: 20px 0;
             color: #000;
         }
 
         .sheet {
             width: 210mm;
             min-height: 297mm;
-            padding: 10mm 18mm 10mm 22mm;
-            margin: 0 auto 15px auto;
+            padding: 12mm 20mm 12mm 25mm;
+            margin: 0 auto 20px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
@@ -115,7 +110,7 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
 
         .header-box {
             position: relative;
-            height: 52px;
+            height: 55px;
             margin-bottom: 2px;
             text-align: center;
         }
@@ -124,22 +119,22 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
             position: absolute;
             left: 0;
             top: -2px;
-            height: 52px;
+            height: 55px;
             width: auto;
         }
 
         .doc-title {
-            font-size: 28pt;
+            font-size: 29pt;
             font-weight: bold;
-            line-height: 48px;
+            line-height: 50px;
             letter-spacing: 0.5px;
         }
 
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 15pt;
-            line-height: 1.15;
+            font-size: 16pt;
+            line-height: 1.18;
         }
 
         .meta-table td {
@@ -150,11 +145,11 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
         .divider-line {
             border: 0;
             border-top: 1.5px solid #000;
-            margin: 2px 0 5px 0;
+            margin: 3px 0 6px 0;
         }
 
         .to-line {
-            font-size: 15pt;
+            font-size: 16pt;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -162,42 +157,42 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
         .prose-body {
             text-align: justify;
             text-justify: inter-cluster;
-            text-indent: 2.2cm;
-            font-size: 15pt;
-            line-height: 1.18;
+            text-indent: 2.5cm;
+            font-size: 16pt;
+            line-height: 1.22;
             margin-top: 2px;
         }
 
         .applicant-sign-wrap {
-            margin-top: 5px;
+            margin-top: 8px;
             margin-left: auto;
-            width: 48%;
+            width: 50%;
             text-align: center;
-            font-size: 15pt;
-            line-height: 1.15;
+            font-size: 16pt;
+            line-height: 1.18;
         }
 
-        /* ตารางแบ่ง 2 ช่องสำหรับ หัวหน้ากลุ่มงาน และ หัวหน้าฝ่าย */
-        .middle-sign-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-            font-size: 14.5pt;
-            line-height: 1.15;
-        }
-        .middle-sign-table td {
-            width: 50%;
-            vertical-align: top;
-            padding: 3px 6px;
+        .head-opinion-box {
+            margin-top: 8px;
             border-top: 1px dashed #777;
+            padding-top: 6px;
+            font-size: 16pt;
+            line-height: 1.18;
+        }
+
+        .head-sign-wrap {
+            margin-left: auto;
+            width: 50%;
+            text-align: center;
+            margin-top: 4px;
         }
 
         .director-frame {
-            margin-top: 5px;
+            margin-top: 8px;
             border: 1px solid #000;
-            padding: 5px 12px;
-            font-size: 14.5pt;
-            line-height: 1.15;
+            padding: 6px 14px;
+            font-size: 16pt;
+            line-height: 1.18;
         }
 
         .attachment-table {
@@ -218,7 +213,7 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
 
         @media print {
             body { background: transparent; padding: 0; }
-            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 10mm 18mm 10mm 22mm; page-break-after: always; }
+            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 12mm 20mm 12mm 25mm; page-break-after: always; }
             .no-print { display: none !important; }
         }
     </style>
@@ -228,6 +223,9 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
     <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️️ สั่งพิมพ์เอกสาร (Print)</button>
     <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
+    <?php if (!empty($trip['approved_file'])): ?>
+        <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
+    <?php endif; ?>
 </div>
 
 <!-- ================= หน้าที่ 1: บันทึกข้อความ ================= -->
@@ -262,44 +260,30 @@ $director_name = "ว่าที่ร้อยโทจักรเพชร�
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) -->
+    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ -->
     <div class="applicant-sign-wrap">
         ลงชื่อ......................................................................<br>
         ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2 และ 3: ความเห็นหัวหน้ากลุ่มงาน (ซ้าย) และ หัวหน้าฝ่าย (ขวา) -->
-    <table class="middle-sign-table">
-        <tr>
-            <td>
-                <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong><br>
-                ...................................................................................<br>
-                <div style="text-align: center; margin-top: 3px;">
-                    ลงชื่อ............................................................<br>
-                    ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
-                    <?php echo htmlspecialchars($group_title); ?><br>
-                    วันที่ ........ เดือน .................... พ.ศ. ........
-                </div>
-            </td>
-            <td>
-                <strong>ความเห็นของ<?php echo htmlspecialchars($dept_title); ?>:</strong><br>
-                ...................................................................................<br>
-                <div style="text-align: center; margin-top: 3px;">
-                    ลงชื่อ............................................................<br>
-                    ( <?php echo htmlspecialchars($head_dept_display); ?> )<br>
-                    <?php echo htmlspecialchars($dept_title); ?><br>
-                    วันที่ ........ เดือน .................... พ.ศ. ........
-                </div>
-            </td>
-        </tr>
-    </table>
+    <!-- ลำดับที่ 2: ความเห็นและลายเซ็นของหัวหน้ากลุ่มงาน -->
+    <div class="head-opinion-box">
+        <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong><br>
+        ..................................................................................................................................................................................<br>
+        <div class="head-sign-wrap">
+            ลงชื่อ......................................................................<br>
+            ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
+            <?php echo htmlspecialchars($group_title); ?><br>
+            วันที่ ........ เดือน ........................ พ.ศ. ............
+        </div>
+    </div>
 
-    <!-- ลำดับที่ 4: ผู้อำนวยการโรงเรียน (ล่างสุด) -->
+    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการสถานศึกษา -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 3px;">
+        <div style="text-align: center; margin-top: 4px;">
             ลงชื่อ......................................................................<br>
             ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
             ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
