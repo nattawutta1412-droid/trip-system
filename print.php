@@ -303,7 +303,7 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
     
     <table class="meta-table">
         <tr>
-            <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โทร. 0-7528-1288</td>
+            <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</td>
         </tr>
         <tr>
             <td style="width: 58%;"><strong>ที่:</strong> <?php echo $doc_number_display; ?></td>
