@@ -25,7 +25,26 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// 1. เรียบเรียงการเดินทางด้วยยานพาหนะ
+// 1. เรียบเรียงกำหนดการวันเวลา (รองรับกรณีครึ่งวัน)
+$start_t = thai_date($trip['start_date'] ?? '');
+$end_t   = thai_date($trip['end_date'] ?? '');
+$half_time = trim($trip['half_day_time'] ?? '');
+
+if (!empty($half_time)) {
+    if ($trip['start_date'] === $trip['end_date']) {
+        $schedule_prose = "ในวันที่ {$start_t} ({$half_time})";
+    } else {
+        $schedule_prose = "ตั้งแต่วันที่ {$start_t} ถึงวันที่ {$end_t} ({$half_time})";
+    }
+} else {
+    if ($trip['start_date'] === $trip['end_date']) {
+        $schedule_prose = "ในวันที่ {$start_t}";
+    } else {
+        $schedule_prose = "ตั้งแต่วันที่ {$start_t} ถึงวันที่ {$end_t}";
+    }
+}
+
+// 2. เรียบเรียงการเดินทางด้วยยานพาหนะ
 $vehicle = $trip['vehicle_type'] ?? '';
 $plate = trim($trip['vehicle_license_plate'] ?? '');
 $vehicle_prose = "";
@@ -39,7 +58,7 @@ if (!empty($vehicle)) {
     }
 }
 
-// 2. เรียบเรียงเงื่อนไขการเบิกจ่ายงบประมาณ
+// 3. เรียบเรียงเงื่อนไขการเบิกจ่ายงบประมาณ
 $expense_raw = $trip['expense_type'] ?? '';
 $expense_prose_parts = [];
 
@@ -267,8 +286,9 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
+    <!-- เนื้อความร้อยแก้ว (มีกำหนดการวันเวลา/ครึ่งวัน ครบถ้วน) -->
     <div class="prose-body">
-        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> <?php echo !empty($vehicle_prose) ? "ในการนี้จะ" . htmlspecialchars($vehicle_prose) . " " : ""; ?><?php echo htmlspecialchars($expense_final_prose); ?> (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
+        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ โดยมีกำหนดการ<?php echo htmlspecialchars($schedule_prose); ?> <?php echo !empty($vehicle_prose) ? "ในการนี้จะ" . htmlspecialchars($vehicle_prose) . " " : ""; ?><?php echo htmlspecialchars($expense_final_prose); ?> (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
     </div>
 
     <div class="prose-body">
