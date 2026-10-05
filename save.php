@@ -21,11 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 3. จัดการตาราง trip_participants ให้มีคอลัมน์ครบถ้วน
+    // 3. จัดการโครงสร้างตาราง trip_participants แก้ปัญหา full_name ขาดค่า
     $create_participants_table = "CREATE TABLE IF NOT EXISTS trip_participants (
         id INT AUTO_INCREMENT PRIMARY KEY,
         trip_id INT NOT NULL,
-        name VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NULL,
+        full_name VARCHAR(255) NULL,
         position VARCHAR(255) NULL,
         detail VARCHAR(255) NULL,
         type VARCHAR(50) DEFAULT 'teacher',
@@ -33,18 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     $conn->query($create_participants_table);
 
-    // ตรวจสอบและเพิ่มคอลัมน์ name, detail, type กรณีตารางเดิมมีอยู่แล้วแต่โครงสร้างไม่ตรง
-    $p_cols = [
-        'name' => 'VARCHAR(255) NOT NULL',
-        'detail' => 'VARCHAR(255) NULL',
-        'position' => 'VARCHAR(255) NULL',
-        'type' => "VARCHAR(50) DEFAULT 'teacher'"
-    ];
-    foreach ($p_cols as $p_col => $p_def) {
-        $check_p = $conn->query("SHOW COLUMNS FROM trip_participants LIKE '{$p_col}'");
-        if ($check_p && $check_p->num_rows == 0) {
-            $conn->query("ALTER TABLE trip_participants ADD COLUMN {$p_col} {$p_def}");
-        }
+    // ปลดล็อค full_name ให้ยอมรับค่า NULL หรือมีคอลัมน์ name/full_name ครบถ้วน
+    $conn->query("ALTER TABLE trip_participants MODIFY COLUMN full_name VARCHAR(255) NULL DEFAULT NULL");
+    $check_name = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'name'");
+    if ($check_name && $check_name->num_rows == 0) {
+        $conn->query("ALTER TABLE trip_participants ADD COLUMN name VARCHAR(255) NULL DEFAULT NULL");
+    }
+    $check_type = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'type'");
+    if ($check_type && $check_type->num_rows == 0) {
+        $conn->query("ALTER TABLE trip_participants ADD COLUMN type VARCHAR(50) DEFAULT 'teacher'");
+    }
+    $check_detail = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'detail'");
+    if ($check_detail && $check_detail->num_rows == 0) {
+        $conn->query("ALTER TABLE trip_participants ADD COLUMN detail VARCHAR(255) NULL DEFAULT NULL");
     }
 
     // 4. รับค่าจากฟอร์ม
@@ -94,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
     $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
 
-    // 8. บันทึกคำร้อง
+    // 8. บันทึกคำร้องหลัก
     $stmt = $conn->prepare("INSERT INTO official_trips 
         (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, expense_other) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -105,15 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
 
-        // 9. บันทึกรายชื่อผู้ร่วมเดินทาง
+        // 9. บันทึกรายชื่อผู้ร่วมเดินทาง (ใส่ทั้ง full_name และ name ป้องกัน Error ทุกรูปแบบ)
         if (!empty($_POST['participants']) && is_array($_POST['participants'])) {
-            $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, detail, position, type) VALUES (?, ?, ?, ?, ?)");
+            $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, full_name, detail, position, type) VALUES (?, ?, ?, ?, ?, ?)");
             foreach ($_POST['participants'] as $p) {
                 $p_name = trim($p['name'] ?? '');
                 $p_detail = trim($p['detail'] ?? '');
                 $p_type = $p['type'] ?? 'teacher';
                 if ($p_name !== '') {
-                    $p_stmt->bind_param("issss", $last_id, $p_name, $p_detail, $p_detail, $p_type);
+                    $p_stmt->bind_param("isssss", $last_id, $p_name, $p_name, $p_detail, $p_detail, $p_type);
                     $p_stmt->execute();
                 }
             }
