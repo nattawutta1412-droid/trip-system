@@ -12,6 +12,19 @@ if (!$trip) {
     die("ไม่พบข้อมูลเอกสาร");
 }
 
+// ดึงข้อมูลผู้ร่วมเดินทาง (ถ้ามี)
+$participants = [];
+$p_check = $conn->query("SHOW TABLES LIKE 'trip_participants'");
+if ($p_check && $p_check->num_rows > 0) {
+    $p_stmt = $conn->prepare("SELECT * FROM trip_participants WHERE trip_id = ? ORDER BY id ASC");
+    $p_stmt->bind_param("i", $id);
+    $p_stmt->execute();
+    $p_res = $p_stmt->get_result();
+    while ($p_row = $p_res->fetch_assoc()) {
+        $participants[] = $p_row;
+    }
+}
+
 function thai_date($date_str) {
     if (!$date_str) return "";
     $thai_months = [
@@ -53,6 +66,13 @@ if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบ
 
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
+
+// ข้อความระบุผู้ร่วมเดินทางในร้อยแก้ว
+$participant_summary_text = "";
+if (!empty($participants)) {
+    $p_count = count($participants);
+    $participant_summary_text = " พร้อมด้วยคณะครูและบุคลากร/นักเรียน จำนวน {$p_count} คน (รายละเอียดดังบัญชีรายชื่อแนบท้าย) ";
+}
 
 $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
 $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
@@ -99,12 +119,13 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             height: 297mm;
             max-height: 297mm;
             padding: 12mm 20mm 12mm 25mm;
-            margin: 0 auto;
+            margin: 0 auto 20px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
+            page-break-after: always;
         }
 
         .header-box {
@@ -114,6 +135,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             text-align: center;
         }
 
+        /* ดึงรูปครุฑ garuda.png ในโฟลเดอร์ของระบบโดยตรง */
         .garuda-img {
             position: absolute;
             left: 0;
@@ -197,38 +219,45 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             line-height: 1.18;
         }
 
+        /* ตารางแนบท้ายรายชื่อผู้ร่วมเดินทาง */
+        .attachment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 15pt;
+        }
+        .attachment-table th, .attachment-table td {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            text-align: left;
+        }
+        .attachment-table th {
+            text-align: center;
+            background-color: #f2f2f2;
+        }
+
         @media print {
-            body {
-                background: transparent;
-                padding: 0;
-            }
-            .sheet {
-                box-shadow: none;
-                margin: 0;
-                width: 210mm;
-                height: 297mm;
-                padding: 12mm 20mm 12mm 25mm;
-            }
-            .no-print {
-                display: none !important;
-            }
+            body { background: transparent; padding: 0; }
+            .sheet { box-shadow: none; margin: 0; width: 210mm; height: 297mm; padding: 12mm 20mm 12mm 25mm; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
 
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
-    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️️ สั่งพิมพ์เอกสาร (Print)</button>
+    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ สั่งพิมพ์เอกสาร (Print)</button>
     <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
     <?php if (!empty($trip['approved_file'])): ?>
         <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
     <?php endif; ?>
 </div>
 
+<!-- หน้าที่ 1: บันทึกข้อความขออนุมัติ -->
 <div class="sheet">
-    <!-- ตราครุฑทางการฝังตรง ไม่หลุด ไม่ต้องโหลดจากเน็ต -->
     <div class="header-box">
-        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'><path fill='%23B22222' d='M500,75 C490,140,440,190,410,230 C380,180,330,150,290,170 C300,210,340,250,370,270 C300,260,230,270,180,310 C210,340,270,350,330,340 C270,365,210,400,165,455 C220,470,280,455,335,425 C280,470,225,520,185,585 C240,590,300,560,350,515 C295,570,245,630,210,705 C275,690,335,640,380,580 C365,650,355,720,360,795 C410,780,450,735,475,680 C480,740,490,800,500,865 C510,800,520,740,525,680 C550,735,590,780,640,795 C645,720,635,650,620,580 C665,640,725,690,790,705 C755,630,705,570,650,515 C700,560,760,590,815,585 C775,520,720,470,665,425 C720,455,780,470,835,455 C790,400,730,365,670,340 C730,350,790,340,820,310 C770,270,700,260,630,270 C660,250,700,210,710,170 C670,150,620,180,590,230 C560,190,510,140,500,75 Z'/><circle cx='500' cy='310' r='55' fill='%23DAA520'/><path fill='%23DAA520' d='M470,365 L530,365 L545,510 L455,510 Z'/></svg>" alt="ตราครุฑ" class="garuda-img">
+        <!-- ชี้ไปที่ garuda.png ในโฟลเดอร์หลักโดยตรง -->
+        <img src="garuda.png" alt="ตราครุฑ" class="garuda-img">
         <span class="doc-title">บันทึกข้อความ</span>
     </div>
     
@@ -249,9 +278,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- เนื้อความร้อยแก้วสมบูรณ์ -->
+    <!-- เนื้อความร้อยแก้ว -->
     <div class="prose-body">
-        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
+        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?><?php echo $participant_summary_text; ?>มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
 
     <div class="prose-body">
@@ -289,6 +318,55 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         </div>
     </div>
 </div>
+
+<!-- หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย (แสดงเฉพาะกรณีมีผู้ร่วมเดินทาง) -->
+<?php if (!empty($participants)): ?>
+<div class="sheet">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h3 style="font-weight: bold; margin-bottom: 5px;">บัญชีรายชื่อผู้ขออนุมัติเดินทางไปราชการแนบท้าย</h3>
+        <div>แนบท้ายบันทึกข้อความ ที่ <?php echo htmlspecialchars($trip['doc_number'] ?? '-'); ?> ลงวันที่ <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
+    </div>
+
+    <table class="attachment-table">
+        <thead>
+            <tr>
+                <th style="width: 8%;">ลำดับ</th>
+                <th style="width: 40%;">ชื่อ - สกุล</th>
+                <th style="width: 32%;">ตำแหน่ง / ระดับชั้น</th>
+                <th style="width: 20%;">หมายเหตุ</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- รายชื่อผู้ขอหลัก (ลำดับที่ 1) -->
+            <tr>
+                <td style="text-align: center;">1</td>
+                <td><?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?></td>
+                <td><?php echo htmlspecialchars($trip['position'] ?? ''); ?></td>
+                <td style="text-align: center;">ผู้ขออนุมัติ</td>
+            </tr>
+            <!-- รายชื่อผู้ร่วมเดินทาง -->
+            <?php 
+            $i = 2;
+            foreach ($participants as $p): 
+            ?>
+            <tr>
+                <td style="text-align: center;"><?php echo $i++; ?></td>
+                <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
+                <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
+                <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 40px; margin-left: auto; width: 50%; text-align: center;">
+        รับรองข้อมูลถูกต้อง<br><br>
+        ลงชื่อ......................................................................<br>
+        ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
+        ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
+    </div>
+</div>
+<?php endif; ?>
 
 </body>
 </html>
