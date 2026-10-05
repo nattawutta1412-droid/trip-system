@@ -41,7 +41,7 @@ function thai_date($date_str) {
 // 1. เลขที่หนังสือ
 $doc_number_display = !empty($trip['doc_number']) ? htmlspecialchars($trip['doc_number']) : '...................................................';
 
-// 2. กำหนดการวันเวลา
+// 2. กำหนดการวันเวลา (กรณีครึ่งวัน)
 $start_t = thai_date($trip['start_date'] ?? '');
 $end_t   = thai_date($trip['end_date'] ?? '');
 $half_time = trim($trip['half_day_time'] ?? '');
@@ -148,8 +148,8 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         body {
             font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 16pt;
-            line-height: 1.15;
+            font-size: 15.5pt;
+            line-height: 1.12;
             background-color: #525659;
             margin: 0;
             padding: 20px 0;
@@ -159,7 +159,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         .sheet {
             width: 210mm;
             min-height: 297mm;
-            padding: 12mm 20mm 12mm 25mm;
+            padding: 10mm 18mm 10mm 22mm;
             margin: 0 auto 20px auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
@@ -174,7 +174,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         .header-box {
             position: relative;
-            height: 55px;
+            height: 52px;
             margin-bottom: 2px;
             text-align: center;
         }
@@ -183,37 +183,37 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
             position: absolute;
             left: 0;
             top: -2px;
-            height: 55px;
+            height: 50px;
             width: auto;
         }
 
         .doc-title {
-            font-size: 29pt;
+            font-size: 28pt;
             font-weight: bold;
-            line-height: 50px;
+            line-height: 48px;
             letter-spacing: 0.5px;
         }
 
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 16pt;
-            line-height: 1.18;
+            font-size: 15.5pt;
+            line-height: 1.15;
         }
 
         .meta-table td {
             vertical-align: bottom;
-            padding: 1px 0;
+            padding: 0;
         }
 
         .divider-line {
             border: 0;
             border-top: 1.5px solid #000;
-            margin: 3px 0 6px 0;
+            margin: 2px 0 4px 0;
         }
 
         .to-line {
-            font-size: 16pt;
+            font-size: 15.5pt;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -221,53 +221,54 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         .prose-body {
             text-align: justify;
             text-justify: inter-cluster;
-            text-indent: 2.5cm;
-            font-size: 16pt;
-            line-height: 1.20;
-            margin-top: 2px;
+            text-indent: 2.2cm;
+            font-size: 15.5pt;
+            line-height: 1.16;
+            margin-top: 1px;
         }
 
         .applicant-sign-wrap {
-            margin-top: 6px;
+            margin-top: 4px;
             margin-left: auto;
-            width: 50%;
+            width: 52%;
             text-align: center;
-            font-size: 16pt;
-            line-height: 1.15;
+            font-size: 15.5pt;
+            line-height: 1.12;
         }
 
-        .head-opinion-box {
-            margin-top: 6px;
+        .opinion-section {
+            margin-top: 3px;
             border-top: 1px dashed #777;
-            padding-top: 4px;
-            font-size: 16pt;
-            line-height: 1.15;
+            padding-top: 3px;
+            font-size: 15pt;
+            line-height: 1.12;
         }
 
-        .head-sign-wrap {
+        .sign-sub-wrap {
             margin-left: auto;
-            width: 50%;
+            width: 52%;
             text-align: center;
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         .director-frame {
-            margin-top: 6px;
+            margin-top: 4px;
             border: 1px solid #000;
-            padding: 5px 12px;
-            font-size: 16pt;
-            line-height: 1.15;
+            padding: 4px 10px;
+            font-size: 15pt;
+            line-height: 1.12;
         }
 
+        /* กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง */
         .admin-stamp-box {
             position: absolute;
-            right: 20mm;
-            bottom: 10mm;
-            width: 65mm;
+            right: 18mm;
+            bottom: 8mm;
+            width: 62mm;
             border: 1px solid #333;
-            padding: 4px 8px;
-            font-size: 13pt;
-            line-height: 1.25;
+            padding: 3px 6px;
+            font-size: 12.5pt;
+            line-height: 1.2;
             background: #fff;
             box-sizing: border-box;
         }
@@ -290,7 +291,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
         @media print {
             body { background: transparent; padding: 0; }
-            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 12mm 20mm 12mm 25mm; page-break-after: always; }
+            .sheet { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 10mm 18mm 10mm 22mm; page-break-after: always; }
             .sheet:last-child { page-break-after: auto; }
             .no-print { display: none !important; }
         }
@@ -342,11 +343,10 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: ความเห็นและลายเซ็นของหัวหน้ากลุ่มงาน -->
-    <div class="head-opinion-box">
-        <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong><br>
-        ..................................................................................................................................................................................<br>
-        <div class="head-sign-wrap">
+    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน -->
+    <div class="opinion-section">
+        <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong> ...........................................................................................................................<br>
+        <div class="sign-sub-wrap">
             ลงชื่อ......................................................................<br>
             ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
             <?php echo htmlspecialchars($group_title); ?><br>
@@ -354,11 +354,22 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้มีอำนาจ (ผอ. หรือ รอง ผอ. รักษาการ) -->
+    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (ระบุชื่อ นางโรสนาร์นีย์ บุญณะ) -->
+    <div class="opinion-section">
+        <strong>ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล:</strong> ..........................................................................................................<br>
+        <div class="sign-sub-wrap">
+            ลงชื่อ......................................................................<br>
+            ( นางโรสนาร์นีย์ บุญณะ )<br>
+            รองผู้อำนวยการกลุ่มบริหารงานบุคคล<br>
+            วันที่ ........ เดือน ........................ พ.ศ. ............
+        </div>
+    </div>
+
+    <!-- ลำดับที่ 4: คำสั่งและการอนุมัติของผู้อำนวยการโรงเรียน -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 3px;">
+        <div style="text-align: center; margin-top: 2px;">
             ลงชื่อ......................................................................<br>
             ( <?php echo $sign_name_display; ?> )<br>
             <?php echo $sign_role_display; ?><br>
@@ -368,12 +379,12 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
 
     <!-- กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง -->
     <div class="admin-stamp-box">
-        <div style="font-weight: bold; text-align: center; border-bottom: 0.5px solid #666; margin-bottom: 3px; padding-bottom: 1px;">
+        <div style="font-weight: bold; text-align: center; border-bottom: 0.5px solid #666; margin-bottom: 2px; padding-bottom: 1px;">
             สำหรับเจ้าหน้าที่งานบุคคล
         </div>
-        <div>เลขที่รับ / ออกเลข: ...................................</div>
-        <div>วันที่ขอเลข: ........./........./..........................</div>
-        <div>ผู้ลงบันทึก: .............................................</div>
+        <div>เลขที่รับ / ออกเลข: ..................................</div>
+        <div>วันที่ขอเลข: ........./........./.........................</div>
+        <div>ผู้ลงบันทึก: ............................................</div>
     </div>
 </div>
 
