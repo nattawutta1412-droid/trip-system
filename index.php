@@ -61,15 +61,15 @@ $result = $conn->query("SELECT * FROM official_trips ORDER BY id DESC");
                     <tbody>
                         <?php while($row = $result->fetch_assoc()): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($row['doc_number']); ?></td>
-                            <td><?php echo htmlspecialchars($row['created_date']); ?></td>
-                            <td><strong><?php echo htmlspecialchars($row['applicant_name']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($row['doc_number'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($row['created_date'] ?? '-'); ?></td>
+                            <td><strong><?php echo htmlspecialchars($row['applicant_name'] ?? ''); ?></strong></td>
                             <td><span class="badge bg-secondary"><?php echo htmlspecialchars($row['head_department'] ?? '-'); ?></span></td>
                             <td>
-                                <div><?php echo htmlspecialchars($row['subject']); ?></div>
-                                <small class="text-muted">ปลายทาง: <?php echo htmlspecialchars($row['destination']); ?></small>
+                                <div><?php echo htmlspecialchars($row['subject'] ?? ''); ?></div>
+                                <small class="text-muted">ปลายทาง: <?php echo htmlspecialchars($row['destination'] ?? '-'); ?></small>
                             </td>
-                            <td><?php echo htmlspecialchars($row['start_date']); ?> ถึง <?php echo htmlspecialchars($row['end_date']); ?></td>
+                            <td><?php echo htmlspecialchars($row['start_date'] ?? ''); ?> ถึง <?php echo htmlspecialchars($row['end_date'] ?? ''); ?></td>
                             <td>
                                 <?php if (!empty($row['approved_file'])): ?>
                                     <span class="badge bg-success">อนุมัติแล้ว</span>
@@ -83,7 +83,6 @@ $result = $conn->query("SELECT * FROM official_trips ORDER BY id DESC");
                                         📥 ดาวน์โหลดคำสั่ง
                                     </a>
                                 <?php else: ?>
-                                    <!-- ปุ่มเปิดโมดัลอัปโหลดสำหรับเจ้าหน้าที่ -->
                                     <form action="index.php" method="POST" enctype="multipart/form-data" class="d-flex gap-1">
                                         <input type="hidden" name="action" value="upload_approved">
                                         <input type="hidden" name="trip_id" value="<?php echo $row['id']; ?>">
