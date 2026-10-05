@@ -11,6 +11,7 @@
         .form-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 30px; margin-top: 25px; margin-bottom: 40px; }
         .section-header { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 20px; margin-top: 15px; font-weight: 600; color: #0d6efd; }
         .expense-box { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 18px; }
+        .participant-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -108,7 +109,7 @@
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
 
-                <!-- ส่วนกรณีไปครึ่งวัน / ระบุเวลา -->
+                <!-- ส่วนกรณีไปครึ่งวัน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border">
                         <label class="form-label fw-bold text-secondary">ลักษณะช่วงเวลาการเดินทาง:</label>
@@ -220,6 +221,18 @@
                 </div>
             </div>
 
+            <!-- 5. ข้อมูลผู้ร่วมเดินทาง (ครู / นักเรียน) -->
+            <div class="section-header d-flex justify-content-between align-items-center">
+                <span>5. ผู้ร่วมเดินทาง (ถ้ามี)</span>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addParticipant('teacher')">+ เพิ่มครู/บุคลากร</button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="addParticipant('student')">+ เพิ่มนักเรียน</button>
+                </div>
+            </div>
+            <div id="participant-container">
+                <!-- รายชื่อจะถูกแทรกเข้ามาตรงนี้เมื่อกดปุ่ม -->
+            </div>
+
             <div class="mt-4 pt-3 border-top text-center">
                 <button type="submit" class="btn btn-primary px-5 py-2 fs-5">บันทึกข้อมูลและสร้างบันทึกข้อความ</button>
                 <a href="index.php" class="btn btn-secondary px-4 py-2 fs-5 ms-2">ยกเลิก</a>
@@ -239,6 +252,42 @@ function toggleHalfDay() {
         box.style.display = 'none';
         input.value = '';
     }
+}
+
+let pIndex = 0;
+function addParticipant(type) {
+    pIndex++;
+    const container = document.getElementById('participant-container');
+    const typeLabel = type === 'teacher' ? 'ครู / บุคลากร' : 'นักเรียน';
+    const detailLabel = type === 'teacher' ? 'ตำแหน่ง / กลุ่มสาระฯ' : 'ชั้น / เลขที่';
+    const detailPlaceholder = type === 'teacher' ? 'เช่น ครู กลุ่มสาระฯ คณิตศาสตร์' : 'เช่น ม.4/1 เลขที่ 5';
+
+    const item = document.createElement('div');
+    item.className = 'participant-item';
+    item.id = `participant_${pIndex}`;
+    item.innerHTML = `
+        <div class="row g-2 align-items-center">
+            <div class="col-md-2">
+                <span class="badge ${type === 'teacher' ? 'bg-primary' : 'bg-success'}">${typeLabel}</span>
+                <input type="hidden" name="participants[${pIndex}][type]" value="${type}">
+            </div>
+            <div class="col-md-5">
+                <input type="text" name="participants[${pIndex}][name]" class="form-control form-control-sm" placeholder="ชื่อ-สกุล" required>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="participants[${pIndex}][detail]" class="form-control form-control-sm" placeholder="${detailPlaceholder}">
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeParticipant(${pIndex})">ลบ</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(item);
+}
+
+function removeParticipant(id) {
+    const el = document.getElementById(`participant_${id}`);
+    if (el) el.remove();
 }
 </script>
 
