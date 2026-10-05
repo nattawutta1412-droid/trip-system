@@ -25,6 +25,30 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
+// แปลงคำศัพท์พาหนะ
+$vehicle = $trip['vehicle_type'] ?? '';
+if ($vehicle === 'personal_car') {
+    $vehicle_text = 'รถยนต์ส่วนบุคคล';
+} elseif ($vehicle === 'school_bus') {
+    $vehicle_text = 'รถยนต์ส่วนกลางของโรงเรียน';
+} elseif ($vehicle === 'public_transport') {
+    $vehicle_text = 'รถโดยสารประจำทาง';
+} else {
+    $vehicle_text = !empty($vehicle) ? $vehicle : 'รถยนต์ส่วนบุคคล';
+}
+
+// แปลงคำศัพท์งบประมาณ
+$expense = $trip['expense_type'] ?? '';
+if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบประมาณ') {
+    $expense_text = 'ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
+} elseif ($expense === 'school_budget' || $expense === 'ขอเบิกจากต้นสังกัด') {
+    $expense_text = 'ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการจากโรงเรียน';
+} elseif ($expense === 'organizer_budget' || $expense === 'ขอเบิกจากผู้จัด') {
+    $expense_text = 'ขอเบิกค่าใช้จ่ายจากหน่วยงานผู้จัด';
+} else {
+    $expense_text = !empty($expense) ? $expense : 'ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
+}
+
 $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
 ?>
 <!DOCTYPE html>
@@ -95,8 +119,8 @@ $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip
     
     <div class="meta-line"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โทร. 0-7528-1288</div>
     <div style="display: flex; justify-content: space-between;" class="meta-line">
-        <div><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number']); ?></div>
-        <div><strong>วันที่:</strong> <?php echo thai_date($trip['created_date']); ?></div>
+        <div><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number'] ?? ''); ?></div>
+        <div><strong>วันที่:</strong> <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
     </div>
     <div class="meta-line"><strong>เรื่อง:</strong> ขออนุมัติเดินทางไปราชการ</div>
     <hr style="border: 0.5px solid #000; margin: 10px 0 20px 0;">
@@ -104,11 +128,11 @@ $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip
     <div class="meta-line"><strong>เรียน:</strong> ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
     <div class="content">
-        ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name']); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position']); ?> <?php echo !empty($trip['academic_standing']) ? 'วิทยฐานะ ' . htmlspecialchars($trip['academic_standing']) : ''; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department']); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ <?php echo htmlspecialchars($trip['subject']); ?> ณ <?php echo htmlspecialchars($trip['destination']); ?>
+        ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?> <?php echo !empty($trip['academic_standing']) ? 'วิทยฐานะ ' . htmlspecialchars($trip['academic_standing']) : ''; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ <?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?>
     </div>
 
     <div class="content" style="text-indent: 2.5cm; margin-top: 10px;">
-        โดยมีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date']); ?> ถึงวันที่ <?php echo thai_date($trip['end_date']); ?> เดินทางโดย <?php echo htmlspecialchars($trip['vehicle_type']); ?> <?php echo !empty($trip['vehicle_license_plate']) ? 'หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : ''; ?> ในการเดินทางไปราชการครั้งนี้<?php echo htmlspecialchars($trip['expense_type']); ?>
+        โดยมีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> เดินทางโดย <?php echo htmlspecialchars($vehicle_text); ?> <?php echo !empty($trip['vehicle_license_plate']) ? 'หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : ''; ?> ในการเดินทางไปราชการครั้งนี้<?php echo htmlspecialchars($expense_text); ?>
     </div>
 
     <div class="content" style="text-indent: 2.5cm; margin-top: 10px;">
@@ -130,8 +154,8 @@ $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip
         <div class="sign-box">
             <br><br>
             ลงชื่อ.......................................................<br>
-            ( <?php echo htmlspecialchars($trip['applicant_name']); ?> )<br>
-            ตำแหน่ง <?php echo htmlspecialchars($trip['position']); ?>
+            ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
+            ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
         </div>
     </div>
 
