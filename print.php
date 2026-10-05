@@ -25,29 +25,35 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// แปลงคำศัพท์พาหนะ
+// แปลงคำศัพท์พาหนะเป็นภาษาเขียนร้อยแก้ว
 $vehicle = $trip['vehicle_type'] ?? '';
 if ($vehicle === 'personal_car') {
     $vehicle_text = 'รถยนต์ส่วนบุคคล';
 } elseif ($vehicle === 'school_bus') {
-    $vehicle_text = 'รถยนต์ส่วนกลางของโรงเรียน';
+    $vehicle_text = 'รถยนต์ส่วนกลางของสถานศึกษา';
 } elseif ($vehicle === 'public_transport') {
     $vehicle_text = 'รถโดยสารประจำทาง';
 } else {
     $vehicle_text = !empty($vehicle) ? $vehicle : 'รถยนต์ส่วนบุคคล';
 }
 
-// แปลงคำศัพท์งบประมาณ
+$license_text = !empty($trip['vehicle_license_plate']) ? ' หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : '';
+
+// แปลงคำศัพท์งบประมาณเป็นภาษาเขียนร้อยแก้ว
 $expense = $trip['expense_type'] ?? '';
 if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบประมาณ') {
-    $expense_text = 'ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
+    $expense_text = 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการแต่อย่างใด';
 } elseif ($expense === 'school_budget' || $expense === 'ขอเบิกจากต้นสังกัด') {
-    $expense_text = 'ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการจากโรงเรียน';
+    $expense_text = 'โดยขออนุมัติเบิกจ่ายงบประมาณค่าใช้จ่ายในการเดินทางไปราชการตามระเบียบจากทางโรงเรียน';
 } elseif ($expense === 'organizer_budget' || $expense === 'ขอเบิกจากผู้จัด') {
-    $expense_text = 'ขอเบิกค่าใช้จ่ายจากหน่วยงานผู้จัด';
+    $expense_text = 'โดยขอเบิกจ่ายค่าใช้จ่ายในการเดินทางไปราชการจากหน่วยงานผู้จัดกิจกรรม';
 } else {
-    $expense_text = !empty($expense) ? $expense : 'ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
+    $expense_text = !empty($expense) ? 'โดย' . htmlspecialchars($expense) : 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
 }
+
+// คำนำหน้านามและตำแหน่งวิทยฐานะ
+$academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
+$ref_text = !empty($trip['ref_document']) ? 'ตามหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
 $head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
 $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '.......................................................';
@@ -62,7 +68,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         body {
             font-family: 'Sarabun', sans-serif;
             font-size: 16pt;
-            line-height: 1.5;
+            line-height: 1.6;
             background: #f0f0f0;
             margin: 0;
             padding: 20px;
@@ -80,7 +86,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .header-wrap {
             position: relative;
             text-align: center;
-            height: 90px;
+            height: 85px;
             margin-bottom: 10px;
         }
         .garuda {
@@ -93,7 +99,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .title-doc {
             font-size: 26pt;
             font-weight: bold;
-            line-height: 80px;
+            line-height: 75px;
         }
         .meta-table {
             width: 100%;
@@ -104,15 +110,15 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             vertical-align: top;
             padding: 2px 0;
         }
-        .content {
+        .prose-content {
             text-align: justify;
             text-indent: 2.5cm;
-            margin-top: 10px;
+            margin-top: 14px;
         }
         .sign-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 25px;
+            margin-top: 30px;
         }
         .sign-table td {
             width: 50%;
@@ -123,9 +129,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .director-box {
             margin-top: 25px;
             margin-left: auto;
-            width: 55%;
+            width: 58%;
             border: 1px solid #000;
-            padding: 12px 15px;
+            padding: 12px 18px;
             line-height: 1.6;
         }
         @media print {
@@ -146,7 +152,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 </div>
 
 <div class="page">
-    <!-- ส่วนหัวหนังสือราชการ + ครุฑ -->
+    <!-- หัวหนังสือราชการ + ครุฑ -->
     <div class="header-wrap">
         <img src="garuda.png" alt="ครุฑ" class="garuda" onerror="this.style.display='none'">
         <span class="title-doc">บันทึกข้อความ</span>
@@ -165,23 +171,21 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         </tr>
     </table>
     
-    <hr style="border: 0; border-top: 1.5px solid #000; margin: 5px 0 15px 0;">
+    <hr style="border: 0; border-top: 1.5px solid #000; margin: 4px 0 14px 0;">
 
     <div><strong>เรียน:</strong> ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <div class="content">
-        ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?> <?php echo !empty($trip['academic_standing']) ? 'วิทยฐานะ ' . htmlspecialchars($trip['academic_standing']) : ''; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ <?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?>
+    <!-- เนื้อความร้อยแก้วต่อเนื่อง ย่อหน้าที่ 1: ความประสงค์และภารกิจ -->
+    <div class="prose-content">
+        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
 
-    <div class="content">
-        โดยมีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> เดินทางโดย <?php echo htmlspecialchars($vehicle_text); ?> <?php echo !empty($trip['vehicle_license_plate']) ? 'หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : ''; ?> ในการเดินทางไปราชการครั้งนี้<?php echo htmlspecialchars($expense_text); ?>
-    </div>
-
-    <div class="content">
+    <!-- ย่อหน้าที่ 2: ลงท้าย -->
+    <div class="prose-content">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ส่วนลายเซ็น ซ้าย-ขวา แบบตารางล็อกตำแหน่งเป๊ะ ไม่เพี้ยน -->
+    <!-- ส่วนลายเซ็น ซ้าย-ขวา -->
     <table class="sign-table">
         <tr>
             <!-- ฝั่งซ้าย: ความเห็นและลายเซ็นหัวหน้าฝ่าย -->
@@ -203,7 +207,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         </tr>
     </table>
 
-    <!-- ส่วนความเห็นของผู้อำนวยการโรงเรียน -->
+    <!-- ส่วนคำสั่งและการอนุมัติของผู้อำนวยการ -->
     <div class="director-box">
         คำสั่ง / คำอนุมัติ:<br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก .............................<br><br>
