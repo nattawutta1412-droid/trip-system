@@ -1,121 +1,149 @@
+<?php
+require_once 'config.php';
+
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$stmt = $conn->prepare("SELECT * FROM official_trips WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$trip = $result->fetch_assoc();
+
+if (!$trip) {
+    die("ไม่พบข้อมูลเอกสาร");
+}
+
+function thai_date($date_str) {
+    if (!$date_str) return "";
+    $thai_months = [
+        "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
+    $time = strtotime($date_str);
+    $d = date('j', $time);
+    $m = $thai_months[intval(date('n', $time))];
+    $y = date('Y', $time) + 543;
+    return "$d $m $y";
+}
+
+$head_title = !empty($trip['head_department']) ? "หัวหน้า" . $trip['head_department'] : "หัวหน้าฝ่าย";
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แบบขออนุมัติเดินทางไปราชการ</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>บันทึกข้อความขออนุมัติไปราชการ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; }
-        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 16pt;
+            line-height: 1.6;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm 20mm 20mm 25mm;
+            margin: auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .header {
+            text-align: center;
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .meta-line { margin-bottom: 8px; }
+        .content {
+            text-indent: 2.5cm;
+            margin-top: 15px;
+            text-align: justify;
+        }
+        .sign-area {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .sign-box {
+            width: 48%;
+            text-align: center;
+        }
+        @media print {
+            body { background: transparent; padding: 0; }
+            .page { box-shadow: none; margin: 0; width: 100%; min-height: auto; }
+            .no-print { display: none; }
+        }
     </style>
 </head>
-<body class="py-4">
-<div class="container" style="max-width: 800px;">
-    <div class="card p-4">
-        <h4 class="text-center mb-4 fw-bold">แบบฟอร์มขออนุมัติเดินทางไปราชการ</h4>
-        <form action="save.php" method="POST" enctype="multipart/form-data">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">เลขที่หนังสือ / ที่:</label>
-                    <input type="text" name="doc_number" class="form-control" placeholder="เช่น ศธ 04xxx/..." required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ลงวันที่:</label>
-                    <input type="date" name="created_date" class="form-control" required value="<?php echo date('Y-m-d'); ?>">
-                </div>
+<body>
 
-                <div class="col-md-6">
-                    <label class="form-label">ชื่อ-สกุล ผู้ขออนุมัติ:</label>
-                    <input type="text" name="applicant_name" class="form-control" placeholder="เช่น นายสมศักดิ์ รักเรียน" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ตำแหน่ง:</label>
-                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู" required>
-                </div>
+<div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
+    <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px;">สั่งพิมพ์เอกสาร (Print)</button>
+    <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
+    <?php if (!empty($trip['approved_file'])): ?>
+        <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
+    <?php endif; ?>
+</div>
 
-                <div class="col-md-6">
-                    <label class="form-label">วิทยฐานะ (ถ้ามี):</label>
-                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">กลุ่มสาระการเรียนรู้ / กลุ่มงาน:</label>
-                    <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ วิทยาศาสตร์และเทคโนโลยี" required>
-                </div>
+<div class="page">
+    <div class="header">บันทึกข้อความ</div>
+    
+    <div class="meta-line"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โทร. 0-7528-1288</div>
+    <div style="display: flex; justify-content: space-between;" class="meta-line">
+        <div><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number']); ?></div>
+        <div><strong>วันที่:</strong> <?php echo thai_date($trip['created_date']); ?></div>
+    </div>
+    <div class="meta-line"><strong>เรื่อง:</strong> ขออนุมัติเดินทางไปราชการ</div>
+    <hr style="border: 0.5px solid #000; margin: 10px 0 20px 0;">
 
-                <!-- ช่องกรอกชื่อหัวหน้าฝ่าย (ใช้เฉพาะหัวหน้าฝ่าย) -->
-                <div class="col-md-12">
-                    <div class="p-3 bg-light rounded border">
-                        <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
-                        <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล เช่น นางสาวใจดี สุขสมบัติ" required>
-                    </div>
-                </div>
+    <div class="meta-line"><strong>เรียน:</strong> ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-                <div class="col-md-12">
-                    <label class="form-label">เรื่องขออนุมัติไปราชการเพื่อ:</label>
-                    <input type="text" name="subject" class="form-control" placeholder="เช่น เข้าร่วมการประชุมเชิงปฏิบัติการ..." required>
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label">สถานที่ไปราชการ (ปลายทาง):</label>
-                    <input type="text" name="destination" class="form-control" placeholder="เช่น โรงแรมไดมอนด์พลาซ่า อ.เมือง จ.สุราษฎร์ธานี" required>
-                </div>
+    <div class="content">
+        ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name']); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position']); ?> <?php echo !empty($trip['academic_standing']) ? 'วิทยฐานะ ' . htmlspecialchars($trip['academic_standing']) : ''; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department']); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ <?php echo htmlspecialchars($trip['subject']); ?> ณ <?php echo htmlspecialchars($trip['destination']); ?>
+    </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">หนังสืออ้างอิง (ถ้ามี):</label>
-                    <input type="text" name="ref_document" class="form-control" placeholder="เช่น หนังสือ สพม.ตรัง กระบี่ ที่...">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ลงวันที่ (ของหนังสืออ้างอิง):</label>
-                    <input type="date" name="ref_date" class="form-control">
-                </div>
+    <div class="content" style="text-indent: 2.5cm; margin-top: 10px;">
+        โดยมีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date']); ?> ถึงวันที่ <?php echo thai_date($trip['end_date']); ?> เดินทางโดย <?php echo htmlspecialchars($trip['vehicle_type']); ?> <?php echo !empty($trip['vehicle_license_plate']) ? 'หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : ''; ?> ในการเดินทางไปราชการครั้งนี้<?php echo htmlspecialchars($trip['expense_type']); ?>
+    </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">ตั้งแต่วันที่:</label>
-                    <input type="date" name="start_date" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ถึงวันที่:</label>
-                    <input type="date" name="end_date" class="form-control" required>
-                </div>
+    <div class="content" style="text-indent: 2.5cm; margin-top: 10px;">
+        จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
+    </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">เวลาเดินทาง (กรณีครึ่งวัน):</label>
-                    <input type="text" name="half_day_time" class="form-control" placeholder="เช่น ช่วงเช้า หรือระบุเวลา">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">การเบิกค่าใช้จ่าย:</label>
-                    <select name="expense_type" class="form-select">
-                        <option value="ไม่ขอเบิกงบประมาณ">ไม่ขอเบิกงบประมาณ</option>
-                        <option value="ขอเบิกจากต้นสังกัด">ขอเบิกจากต้นสังกัด</option>
-                        <option value="ขอเบิกจากผู้จัด">ขอเบิกจากผู้จัด</option>
-                    </select>
-                </div>
+    <!-- ส่วนลายเซ็น 2 ฝั่ง -->
+    <div class="sign-area">
+        <!-- ฝั่งซ้าย: ความเห็นและลายเซ็นหัวหน้าฝ่าย -->
+        <div class="sign-box">
+            ความเห็นของ<?php echo htmlspecialchars($head_title); ?><br>
+            ...................................................................<br><br>
+            ลงชื่อ.......................................................<br>
+            ( <?php echo htmlspecialchars(!empty($trip['head_name']) ? $trip['head_name'] : '.......................................................'); ?> )<br>
+            <?php echo htmlspecialchars($head_title); ?>
+        </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">พาหนะเดินทาง:</label>
-                    <input type="text" name="vehicle_type" class="form-control" placeholder="เช่น รถยนต์ส่วนบุคคล, รถโดยสารประจำทาง" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ทะเบียนรถ (ถ้ามี):</label>
-                    <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
-                </div>
+        <!-- ฝั่งขวา: ลายเซ็นผู้ขออนุมัติ -->
+        <div class="sign-box">
+            <br><br>
+            ลงชื่อ.......................................................<br>
+            ( <?php echo htmlspecialchars($trip['applicant_name']); ?> )<br>
+            ตำแหน่ง <?php echo htmlspecialchars($trip['position']); ?>
+        </div>
+    </div>
 
-                <!-- ช่องแนบไฟล์ -->
-                <div class="col-md-12">
-                    <div class="p-3 bg-light rounded border border-secondary border-dashed">
-                        <label class="form-label fw-bold text-success">แนบเอกสารคำสั่ง / หนังสือเชิญ (PDF หรือ รูปภาพ):</label>
-                        <input type="file" name="attachment" class="form-control" accept=".pdf,image/*">
-                        <small class="text-muted">* รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 10MB</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-4 text-center">
-                <button type="submit" class="btn btn-primary px-5 py-2">บันทึกข้อมูลและส่งเอกสาร</button>
-            </div>
-        </form>
+    <!-- ความเห็นผู้อำนวยการ -->
+    <div style="margin-top: 40px; border: 1px solid #000; padding: 15px; width: 60%; margin-left: auto;">
+        คำสั่ง / คำอนุมัติ:<br>
+        [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก .....................................<br><br>
+        ลงชื่อ.......................................................<br>
+        ( ....................................................... )<br>
+        ตำแหน่ง ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์
     </div>
 </div>
+
 </body>
 </html>
