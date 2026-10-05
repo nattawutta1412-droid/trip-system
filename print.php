@@ -25,39 +25,52 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// แปลงคำศัพท์พาหนะ
+// 1. เรียบเรียงการเดินทางด้วยยานพาหนะ
 $vehicle = $trip['vehicle_type'] ?? '';
-if ($vehicle === 'personal_car') {
-    $vehicle_text = 'รถยนต์ส่วนบุคคล';
-} elseif ($vehicle === 'school_bus') {
-    $vehicle_text = 'รถยนต์ส่วนกลางของสถานศึกษา';
-} elseif ($vehicle === 'public_transport') {
-    $vehicle_text = 'รถโดยสารประจำทาง';
-} else {
-    $vehicle_text = !empty($vehicle) ? $vehicle : 'รถยนต์ส่วนบุคคล';
+$plate = trim($trip['vehicle_license_plate'] ?? '');
+$vehicle_prose = "";
+if (!empty($vehicle)) {
+    if ($vehicle === 'รถยนต์ราชการ') {
+        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ราชการ";
+    } elseif ($vehicle === 'รถยนต์ส่วนตัว') {
+        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ส่วนตัว" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "");
+    } else {
+        $vehicle_prose = "เดินทางโดย{$vehicle}" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "");
+    }
 }
 
-$license_text = !empty($trip['vehicle_license_plate']) ? ' หมายเลขทะเบียน ' . htmlspecialchars($trip['vehicle_license_plate']) : '';
+// 2. เรียบเรียงเงื่อนไขการเบิกจ่ายงบประมาณตามแบบฟอร์ม
+$expense_raw = $trip['expense_type'] ?? '';
+$expense_prose_parts = [];
 
-// แปลงคำศัพท์งบประมาณ
-$expense = $trip['expense_type'] ?? '';
-if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบประมาณ') {
-    $expense_text = 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการแต่อย่างใด';
-} elseif ($expense === 'school_budget' || $expense === 'ขอเบิกจากต้นสังกัด') {
-    $expense_text = 'โดยขออนุมัติเบิกจ่ายค่าใช้จ่ายในการเดินทางไปราชการตามระเบียบจากทางโรงเรียน';
-} elseif ($expense === 'organizer_budget' || $expense === 'ขอเบิกจากผู้จัด') {
-    $expense_text = 'โดยขอเบิกจ่ายค่าใช้จ่ายในการเดินทางไปราชการจากหน่วยงานผู้จัด';
+if (strpos($expense_raw, "ไม่ขอเบิกค่าใช้จ่าย") !== false) {
+    $expense_prose_parts[] = "ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการแต่อย่างใด";
+}
+if (strpos($expense_raw, "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณ") !== false) {
+    $expense_prose_parts[] = "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ";
+}
+if (strpos($expense_raw, "ขอเบิกเฉพาะค่าใช้จ่าย") !== false) {
+    $sub = trim($trip['expense_specific_details'] ?? '');
+    $expense_prose_parts[] = "ขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ " . (!empty($sub) ? $sub : "ตามที่เกิดขึ้นจริง");
+}
+if (!empty($trip['expense_other'])) {
+    $expense_prose_parts[] = "และ" . htmlspecialchars($trip['expense_other']);
+}
+
+$expense_final_prose = "";
+if (!empty($expense_prose_parts)) {
+    $expense_final_prose = "โดยข้าพเจ้า" . implode(" อีกทั้ง", $expense_prose_parts);
 } else {
-    $expense_text = !empty($expense) ? 'โดย' . htmlspecialchars($expense) : 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
+    $expense_final_prose = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ";
 }
 
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
-// ข้อมูลหัวหน้ากลุ่มงาน (ดึงจาก work_group หรือ head_department เดิมถ้ามี)
-$group_name = !empty($trip['work_group']) ? $trip['work_group'] : (!empty($trip['head_department']) ? $trip['head_department'] : 'กลุ่มงาน');
+// ข้อมูลหัวหน้ากลุ่มงาน
+$group_name = !empty($trip['work_group']) ? $trip['work_group'] : 'กลุ่มงาน';
 $group_title = "หัวหน้า" . $group_name;
-$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : (!empty($trip['head_name']) ? $trip['head_name'] : '.......................................................');
+$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -221,11 +234,8 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
 <body>
 
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
-    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️️ สั่งพิมพ์เอกสาร (Print)</button>
+    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨 สั่งพิมพ์เอกสาร (Print)</button>
     <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
-    <?php if (!empty($trip['approved_file'])): ?>
-        <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
-    <?php endif; ?>
 </div>
 
 <!-- ================= หน้าที่ 1: บันทึกข้อความ ================= -->
@@ -252,8 +262,9 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
+    <!-- เนื้อความร้อยแก้วเชื่อมโยงข้อมูลและตัวเลือกการเบิกงบประมาณ -->
     <div class="prose-body">
-        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?> (รายละเอียดดังบัญชีรายชื่อและกำหนดการแนบท้าย)
+        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> <?php echo !empty($vehicle_prose) ? "ในการนี้จะ" . htmlspecialchars($vehicle_prose) . " " : ""; ?><?php echo htmlspecialchars($expense_final_prose); ?> (รายละเอียดดังบัญชีรายชื่อและกำหนดการแนบท้าย)
     </div>
 
     <div class="prose-body">
