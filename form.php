@@ -10,7 +10,6 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
         .form-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 30px; margin-top: 25px; margin-bottom: 40px; }
         .section-header { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 20px; margin-top: 15px; font-weight: 600; color: #0d6efd; }
-        .participant-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -36,8 +35,8 @@
                 </div>
             </div>
 
-            <!-- 2. ข้อมูลผู้ขออนุมัติ -->
-            <div class="section-header">2. ข้อมูลผู้ขออนุมัติ</div>
+            <!-- 2. ข้อมูลผู้ขออนุมัติและกลุ่มงาน -->
+            <div class="section-header">2. ข้อมูลผู้ขออนุมัติและกลุ่มงานต้นสังกัด</div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">ชื่อ-สกุล ผู้ขออนุมัติ:</label>
@@ -49,19 +48,19 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">วิทยฐานะ (ถ้ามี):</label>
-                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ">
+                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ (ถ้าไม่มีเว้นว่างได้)">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">กลุ่มสาระการเรียนรู้ / งานสังกัดของผู้ขอ:</label>
+                    <label class="form-label">กลุ่มสาระการเรียนรู้ / งานสังกัด:</label>
                     <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ ภาษาต่างประเทศ" required>
                 </div>
 
-                <!-- ส่วนเลือกกลุ่มงาน และระบุชื่อหัวหน้ากลุ่มงาน -->
+                <!-- ส่วนกลุ่มงานและหัวหน้ากลุ่มงาน -->
                 <div class="col-12">
-                    <div class="p-3 bg-light rounded border border-success-subtle">
+                    <div class="p-3 bg-light rounded border border-primary-subtle">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-success">สังกัดกลุ่มงาน:</label>
+                                <label class="form-label fw-bold text-primary">สังกัดกลุ่มงานที่เสนอ:</label>
                                 <select name="work_group" class="form-select" required>
                                     <option value="">-- เลือกกลุ่มงาน --</option>
                                     <option value="กลุ่มงานบริหารวิชาการ">กลุ่มงานบริหารวิชาการ</option>
@@ -72,30 +71,8 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-success">ชื่อ-สกุล หัวหน้ากลุ่มงาน:</label>
-                                <input type="text" name="head_group_name" class="form-control" placeholder="ระบุชื่อ-สกุล หัวหน้ากลุ่มงาน" required>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ส่วนเลือกฝ่าย และระบุชื่อหัวหน้าฝ่าย -->
-                <div class="col-12">
-                    <div class="p-3 bg-light rounded border border-primary-subtle">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-primary">ฝ่ายต้นสังกัดที่เสนอ:</label>
-                                <select name="head_department" class="form-select" required>
-                                    <option value="">-- เลือกฝ่าย --</option>
-                                    <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
-                                    <option value="ฝ่ายบริหารงบประมาณและแผนงาน">ฝ่ายบริหารงบประมาณและแผนงาน</option>
-                                    <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
-                                    <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
-                                <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล หัวหน้าฝ่าย" required>
+                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้ากลุ่มงาน:</label>
+                                <input type="text" name="head_group_name" class="form-control" placeholder="ระบุคำนำหน้าและชื่อ-สกุล หัวหน้ากลุ่มงาน" required>
                             </div>
                         </div>
                     </div>
