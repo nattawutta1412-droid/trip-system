@@ -45,7 +45,6 @@
                     <input type="text" name="position" class="form-control" placeholder="เช่น ครู, ครูผู้ช่วย, รองผู้อำนวยการสถานศึกษา" required>
                 </div>
 
-                <!-- Dropdown วิทยฐานะ -->
                 <div class="col-md-6">
                     <label class="form-label">วิทยฐานะ:</label>
                     <select name="academic_standing" class="form-select">
@@ -57,7 +56,6 @@
                     </select>
                 </div>
 
-                <!-- Dropdown กลุ่มสาระการเรียนรู้ / กลุ่มงาน / ผู้บริหาร -->
                 <div class="col-md-6">
                     <label class="form-label">กลุ่มสาระการเรียนรู้ / กลุ่มงาน:</label>
                     <select name="department" class="form-select" required>
@@ -82,7 +80,6 @@
                     </select>
                 </div>
 
-                <!-- กลุ่มงานและหัวหน้ากลุ่มงาน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border border-primary-subtle">
                         <div class="row g-3">
@@ -135,7 +132,6 @@
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
 
-                <!-- กรณีไปครึ่งวัน -->
                 <div class="col-12">
                     <div class="p-3 bg-light rounded border">
                         <label class="form-label fw-bold text-secondary">ลักษณะช่วงเวลาการเดินทาง:</label>
@@ -157,20 +153,16 @@
                 </div>
             </div>
 
-            <!-- 4. รายละเอียดการเบิกจ่ายและการเดินทาง -->
+            <!-- 4. รายละเอียดค่าใช้จ่ายและยานพาหนะ -->
             <div class="section-header">4. รายละเอียดค่าใช้จ่ายและยานพาหนะ</div>
             <div class="expense-box">
                 <div class="fw-bold mb-2">โดยข้าพเจ้า:</div>
 
-                <!-- ข้อ 1: ไม่ขอเบิกค่าใช้จ่าย -->
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="expense_option_no" id="exp_no" value="1">
-                    <label class="form-check-label" for="exp_no">
-                        ไม่ขอเบิกค่าใช้จ่าย
-                    </label>
+                    <label class="form-check-label" for="exp_no">ไม่ขอเบิกค่าใช้จ่าย</label>
                 </div>
 
-                <!-- ข้อ 2: ขอเบิกตามสิทธิจากงบประมาณสถานศึกษา -->
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="expense_option_school" id="exp_school" value="1">
                     <label class="form-check-label" for="exp_school">
@@ -178,13 +170,10 @@
                     </label>
                 </div>
 
-                <!-- ข้อ 3: ขอเบิกเฉพาะค่าใช้จ่าย -->
                 <div class="mb-3 ps-4 border-start border-2 border-primary">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="expense_option_specific" id="exp_specific" value="1">
-                        <label class="form-check-label fw-bold" for="exp_specific">
-                            ขอเบิกเฉพาะค่าใช้จ่าย:
-                        </label>
+                        <label class="form-check-label fw-bold" for="exp_specific">ขอเบิกเฉพาะค่าใช้จ่าย:</label>
                     </div>
                     <div class="d-flex flex-wrap gap-3 ms-3">
                         <div class="form-check">
@@ -206,13 +195,10 @@
                     </div>
                 </div>
 
-                <!-- ข้อ 4: ไปราชการด้วยยานพาหนะ (เพิ่มช่อง พนักงานขับรถ กรณีรถราชการ) -->
                 <div class="mb-3 ps-4 border-start border-2 border-success">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="expense_option_vehicle" id="exp_vehicle" value="1" onchange="toggleVehicleInputs()">
-                        <label class="form-check-label fw-bold" for="exp_vehicle">
-                            ไปราชการด้วย:
-                        </label>
+                        <label class="form-check-label fw-bold" for="exp_vehicle">ไปราชการด้วย:</label>
                     </div>
                     <div class="row g-2 align-items-center ms-1">
                         <div class="col-auto">
@@ -236,13 +222,10 @@
                     </div>
                 </div>
 
-                <!-- ข้อ 5: อื่นๆ -->
                 <div class="mb-1">
                     <div class="form-check mb-1">
                         <input class="form-check-input" type="checkbox" name="expense_option_other" id="exp_other" value="1">
-                        <label class="form-check-label fw-bold" for="exp_other">
-                            อื่น ๆ
-                        </label>
+                        <label class="form-check-label fw-bold" for="exp_other">อื่น ๆ</label>
                     </div>
                     <div class="ms-3">
                         <input type="text" name="expense_other" class="form-control form-control-sm" placeholder="ระบุรายละเอียดเพิ่มเติม...">
@@ -250,7 +233,7 @@
                 </div>
             </div>
 
-            <!-- 5. ข้อมูลผู้ร่วมเดินทาง (ครู / นักเรียน) -->
+            <!-- 5. ผู้ร่วมเดินทาง -->
             <div class="section-header d-flex justify-content-between align-items-center">
                 <span>5. ผู้ร่วมเดินทาง (ถ้ามี)</span>
                 <div>
@@ -259,6 +242,30 @@
                 </div>
             </div>
             <div id="participant-container"></div>
+
+            <!-- 6. ผู้มีอำนาจลงนามอนุมัติ (ผู้อำนวยการ / รักษาการในตำแหน่ง) -->
+            <div class="section-header">6. ผู้มีอำนาจพิจารณาอนุมัติ</div>
+            <div class="p-3 bg-light rounded border border-warning-subtle mb-3">
+                <label class="form-label fw-bold text-dark mb-2">เสนออนุมัติต่อ:</label>
+                <div class="d-flex flex-wrap gap-4 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sign_mode" id="sign_dir" value="director" checked onchange="toggleSignMode()">
+                        <label class="form-check-label" for="sign_dir">ผู้อำนวยการโรงเรียน (ว่าที่ร้อยโทจักรเพชร์ พรมยศ)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sign_mode" id="sign_act" value="acting" onchange="toggleSignMode()">
+                        <label class="form-check-label" for="sign_act">รองผู้อำนวยการ รักษาการในตำแหน่ง ผู้อำนวยการโรงเรียนฯ</label>
+                    </div>
+                </div>
+                <div id="acting_box" style="display: none;">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">ชื่อ-สกุล รองผู้อำนวยการที่รักษาการ:</label>
+                            <input type="text" name="acting_name" id="acting_name" class="form-control form-control-sm" placeholder="เช่น นายประเสริฐ ดำรงเกียรติ">
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="mt-4 pt-3 border-top text-center">
                 <button type="submit" class="btn btn-primary px-5 py-2 fs-5">บันทึกข้อมูลและสร้างบันทึกข้อความ</button>
@@ -292,6 +299,20 @@ function toggleVehicleInputs() {
     } else {
         driverBox.style.display = 'none';
         driverInput.value = '';
+    }
+}
+
+function toggleSignMode() {
+    const isActing = document.getElementById('sign_act').checked;
+    const box = document.getElementById('acting_box');
+    const input = document.getElementById('acting_name');
+    if (isActing) {
+        box.style.display = 'block';
+        input.required = true;
+    } else {
+        box.style.display = 'none';
+        input.required = false;
+        input.value = '';
     }
 }
 
