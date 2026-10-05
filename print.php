@@ -56,15 +56,7 @@ function thai_date($date_str) {
             font-weight: bold;
             margin-bottom: 20px;
         }
-        .logo {
-            position: absolute;
-            left: 25mm;
-            top: 25mm;
-            width: 60px;
-        }
-        .meta-line {
-            margin-bottom: 8px;
-        }
+        .meta-line { margin-bottom: 8px; }
         .content {
             text-indent: 2.5cm;
             margin-top: 15px;
@@ -91,6 +83,9 @@ function thai_date($date_str) {
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
     <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px;">สั่งพิมพ์เอกสาร (Print)</button>
     <a href="form.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">กลับหน้าฟอร์ม</a>
+    <?php if (!empty($trip['attached_file'])): ?>
+        <a href="uploads/<?php echo htmlspecialchars($trip['attached_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📎 ดูไฟล์แนบ</a>
+    <?php endif; ?>
 </div>
 
 <div class="page">
@@ -118,9 +113,8 @@ function thai_date($date_str) {
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ส่วนลายเซ็น 2 ฝั่ง: ผู้ขออนุมัติ และ หัวหน้าฝ่าย -->
+    <!-- ส่วนลายเซ็น 2 ฝั่ง -->
     <div class="sign-area">
-        <!-- ฝั่งซ้าย: ความเห็นและลายเซ็นหัวหน้าฝ่าย -->
         <div class="sign-box">
             ความเห็นของหัวหน้ากลุ่มสาระฯ/หัวหน้ากลุ่มงาน<br>
             ...................................................................<br><br>
@@ -129,7 +123,6 @@ function thai_date($date_str) {
             หัวหน้ากลุ่มสาระการเรียนรู้ / หัวหน้ากลุ่มงาน
         </div>
 
-        <!-- ฝั่งขวา: ลายเซ็นผู้ขออนุมัติ -->
         <div class="sign-box">
             <br><br>
             ลงชื่อ.......................................................<br>
@@ -138,7 +131,6 @@ function thai_date($date_str) {
         </div>
     </div>
 
-    <!-- ความเห็นผู้อำนวยการ -->
     <div style="margin-top: 40px; border: 1px solid #000; padding: 15px; width: 60%; margin-left: auto;">
         คำสั่ง / คำอนุมัติ:<br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก .....................................<br><br>
