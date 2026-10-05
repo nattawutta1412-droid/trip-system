@@ -15,7 +15,7 @@
 <div class="container" style="max-width: 800px;">
     <div class="card p-4">
         <h4 class="text-center mb-4 fw-bold">แบบฟอร์มขออนุมัติเดินทางไปราชการ</h4>
-        <form action="save.php" method="POST" enctype="multipart/form-data">
+        <form action="save.php" method="POST">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">เลขที่หนังสือ / ที่:</label>
@@ -40,15 +40,29 @@
                     <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">กลุ่มสาระการเรียนรู้ / กลุ่มงาน:</label>
+                    <label class="form-label">กลุ่มสาระการเรียนรู้ / กลุ่มงานของผู้ขอ:</label>
                     <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ วิทยาศาสตร์และเทคโนโลยี" required>
                 </div>
 
-                <!-- ช่องกรอกชื่อหัวหน้าฝ่าย (ใช้เฉพาะหัวหน้าฝ่าย) -->
+                <!-- ส่วนข้อมูลหัวหน้าฝ่าย: ระบุฝ่าย และ ชื่อ-สกุล -->
                 <div class="col-md-12">
                     <div class="p-3 bg-light rounded border">
-                        <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
-                        <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล เช่น นางสาวใจดี สุขสมบัติ" required>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-primary">ฝ่ายต้นสังกัดที่เสนอ:</label>
+                                <select name="head_department" class="form-select" required>
+                                    <option value="">-- เลือกฝ่าย --</option>
+                                    <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
+                                    <option value="ฝ่ายบริหารงบประมาณและแผนงาน">ฝ่ายบริหารงบประมาณและแผนงาน</option>
+                                    <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
+                                    <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
+                                <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล เช่น นางสาวใจดี สุขสมบัติ" required>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -100,19 +114,10 @@
                     <label class="form-label">ทะเบียนรถ (ถ้ามี):</label>
                     <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
                 </div>
-
-                <!-- ช่องแนบไฟล์ -->
-                <div class="col-md-12">
-                    <div class="p-3 bg-light rounded border border-secondary border-dashed">
-                        <label class="form-label fw-bold text-success">แนบเอกสารคำสั่ง / หนังสือเชิญ (PDF หรือ รูปภาพ):</label>
-                        <input type="file" name="attachment" class="form-control" accept=".pdf,image/*">
-                        <small class="text-muted">* รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 10MB</small>
-                    </div>
-                </div>
             </div>
 
             <div class="mt-4 text-center">
-                <button type="submit" class="btn btn-primary px-5 py-2">บันทึกข้อมูลและส่งเอกสาร</button>
+                <button type="submit" class="btn btn-primary px-5 py-2">บันทึกข้อมูลและสร้างบันทึกข้อความ</button>
             </div>
         </form>
     </div>
