@@ -61,10 +61,10 @@ $filtered_count = $result->num_rows;
 
 // รายชื่อกลุ่มสาระ/กลุ่มงาน
 $dept_list = [
-    "กลุ่มสาระฯ ภาษาไทย", "กลุ่มสาระฯ คณิตศาสตร์", "กลุ่มสาระฯ วิทยาศาสตร์และเทคโนโลยี",
-    "กลุ่มสาระฯ สังคมศึกษา ศาสนา และวัฒนธรรม", "กลุ่มสาระฯ สุขศึกษาและพลศึกษา",
-    "กลุ่มสาระฯ ศิลปะ", "กลุ่มสาระฯ การงานอาชีพ", "กลุ่มสาระฯ ภาษาต่างประเทศ",
-    "กิจกรรมพัฒนาผู้เรียน", "กลุ่มงานบริหารวิชาการ", "กลุ่มงานบริหารงบประมาณและแผนงาน",
+    "กลุ่มสาระการเรียนรู้ภาษาไทย", "กลุ่มสาระการเรียนรู้คณิตศาสตร์", "กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี",
+    "กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม", "กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา",
+    "กลุ่มสาระการเรียนรู้ศิลปะ", "กลุ่มสาระการเรียนรู้การงานอาชีพ", "กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ",
+    "กิจกรรมพัฒนาผู้เรียน", "ฝ่ายบริหารสถานศึกษา", "กลุ่มงานบริหารวิชาการ", "กลุ่มงานบริหารงบประมาณและแผนงาน",
     "กลุ่มงานบริหารงานบุคคล", "กลุ่มงานบริหารทั่วไป", "กลุ่มงานกิจการนักเรียน"
 ];
 
@@ -142,7 +142,7 @@ function thai_date_short($date_str) {
 <body class="py-3">
 
 <div class="container-fluid px-4">
-    <!-- แถบหัวระบบ + ปุ่มจัดการหลังบ้าน + ปุ่มเขียนคำร้อง -->
+    <!-- แถบหัวระบบ + ปุ่มดำเนินการ -->
     <div class="header-panel d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex align-items-center gap-3">
             <img src="logo.png" alt="Logo" style="height: 52px;" onerror="this.src='https://placehold.co/52x52?text=YKR';">
@@ -151,7 +151,7 @@ function thai_date_short($date_str) {
                 <small class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</small>
             </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="admin.php" class="btn text-white fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2" style="background-color: #c94a29; border: none;">
                 <i class="bi bi-shield-lock-fill"></i> จัดการหลังบ้าน (เจ้าหน้าที่)
             </a>
@@ -161,7 +161,7 @@ function thai_date_short($date_str) {
         </div>
     </div>
 
-    <!-- แถบการ์ดสถิติ -->
+    <!-- แถบสถิติ -->
     <div class="row g-3 mb-4">
         <div class="col-md-4 col-sm-6">
             <div class="stat-card blue">
@@ -213,11 +213,23 @@ function thai_date_short($date_str) {
         </form>
     </div>
 
-    <!-- ตารางรายการคำร้อง -->
+    <!-- ตารางรายการคำร้อง + ปุ่มพิมพ์รายงานสรุปราชการ A4 แนวนอน -->
     <div class="main-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0">รายการคำร้องขอไปราชการ</h6>
-            <small class="text-muted">พบทั้งหมด <?php echo $filtered_count; ?> รายการ</small>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h6 class="fw-bold mb-0">รายการคำร้องขอไปราชการ</h6>
+                <small class="text-muted">พบทั้งหมด <?php echo $filtered_count; ?> รายการ</small>
+            </div>
+            <div class="d-flex gap-2">
+                <!-- ปุ่มส่งออกเป็น Excel/CSV -->
+                <a href="export_excel.php?<?php echo http_build_query($_GET); ?>" class="btn btn-sm btn-outline-success fw-bold px-3">
+                    <i class="bi bi-file-earmark-excel"></i> ส่งออก Excel (CSV)
+                </a>
+                <!-- ปุ่มเปิดหน้ารายงานราชการ A4 แนวนอน ตัวจริง -->
+                <a href="report_print.php?<?php echo http_build_query($_GET); ?>" target="_blank" class="btn btn-sm btn-primary fw-bold px-3 shadow-sm">
+                    <i class="bi bi-printer-fill"></i> พิมพ์รายงานสรุปราชการ (A4 แนวนอน)
+                </a>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -289,12 +301,3 @@ function thai_date_short($date_str) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-<!-- ปุ่มส่งออกเป็น Excel -->
-<a href="export_excel.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-success fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
-    <i class="bi bi-file-earmark-excel-fill"></i> ส่งออกเป็น Excel (CSV)
-</a>
-
-<!-- ปุ่มสั่งพิมพ์สรุปหน้ารายงาน -->
-<button onclick="window.print()" class="btn btn-outline-secondary fw-bold d-flex align-items-center gap-1 shadow-sm px-3 py-2">
-    <i class="bi bi-printer-fill"></i> พิมพ์รายงานสรุป
-</button>
