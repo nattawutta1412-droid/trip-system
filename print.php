@@ -41,7 +41,7 @@ function thai_date($date_str) {
 // 1. เลขที่หนังสือ
 $doc_number_display = !empty($trip['doc_number']) ? htmlspecialchars($trip['doc_number']) : '...................................................';
 
-// 2. กำหนดการวันเวลา (กรณีครึ่งวัน)
+// 2. กำหนดการวันเวลา
 $start_t = thai_date($trip['start_date'] ?? '');
 $end_t   = thai_date($trip['end_date'] ?? '');
 $half_time = trim($trip['half_day_time'] ?? '');
@@ -108,6 +108,16 @@ $ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มี�
 $group_name = !empty($trip['work_group']) ? $trip['work_group'] : 'กลุ่มงาน';
 $group_title = ($group_name === 'ฝ่ายบริหารสถานศึกษา') ? 'ผู้บริหารสถานศึกษา' : 'หัวหน้า' . $group_name;
 $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
+
+// ผู้มีอำนาจลงนาม (ผอ. หรือ รอง ผอ. รักษาการ)
+$sign_mode = $trip['sign_mode'] ?? 'director';
+if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
+    $sign_name_display = htmlspecialchars($trip['acting_name']);
+    $sign_role_display = "รองผู้อำนวยการ รักษาการในตำแหน่ง<br>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์";
+} else {
+    $sign_name_display = "ว่าที่ร้อยโทจักรเพชร์ พรมยศ";
+    $sign_role_display = "ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์";
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -249,7 +259,6 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
             line-height: 1.15;
         }
 
-        /* กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง */
         .admin-stamp-box {
             position: absolute;
             right: 20mm;
@@ -345,14 +354,14 @@ $head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการสถานศึกษา -->
+    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้มีอำนาจ (ผอ. หรือ รอง ผอ. รักษาการ) -->
     <div class="director-frame">
-        <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
+        <strong>คำสั่ง / การพิจารณา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
         <div style="text-align: center; margin-top: 3px;">
             ลงชื่อ......................................................................<br>
-            ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
-            ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
+            ( <?php echo $sign_name_display; ?> )<br>
+            <?php echo $sign_role_display; ?><br>
             วันที่ ........ เดือน ........................ พ.ศ. ............
         </div>
     </div>
