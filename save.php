@@ -2,7 +2,7 @@
 require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 1. ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติทันทีหากยังไม่มีในฐานข้อมูล
+    // 1. ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติ
     $required_columns = [
         'work_group' => 'VARCHAR(150) NULL',
         'head_group_name' => 'VARCHAR(255) NULL',
@@ -18,7 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 2. รับค่าจากฟอร์ม
+    // 2. ตรวจสอบและสร้างตารางเก็บผู้ร่วมเดินทางอัตโนมัติ
+    $create_participants_table = "CREATE TABLE IF NOT EXISTS trip_participants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        trip_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        position VARCHAR(255) NULL,
+        detail VARCHAR(255) NULL,
+        type VARCHAR(50) DEFAULT 'teacher',
+        INDEX (trip_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+    $conn->query($create_participants_table);
+
+    // 3. รับค่าจากฟอร์ม
     $doc_number            = $_POST['doc_number'] ?? '';
     $created_date          = $_POST['created_date'] ?? date('Y-m-d');
     $applicant_name        = $_POST['applicant_name'] ?? '';
@@ -35,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $end_date              = $_POST['end_date'] ?? '';
     $half_day_time         = trim($_POST['half_day_time'] ?? '');
 
-    // 3. จัดการข้อมูลค่าใช้จ่าย
+    // 4. จัดการข้อมูลค่าใช้จ่าย
     $expense_parts = [];
     if (!empty($_POST['expense_option_no'])) {
         $expense_parts[] = "ไม่ขอเบิกค่าใช้จ่าย";
@@ -48,14 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $expense_parts[] = "ขอเบิกเฉพาะค่าใช้จ่าย (" . $specific_items . ")";
     }
     
-    // 4. พาหนะ
+    // 5. พาหนะ
     $vehicle_type = "";
     if (!empty($_POST['expense_option_vehicle'])) {
         $vehicle_type = $_POST['vehicle_select'] ?? 'รถยนต์ส่วนตัว';
     }
     $vehicle_license_plate = $_POST['vehicle_license_plate'] ?? '';
 
-    // 5. อื่นๆ
+    // 6. อื่นๆ
     $expense_other = "";
     if (!empty($_POST['expense_option_other']) && !empty($_POST['expense_other'])) {
         $expense_other = trim($_POST['expense_other']);
@@ -65,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
     $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
 
-    // 6. ทำการบันทึกข้อมูล
+    // 7. บันทึกคำร้องหลัก
     $stmt = $conn->prepare("INSERT INTO official_trips 
         (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, expense_other) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -75,6 +87,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt->execute()) {
         $last_id = $conn->insert_id;
+
+        // 8. บันทึกรายชื่อผู้ร่วมเดินทางลงตาราง trip_participants
+        if (!empty($_POST['participants']) && is_array($_POST['participants'])) {
+            $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, detail, position, type) VALUES (?, ?, ?, ?, ?)");
+            foreach ($_POST['participants'] as $p) {
+                $p_name = trim($p['name'] ?? '');
+                $p_detail = trim($p['detail'] ?? '');
+                $p_type = $p['type'] ?? 'teacher';
+                if ($p_name !== '') {
+                    $p_stmt->bind_param("issss", $last_id, $p_name, $p_detail, $p_detail, $p_type);
+                    $p_stmt->execute();
+                }
+            }
+        }
+
         header("Location: print.php?id=" . $last_id);
         exit();
     } else {
