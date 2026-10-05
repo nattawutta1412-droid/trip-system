@@ -51,7 +51,6 @@ if ($expense === 'no_expense' || $expense === 'ไม่ขอเบิกงบ
     $expense_text = !empty($expense) ? 'โดย' . htmlspecialchars($expense) : 'โดยไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ';
 }
 
-// คำนำหน้านามและตำแหน่งวิทยฐานะ
 $academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
 $ref_text = !empty($trip['ref_document']) ? 'ตามหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
 
@@ -63,15 +62,32 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 <head>
     <meta charset="UTF-8">
     <title>บันทึกข้อความขออนุมัติไปราชการ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <!-- ฝังเว็บฟอนต์ TH Sarabun New / TH Sarabun PSK -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
     <style>
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: local('TH Sarabun New'), local('THSarabunNew'),
+                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew-webfont.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: local('TH Sarabun New Bold'), local('THSarabunNew-Bold'),
+                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew_bold-webfont.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+        }
+
         body {
-            font-family: 'Sarabun', sans-serif;
+            font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
             font-size: 16pt;
-            line-height: 1.6;
+            line-height: 1.25;
             background: #f0f0f0;
             margin: 0;
             padding: 20px;
+            color: #000;
         }
         .page {
             width: 210mm;
@@ -86,53 +102,62 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         .header-wrap {
             position: relative;
             text-align: center;
-            height: 85px;
-            margin-bottom: 10px;
+            height: 75px;
+            margin-bottom: 5px;
         }
         .garuda {
             position: absolute;
             left: 0;
             top: 0;
-            width: 65px;
+            width: 60px;
             height: auto;
         }
         .title-doc {
-            font-size: 26pt;
+            font-size: 29pt;
             font-weight: bold;
-            line-height: 75px;
+            line-height: 70px;
+            letter-spacing: 0.5px;
         }
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            font-size: 16pt;
         }
         .meta-table td {
             vertical-align: top;
-            padding: 2px 0;
+            padding: 1px 0;
+        }
+        .line-divider {
+            border: 0;
+            border-top: 1.5px solid #000;
+            margin: 4px 0 12px 0;
         }
         .prose-content {
             text-align: justify;
             text-indent: 2.5cm;
-            margin-top: 14px;
+            margin-top: 10px;
+            font-size: 16pt;
         }
         .sign-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 30px;
+            margin-top: 25px;
+            font-size: 16pt;
         }
         .sign-table td {
             width: 50%;
             vertical-align: top;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.5;
         }
         .director-box {
-            margin-top: 25px;
+            margin-top: 20px;
             margin-left: auto;
             width: 58%;
             border: 1px solid #000;
-            padding: 12px 18px;
-            line-height: 1.6;
+            padding: 10px 16px;
+            line-height: 1.5;
+            font-size: 16pt;
         }
         @media print {
             body { background: transparent; padding: 0; }
@@ -152,7 +177,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 </div>
 
 <div class="page">
-    <!-- หัวหนังสือราชการ + ครุฑ -->
+    <!-- ครุฑและหัวเรื่องบันทึกข้อความ -->
     <div class="header-wrap">
         <img src="garuda.png" alt="ครุฑ" class="garuda" onerror="this.style.display='none'">
         <span class="title-doc">บันทึกข้อความ</span>
@@ -163,29 +188,28 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ โทร. 0-7528-1288</td>
         </tr>
         <tr>
-            <td style="width: 50%;"><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number'] ?? ''); ?></td>
-            <td style="width: 50%;"><strong>วันที่:</strong> <?php echo thai_date($trip['created_date'] ?? ''); ?></td>
+            <td style="width: 55%;"><strong>ที่:</strong> <?php echo htmlspecialchars($trip['doc_number'] ?? ''); ?></td>
+            <td style="width: 45%;"><strong>วันที่:</strong> <?php echo thai_date($trip['created_date'] ?? ''); ?></td>
         </tr>
         <tr>
             <td colspan="2"><strong>เรื่อง:</strong> ขออนุมัติเดินทางไปราชการ</td>
         </tr>
     </table>
     
-    <hr style="border: 0; border-top: 1.5px solid #000; margin: 4px 0 14px 0;">
+    <div class="line-divider"></div>
 
-    <div><strong>เรียน:</strong> ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
+    <div style="font-size: 16pt;"><strong>เรียน:</strong> ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- เนื้อความร้อยแก้วต่อเนื่อง ย่อหน้าที่ 1: ความประสงค์และภารกิจ -->
+    <!-- เนื้อความร้อยแก้ว -->
     <div class="prose-content">
         <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
 
-    <!-- ย่อหน้าที่ 2: ลงท้าย -->
     <div class="prose-content">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ส่วนลายเซ็น ซ้าย-ขวา -->
+    <!-- ช่องลายเซ็นหัวหน้าฝ่าย และ ผู้ขออนุมัติ -->
     <table class="sign-table">
         <tr>
             <!-- ฝั่งซ้าย: ความเห็นและลายเซ็นหัวหน้าฝ่าย -->
