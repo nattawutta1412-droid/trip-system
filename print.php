@@ -98,7 +98,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             width: 210mm;
             height: 297mm;
             max-height: 297mm;
-            padding: 12mm 20mm 12mm 25mm; /* ตั้งระยะตามระเบียบงานสารบรรณ พอดีในหน้าเดียว */
+            padding: 12mm 20mm 12mm 25mm;
             margin: 0 auto;
             background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
@@ -114,7 +114,6 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             text-align: center;
         }
 
-        /* ตราครุฑ 1.5 ซม. ด้านซ้ายบน */
         .garuda-img {
             position: absolute;
             left: 0;
@@ -163,7 +162,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             margin-top: 2px;
         }
 
-        /* 1. ลายเซ็นผู้ขออนุมัติ (เยื้องขวา) */
+        /* 1. ลายเซ็นผู้ขออนุมัติ */
         .applicant-sign-wrap {
             margin-top: 8px;
             margin-left: auto;
@@ -189,7 +188,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
             margin-top: 3px;
         }
 
-        /* 3. คำสั่งและคำอนุมัติของผู้อำนวยการ (ล่างสุด) */
+        /* 3. คำสั่งและการอนุมัติของผู้อำนวยการ */
         .director-frame {
             margin-top: 6px;
             border: 1px solid #000;
@@ -219,7 +218,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 <body>
 
 <div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
-    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️ สั่งพิมพ์เอกสาร (Print)</button>
+    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨️️ สั่งพิมพ์เอกสาร (Print)</button>
     <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
     <?php if (!empty($trip['approved_file'])): ?>
         <a href="uploads/<?php echo htmlspecialchars($trip['approved_file']); ?>" target="_blank" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #198754; color: white; border-radius: 4px; display: inline-block;">📥 ดาวน์โหลดคำสั่งที่อนุมัติแล้ว</a>
@@ -227,9 +226,9 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 </div>
 
 <div class="sheet">
-    <!-- ส่วนหัวหนังสือ + ตราครุฑแท้มาตรฐานสำนักนายกรัฐมนตรี -->
+    <!-- ตราครุฑทางการฝังตรง ไม่หลุด ไม่ต้องโหลดจากเน็ต -->
     <div class="header-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Garuda_Emblem_of_Thailand.svg/300px-Garuda_Emblem_of_Thailand.svg.png" alt="ตราครุฑ" class="garuda-img" crossorigin="anonymous">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'><path fill='%23B22222' d='M500,75 C490,140,440,190,410,230 C380,180,330,150,290,170 C300,210,340,250,370,270 C300,260,230,270,180,310 C210,340,270,350,330,340 C270,365,210,400,165,455 C220,470,280,455,335,425 C280,470,225,520,185,585 C240,590,300,560,350,515 C295,570,245,630,210,705 C275,690,335,640,380,580 C365,650,355,720,360,795 C410,780,450,735,475,680 C480,740,490,800,500,865 C510,800,520,740,525,680 C550,735,590,780,640,795 C645,720,635,650,620,580 C665,640,725,690,790,705 C755,630,705,570,650,515 C700,560,760,590,815,585 C775,520,720,470,665,425 C720,455,780,470,835,455 C790,400,730,365,670,340 C730,350,790,340,820,310 C770,270,700,260,630,270 C660,250,700,210,710,170 C670,150,620,180,590,230 C560,190,510,140,500,75 Z'/><circle cx='500' cy='310' r='55' fill='%23DAA520'/><path fill='%23DAA520' d='M470,365 L530,365 L545,510 L455,510 Z'/></svg>" alt="ตราครุฑ" class="garuda-img">
         <span class="doc-title">บันทึกข้อความ</span>
     </div>
     
@@ -250,7 +249,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
 
     <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
 
-    <!-- เนื้อความร้อยแก้ว -->
+    <!-- เนื้อความร้อยแก้วสมบูรณ์ -->
     <div class="prose-body">
         <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> มีกำหนดการตั้งแต่วันที่ <?php echo thai_date($trip['start_date'] ?? ''); ?> ถึงวันที่ <?php echo thai_date($trip['end_date'] ?? ''); ?> ในการนี้จะเดินทางโดย<?php echo htmlspecialchars($vehicle_text) . $license_text; ?> <?php echo $expense_text; ?>
     </div>
@@ -278,7 +277,7 @@ $head_name_display = !empty($trip['head_name']) ? $trip['head_name'] : '........
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการ (ล่างสุด) -->
+    <!-- ลำดับที่ 3: คำสั่งและการอนุมัติของผู้อำนวยการ -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณาของผู้อำนวยการสถานศึกษา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
