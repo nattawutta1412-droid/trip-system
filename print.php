@@ -159,7 +159,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         .sheet {
             width: 210mm;
             min-height: 297mm;
-            /* ขอบบน 1.5 ซม. (15mm), ขวา 2 ซม. (20mm), ล่าง 1.2 ซม. (12mm), ซ้าย 2.5 ซม. (25mm) */
+            /* เว้นขอบบน 1.5 ซม. (15mm) ขอบขวา 20mm ขอบล่าง 12mm ขอบซ้าย 25mm */
             padding: 15mm 20mm 12mm 25mm;
             margin: 0 auto 20px auto;
             background: #ffffff;
@@ -184,7 +184,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
             position: absolute;
             left: 0;
             top: -2px;
-            height: 55px; /* ขนาดตราครุฑมาตรฐาน */
+            height: 55px;
             width: auto;
         }
 
@@ -238,7 +238,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         }
 
         .opinion-section {
-            margin-top: 8px;
+            margin-top: 10px;
             padding-top: 0;
             font-size: 15pt;
             line-height: 1.15;
@@ -248,14 +248,14 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
             margin-left: auto;
             width: 52%;
             text-align: center;
-            margin-top: 12px; /* เคาะลงมา 1 บรรทัดสำหรับลงลายมือชื่อ */
+            margin-top: 14px; /* เว้นระยะลงลายเซ็นกว้างโปร่ง */
             line-height: 1.15;
         }
 
         .director-frame {
-            margin-top: 8px;
+            margin-top: 10px;
             border: 1px solid #000;
-            padding: 5px 12px;
+            padding: 6px 12px;
             font-size: 15pt;
             line-height: 1.15;
         }
@@ -297,7 +297,7 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
                 margin: 0; 
                 width: 210mm; 
                 min-height: 297mm; 
-                padding: 15mm 20mm 12mm 25mm; /* บังคับขอบบน 1.5 ซม. ตอนพิมพ์ */
+                padding: 15mm 20mm 12mm 25mm; 
                 page-break-after: always; 
             }
             .sheet:last-child { page-break-after: auto; }
@@ -351,37 +351,34 @@ if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
         ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
     </div>
 
-    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน -->
+    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน (ไม่มีบรรทัดวันที่) -->
     <div class="opinion-section">
         <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong> ...........................................................................................................................<br>
         <div class="sign-sub-wrap">
             ลงชื่อ......................................................................<br>
             ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
-            <?php echo htmlspecialchars($group_title); ?><br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
+            <?php echo htmlspecialchars($group_title); ?>
         </div>
     </div>
 
-    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล -->
+    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (ไม่มีบรรทัดวันที่) -->
     <div class="opinion-section">
         <strong>ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล:</strong> ..........................................................................................................<br>
         <div class="sign-sub-wrap">
             ลงชื่อ......................................................................<br>
             ( นางโรสนาร์นีย์ บุญณะ )<br>
-            รองผู้อำนวยการกลุ่มบริหารงานบุคคล<br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
+            รองผู้อำนวยการกลุ่มบริหารงานบุคคล
         </div>
     </div>
 
-    <!-- ลำดับที่ 4: คำสั่งและการอนุมัติของผู้อำนวยการโรงเรียน -->
+    <!-- ลำดับที่ 4: คำสั่งและการอนุมัติของผู้อำนวยการโรงเรียน (ไม่มีบรรทัดวันที่) -->
     <div class="director-frame">
         <strong>คำสั่ง / การพิจารณา:</strong><br>
         [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 10px;">
+        <div style="text-align: center; margin-top: 14px;">
             ลงชื่อ......................................................................<br>
             ( <?php echo $sign_name_display; ?> )<br>
-            <?php echo $sign_role_display; ?><br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
+            <?php echo $sign_role_display; ?>
         </div>
     </div>
 
