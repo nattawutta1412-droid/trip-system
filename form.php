@@ -3,160 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แบบคำร้องขออนุญาตไปราชการ</title>
+    <title>แบบขออนุมัติเดินทางไปราชการ - โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
-        .card-custom { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
+        .form-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 30px; margin-top: 25px; margin-bottom: 40px; }
+        .section-header { border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 20px; margin-top: 15px; font-weight: 600; color: #0d6efd; }
+        .participant-item { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     </style>
 </head>
-<body class="py-4">
-<div class="container">
-    <div class="card card-custom p-4 mx-auto" style="max-width: 900px;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="text-primary mb-0">แบบคำร้องขออนุญาตไปราชการ</h3>
-            <a href="history.php" class="btn btn-outline-secondary">ดูประวัติคำร้อง</a>
+<body>
+
+<div class="container" style="max-width: 900px;">
+    <div class="form-card">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark">แบบขออนุมัติเดินทางไปราชการ</h3>
+            <p class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</p>
         </div>
-        
+
         <form action="save.php" method="POST">
-            <h5 class="text-secondary border-bottom pb-2 mb-3">1. ข้อมูลทั่วไปและผู้ขออนุญาต</h5>
-            <div class="row g-3 mb-3">
+            <!-- 1. ข้อมูลบันทึกข้อความ -->
+            <div class="section-header">1. ข้อมูลบันทึกข้อความ</div>
+            <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">วันที่ยื่นคำร้อง <span class="text-danger">*</span></label>
-                    <input type="date" name="created_date" class="form-control" required value="<?php echo date('Y-m-d'); ?>">
+                    <label class="form-label">เลขที่หนังสือ / ที่:</label>
+                    <input type="text" name="doc_number" class="form-control" placeholder="เช่น ศธ 04xxx/..." required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">สังกัด / กลุ่มงาน / กลุ่มสาระฯ <span class="text-danger">*</span></label>
-                    <input type="text" name="department" class="form-control" required placeholder="เช่น กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">ชื่อ - สกุล ผู้ขออนุญาต <span class="text-danger">*</span></label>
-                    <input type="text" name="applicant_name" class="form-control" required placeholder="นาย/นาง/นางสาว...">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">ตำแหน่ง <span class="text-danger">*</span></label>
-                    <input type="text" name="position" class="form-control" required placeholder="เช่น ครู">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">วิทยฐานะ</label>
-                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ (ถ้ามี)">
+                    <label class="form-label">ลงวันที่:</label>
+                    <input type="date" name="created_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
                 </div>
             </div>
 
-            <h5 class="text-secondary border-bottom pb-2 mb-3 mt-4">2. รายละเอียดการไปราชการ</h5>
-            <div class="mb-3">
-                <label class="form-label">มีความประสงค์จะขออนุญาตไปราชการ เรื่อง <span class="text-danger">*</span></label>
-                <input type="text" name="subject" class="form-control" required placeholder="ระบุภารกิจหรือหัวข้องาน">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">สถานที่ ณ <span class="text-danger">*</span></label>
-                <input type="text" name="destination" class="form-control" required placeholder="ระบุสถานที่ปลายทางและจังหวัด">
-            </div>
-            <div class="row g-3 mb-3">
+            <!-- 2. ข้อมูลผู้ขออนุมัติ -->
+            <div class="section-header">2. ข้อมูลผู้ขออนุมัติ</div>
+            <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">ตามหนังสือเลขที่ / คำสั่งที่</label>
-                    <input type="text" name="ref_document" class="form-control" placeholder="ระบุเลขที่หนังสือ (ถ้ามี)">
+                    <label class="form-label">ชื่อ-สกุล ผู้ขออนุมัติ:</label>
+                    <input type="text" name="applicant_name" class="form-control" placeholder="เช่น นายสมศักดิ์ รักเรียน" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">ลงวันที่ (ลว.)</label>
+                    <label class="form-label">ตำแหน่ง:</label>
+                    <input type="text" name="position" class="form-control" placeholder="เช่น ครู, ครูผู้ช่วย" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">วิทยฐานะ (ถ้ามี):</label>
+                    <input type="text" name="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">กลุ่มสาระการเรียนรู้ / งานสังกัดของผู้ขอ:</label>
+                    <input type="text" name="department" class="form-control" placeholder="เช่น กลุ่มสาระฯ ภาษาต่างประเทศ" required>
+                </div>
+
+                <!-- ส่วนเลือกกลุ่มงาน และระบุชื่อหัวหน้ากลุ่มงาน -->
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded border border-success-subtle">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-success">สังกัดกลุ่มงาน:</label>
+                                <select name="work_group" class="form-select" required>
+                                    <option value="">-- เลือกกลุ่มงาน --</option>
+                                    <option value="กลุ่มงานบริหารวิชาการ">กลุ่มงานบริหารวิชาการ</option>
+                                    <option value="กลุ่มงานบริหารงบประมาณและแผนงาน">กลุ่มงานบริหารงบประมาณและแผนงาน</option>
+                                    <option value="กลุ่มงานบริหารงานบุคคล">กลุ่มงานบริหารงานบุคคล</option>
+                                    <option value="กลุ่มงานบริหารทั่วไป">กลุ่มงานบริหารทั่วไป</option>
+                                    <option value="กลุ่มงานกิจการนักเรียน">กลุ่มงานกิจการนักเรียน</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-success">ชื่อ-สกุล หัวหน้ากลุ่มงาน:</label>
+                                <input type="text" name="head_group_name" class="form-control" placeholder="ระบุชื่อ-สกุล หัวหน้ากลุ่มงาน" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ส่วนเลือกฝ่าย และระบุชื่อหัวหน้าฝ่าย -->
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded border border-primary-subtle">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-primary">ฝ่ายต้นสังกัดที่เสนอ:</label>
+                                <select name="head_department" class="form-select" required>
+                                    <option value="">-- เลือกฝ่าย --</option>
+                                    <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
+                                    <option value="ฝ่ายบริหารงบประมาณและแผนงาน">ฝ่ายบริหารงบประมาณและแผนงาน</option>
+                                    <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
+                                    <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-primary">ชื่อ-สกุล หัวหน้าฝ่าย:</label>
+                                <input type="text" name="head_name" class="form-control" placeholder="ระบุชื่อ-สกุล หัวหน้าฝ่าย" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. รายละเอียดการเดินทาง -->
+            <div class="section-header">3. รายละเอียดการเดินทางไปราชการ</div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">ไปราชการเพื่อ (วัตถุประสงค์):</label>
+                    <textarea name="subject" class="form-control" rows="2" placeholder="ระบุภารกิจ เช่น เข้าร่วมการประชุมเชิงปฏิบัติการ..." required></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">สถานที่ปลายทาง:</label>
+                    <input type="text" name="destination" class="form-control" placeholder="เช่น โรงแรมไดมอนด์พลาซ่า อำเภอเมือง จังหวัดสุราษฎร์ธานี" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">หนังสืออ้างอิง (ถ้ามี):</label>
+                    <input type="text" name="ref_document" class="form-control" placeholder="เช่น หนังสือ สพม.ตรัง กระบี่ ที่...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ลงวันที่ของหนังสืออ้างอิง:</label>
                     <input type="date" name="ref_date" class="form-control">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">ตั้งแต่วันที่ <span class="text-danger">*</span></label>
+                <div class="col-md-6">
+                    <label class="form-label">ตั้งแต่วันที่:</label>
                     <input type="date" name="start_date" class="form-control" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">ถึงวันที่ <span class="text-danger">*</span></label>
+                <div class="col-md-6">
+                    <label class="form-label">ถึงวันที่:</label>
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">กรณีครึ่งวัน เริ่มตั้งแต่เวลา</label>
-                    <input type="text" name="half_day_time" class="form-control" placeholder="เช่น 08.30 - 12.00 น.">
+                <div class="col-md-6">
+                    <label class="form-label">เวลาเดินทาง (กรณีครึ่งวัน / ไป-กลับ):</label>
+                    <input type="text" name="half_day_time" class="form-control" placeholder="เช่น ช่วงเช้า, เวลา 08.30 - 12.00 น.">
                 </div>
-            </div>
-
-            <h5 class="text-secondary border-bottom pb-2 mb-3 mt-4">3. ค่าใช้จ่ายและยานพาหนะ</h5>
-            <div class="mb-3">
-                <label class="form-label fw-bold">การเบิกค่าใช้จ่าย:</label>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="expense_type" value="ไม่ขอเบิกค่าใช้จ่าย" id="exp1" checked>
-                    <label class="form-check-label" for="exp1">ไม่ขอเบิกค่าใช้จ่าย</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="expense_type" value="ขอเบิกค่าใช้จ่ายตามสิทธิ" id="exp2">
-                    <label class="form-check-label" for="exp2">ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือนอกงบประมาณของสถานศึกษา</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="expense_type" value="ขอเบิกเฉพาะ" id="exp3">
-                    <label class="form-check-label" for="exp3">ขอเบิกเฉพาะ</label>
-                </div>
-                <input type="text" name="expense_specific_details" class="form-control mt-2" placeholder="กรณีเลือกขอเบิกเฉพาะ ระบุ เช่น ค่าพาหนะเดินทาง, ค่าน้ำมัน, ค่าเบี้ยเลี้ยง">
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">ยานพาหนะเดินทาง</label>
-                    <select name="vehicle_type" class="form-select" required>
-                        <option value="รถยนต์ส่วนตัว">รถยนต์ส่วนตัว</option>
-                        <option value="รถยนต์ราชการ">รถยนต์ราชการ</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
+                <div class="col-md-6">
+                    <label class="form-label">การเบิกค่าใช้จ่าย:</label>
+                    <select name="expense_type" class="form-select" required>
+                        <option value="ไม่ขอเบิกงบประมาณ">ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ</option>
+                        <option value="ขอเบิกจากต้นสังกัด">ขอเบิกค่าใช้จ่ายจากโรงเรียน</option>
+                        <option value="ขอเบิกจากผู้จัด">ขอเบิกค่าใช้จ่ายจากหน่วยงานผู้จัด</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">หมายเลขทะเบียน</label>
+            </div>
+
+            <!-- 4. ยานพาหนะ -->
+            <div class="section-header">4. พาหนะที่ใช้เดินทาง</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">ยานพาหนะ:</label>
+                    <select name="vehicle_type" class="form-select" required>
+                        <option value="รถยนต์ส่วนบุคคล">รถยนต์ส่วนบุคคล</option>
+                        <option value="รถยนต์ส่วนกลางของสถานศึกษา">รถยนต์ส่วนกลางของโรงเรียน</option>
+                        <option value="รถโดยสารประจำทาง">รถโดยสารประจำทาง</option>
+                        <option value="เครื่องบินโดยสาร">เครื่องบินโดยสาร</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">หมายเลขทะเบียนรถ (ถ้ามี):</label>
                     <input type="text" name="vehicle_license_plate" class="form-control" placeholder="เช่น กข 1234 ตรัง">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">พนักงานขับรถ / ระบุอื่นๆ</label>
-                    <input type="text" name="driver_name" class="form-control" placeholder="ระบุชื่อพนักงานขับรถ (ถ้ามี)">
-                </div>
             </div>
 
-            <h5 class="text-secondary border-bottom pb-2 mb-3 mt-4">4. สิ่งที่แนบมาด้วย: รายชื่อผู้ร่วมเดินทาง (ถ้ามี)</h5>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">รายชื่อครูร่วมเดินทาง</label>
-                <div id="teacher_list">
-                    <div class="row g-2 mb-2">
-                        <div class="col-6"><input type="text" name="teachers[]" class="form-control" placeholder="ชื่อ-สกุล ครู"></div>
-                        <div class="col-6"><input type="text" name="teacher_details[]" class="form-control" placeholder="ตำแหน่ง / วิทยฐานะ"></div>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTeacherRow()">+ เพิ่มครู</button>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold">รายชื่อนักเรียนร่วมเดินทาง</label>
-                <div id="student_list">
-                    <div class="row g-2 mb-2">
-                        <div class="col-6"><input type="text" name="students[]" class="form-control" placeholder="ชื่อ-สกุล นักเรียน"></div>
-                        <div class="col-6"><input type="text" name="student_details[]" class="form-control" placeholder="ระดับชั้น เช่น ม.3/1"></div>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addStudentRow()">+ เพิ่มนักเรียน</button>
-            </div>
-
-            <div class="text-center pt-3">
-                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">บันทึกคำร้อง</button>
+            <div class="mt-4 pt-3 border-top text-center">
+                <button type="submit" class="btn btn-primary px-5 py-2 fs-5">บันทึกข้อมูลและสร้างบันทึกข้อความ</button>
+                <a href="index.php" class="btn btn-secondary px-4 py-2 fs-5 ms-2">ยกเลิก</a>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-function addTeacherRow() {
-    const div = document.createElement('div');
-    div.className = 'row g-2 mb-2';
-    div.innerHTML = '<div class="col-6"><input type="text" name="teachers[]" class="form-control" placeholder="ชื่อ-สกุล ครู"></div><div class="col-6"><input type="text" name="teacher_details[]" class="form-control" placeholder="ตำแหน่ง / วิทยฐานะ"></div>';
-    document.getElementById('teacher_list').appendChild(div);
-}
-function addStudentRow() {
-    const div = document.createElement('div');
-    div.className = 'row g-2 mb-2';
-    div.innerHTML = '<div class="col-6"><input type="text" name="students[]" class="form-control" placeholder="ชื่อ-สกุล นักเรียน"></div><div class="col-6"><input type="text" name="student_details[]" class="form-control" placeholder="ระดับชั้น เช่น ม.3/1"></div>';
-    document.getElementById('student_list').appendChild(div);
-}
-</script>
 </body>
 </html>
