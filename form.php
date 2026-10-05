@@ -107,9 +107,30 @@
                     <label class="form-label">ถึงวันที่:</label>
                     <input type="date" name="end_date" class="form-control" required>
                 </div>
+
+                <!-- ส่วนกรณีไปครึ่งวัน / ระบุเวลา -->
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded border">
+                        <label class="form-label fw-bold text-secondary">ลักษณะช่วงเวลาการเดินทาง:</label>
+                        <div class="d-flex flex-wrap gap-4 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="time_mode" id="tm_full" value="full" checked onchange="toggleHalfDay()">
+                                <label class="form-check-label" for="tm_full">เต็มวัน</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="time_mode" id="tm_half" value="half" onchange="toggleHalfDay()">
+                                <label class="form-check-label" for="tm_half">กรณีครึ่งวัน / ไป-กลับเฉพาะช่วงเวลา</label>
+                            </div>
+                        </div>
+                        <div id="half_day_box" style="display: none;">
+                            <label class="form-label small text-muted">ระบุช่วงเวลา (กรณีครึ่งวัน):</label>
+                            <input type="text" name="half_day_time" id="half_day_time" class="form-control form-control-sm" placeholder="เช่น ช่วงเช้า (เวลา 08.30 - 12.00 น.) หรือ ช่วงบ่าย (เวลา 13.00 - 16.30 น.)">
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- 4. รายละเอียดการเบิกจ่ายและการเดินทาง (ตรงตามแม่แบบ) -->
+            <!-- 4. รายละเอียดการเบิกจ่ายและการเดินทาง -->
             <div class="section-header">4. รายละเอียดค่าใช้จ่ายและยานพาหนะ</div>
             <div class="expense-box">
                 <div class="fw-bold mb-2">โดยข้าพเจ้า:</div>
@@ -206,6 +227,20 @@
         </form>
     </div>
 </div>
+
+<script>
+function toggleHalfDay() {
+    const isHalf = document.getElementById('tm_half').checked;
+    const box = document.getElementById('half_day_box');
+    const input = document.getElementById('half_day_time');
+    if (isHalf) {
+        box.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+        input.value = '';
+    }
+}
+</script>
 
 </body>
 </html>
