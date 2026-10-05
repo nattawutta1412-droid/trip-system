@@ -6,6 +6,25 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 require_once 'config.php';
 
+// 1. ตรวจสอบและสร้างคอลัมน์ที่จำเป็นใน official_trips อัตโนมัติหากยังไม่มี
+$required_columns = [
+    'sign_mode' => "VARCHAR(50) DEFAULT 'director'",
+    'acting_name' => "VARCHAR(255) NULL",
+    'driver_name' => "VARCHAR(255) NULL",
+    'status' => "VARCHAR(50) DEFAULT 'ปกติ'",
+    'cancel_reason' => "TEXT NULL",
+    'half_day_time' => "VARCHAR(100) NULL",
+    'work_group' => "VARCHAR(150) NULL",
+    'head_group_name' => "VARCHAR(255) NULL"
+];
+
+foreach ($required_columns as $col => $def) {
+    $check = $conn->query("SHOW COLUMNS FROM official_trips LIKE '{$col}'");
+    if ($check && $check->num_rows == 0) {
+        $conn->query("ALTER TABLE official_trips ADD COLUMN {$col} {$def}");
+    }
+}
+
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($id <= 0) {
     header("Location: admin.php");
@@ -15,7 +34,7 @@ if ($id <= 0) {
 $message = "";
 $message_type = "success";
 
-// เมื่อกดบันทึกการแก้ไข
+// 2. เมื่อกดบันทึกการแก้ไข
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $doc_number        = trim($_POST['doc_number'] ?? '');
     $applicant_name    = trim($_POST['applicant_name'] ?? '');
@@ -63,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ดึงข้อมูลเดิมมาแสดง
+// 3. ดึงข้อมูลเดิมมาแสดง
 $stmt = $conn->prepare("SELECT * FROM official_trips WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -94,7 +113,7 @@ if (!$trip) {
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="fw-bold mb-0">แก้ไขข้อมูลคำร้องไปราชการ #<?php echo $id; ?></h4>
-            <small class="text-muted">ผู้ขออนุมัติ: <?php echo htmlspecialchars($trip['applicant_name']); ?></small>
+            <small class="text-muted">ผู้ขออนุมัติ: <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?></small>
         </div>
         <div class="d-flex gap-2">
             <a href="print.php?id=<?php echo $id; ?>" target="_blank" class="btn btn-outline-primary btn-sm">
