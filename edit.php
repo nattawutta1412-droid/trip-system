@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 require_once 'config.php';
 
-// 1. ตรวจสอบและสร้างคอลัมน์ที่จำเป็นใน official_trips อัตโนมัติหากยังไม่มี
+// ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติ
 $required_columns = [
     'sign_mode' => "VARCHAR(50) DEFAULT 'director'",
     'acting_name' => "VARCHAR(255) NULL",
@@ -34,7 +34,7 @@ if ($id <= 0) {
 $message = "";
 $message_type = "success";
 
-// 2. เมื่อกดบันทึกการแก้ไข
+// เมื่อกดบันทึกการแก้ไข
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $doc_number        = trim($_POST['doc_number'] ?? '');
     $applicant_name    = trim($_POST['applicant_name'] ?? '');
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 3. ดึงข้อมูลเดิมมาแสดง
+// ดึงข้อมูลเดิม
 $stmt = $conn->prepare("SELECT * FROM official_trips WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -164,12 +164,48 @@ if (!$trip) {
                     <input type="text" name="academic_standing" class="form-control" value="<?php echo htmlspecialchars($trip['academic_standing'] ?? ''); ?>" placeholder="เช่น ชำนาญการพิเศษ">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label small fw-bold">กลุ่มสาระการเรียนรู้ / สายงาน:</label>
-                    <input type="text" name="department" class="form-control" value="<?php echo htmlspecialchars($trip['department'] ?? ''); ?>" required>
+                    <label class="form-label small fw-bold">กลุ่มสาระการเรียนรู้ / กลุ่มงาน / สายงาน:</label>
+                    <select name="department" class="form-select" required>
+                        <?php $cur_dept = $trip['department'] ?? ''; ?>
+                        <option value="">-- เลือกกลุ่มสาระการเรียนรู้ / กลุ่มงาน / ฝ่าย --</option>
+                        <optgroup label="ผู้บริหารสถานศึกษา">
+                            <option value="ฝ่ายบริหารสถานศึกษา" <?php echo ($cur_dept === 'ฝ่ายบริหารสถานศึกษา') ? 'selected' : ''; ?>>ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
+                        </optgroup>
+                        <optgroup label="กลุ่มงานบริหาร (ฝ่าย/งาน)">
+                            <option value="กลุ่มงานบริหารวิชาการ" <?php echo ($cur_dept === 'กลุ่มงานบริหารวิชาการ') ? 'selected' : ''; ?>>กลุ่มงานบริหารวิชาการ</option>
+                            <option value="กลุ่มงานบริหารงบประมาณและแผนงาน" <?php echo ($cur_dept === 'กลุ่มงานบริหารงบประมาณและแผนงาน') ? 'selected' : ''; ?>>กลุ่มงานบริหารงบประมาณและแผนงาน</option>
+                            <option value="กลุ่มงานบริหารงานบุคคล" <?php echo ($cur_dept === 'กลุ่มงานบริหารงานบุคคล') ? 'selected' : ''; ?>>กลุ่มงานบริหารงานบุคคล</option>
+                            <option value="กลุ่มงานบริหารทั่วไป" <?php echo ($cur_dept === 'กลุ่มงานบริหารทั่วไป') ? 'selected' : ''; ?>>กลุ่มงานบริหารทั่วไป</option>
+                            <option value="กลุ่มงานกิจการนักเรียน" <?php echo ($cur_dept === 'กลุ่มงานกิจการนักเรียน') ? 'selected' : ''; ?>>กลุ่มงานกิจการนักเรียน</option>
+                        </optgroup>
+                        <optgroup label="กลุ่มสาระการเรียนรู้">
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาไทย" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ภาษาไทย') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ภาษาไทย</option>
+                            <option value="กลุ่มสาระการเรียนรู้คณิตศาสตร์" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้คณิตศาสตร์') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้คณิตศาสตร์</option>
+                            <option value="กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                            <option value="กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา</option>
+                            <option value="กลุ่มสาระการเรียนรู้ศิลปะ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ศิลปะ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ศิลปะ</option>
+                            <option value="กลุ่มสาระการเรียนรู้การงานอาชีพ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้การงานอาชีพ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้การงานอาชีพ</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ</option>
+                            <option value="กิจกรรมพัฒนาผู้เรียน" <?php echo ($cur_dept === 'กิจกรรมพัฒนาผู้เรียน') ? 'selected' : ''; ?>>กิจกรรมพัฒนาผู้เรียน</option>
+                        </optgroup>
+                        <optgroup label="สายสนับสนุนและบุคลากร">
+                            <option value="บุคลากรทางการศึกษา/เจ้าหน้าที่" <?php echo ($cur_dept === 'บุคลากรทางการศึกษา/เจ้าหน้าที่') ? 'selected' : ''; ?>>บุคลากรทางการศึกษา / เจ้าหน้าที่</option>
+                        </optgroup>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small fw-bold">กลุ่มงานที่เสนอ:</label>
-                    <input type="text" name="work_group" class="form-control" value="<?php echo htmlspecialchars($trip['work_group'] ?? ''); ?>" required>
+                    <select name="work_group" class="form-select" required>
+                        <?php $cur_wg = $trip['work_group'] ?? ''; ?>
+                        <option value="">-- เลือกกลุ่มงาน --</option>
+                        <option value="ฝ่ายบริหารสถานศึกษา" <?php echo ($cur_wg === 'ฝ่ายบริหารสถานศึกษา') ? 'selected' : ''; ?>>ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
+                        <option value="กลุ่มงานบริหารวิชาการ" <?php echo ($cur_wg === 'กลุ่มงานบริหารวิชาการ') ? 'selected' : ''; ?>>กลุ่มงานบริหารวิชาการ</option>
+                        <option value="กลุ่มงานบริหารงบประมาณและแผนงาน" <?php echo ($cur_wg === 'กลุ่มงานบริหารงบประมาณและแผนงาน') ? 'selected' : ''; ?>>กลุ่มงานบริหารงบประมาณและแผนงาน</option>
+                        <option value="กลุ่มงานบริหารงานบุคคล" <?php echo ($cur_wg === 'กลุ่มงานบริหารงานบุคคล') ? 'selected' : ''; ?>>กลุ่มงานบริหารงานบุคคล</option>
+                        <option value="กลุ่มงานบริหารทั่วไป" <?php echo ($cur_wg === 'กลุ่มงานบริหารทั่วไป') ? 'selected' : ''; ?>>กลุ่มงานบริหารทั่วไป</option>
+                        <option value="กลุ่มงานกิจการนักเรียน" <?php echo ($cur_wg === 'กลุ่มงานกิจการนักเรียน') ? 'selected' : ''; ?>>กลุ่มงานกิจการนักเรียน</option>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small fw-bold">ชื่อหัวหน้ากลุ่มงาน:</label>
