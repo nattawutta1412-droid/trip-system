@@ -1,454 +1,287 @@
 <?php
+session_start();
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
 require_once 'config.php';
 
+// ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติ
+$required_columns = [
+    'sign_mode' => "VARCHAR(50) DEFAULT 'director'",
+    'acting_name' => "VARCHAR(255) NULL",
+    'driver_name' => "VARCHAR(255) NULL",
+    'status' => "VARCHAR(50) DEFAULT 'ปกติ'",
+    'cancel_reason' => "TEXT NULL",
+    'half_day_time' => "VARCHAR(100) NULL",
+    'work_group' => "VARCHAR(150) NULL",
+    'head_group_name' => "VARCHAR(255) NULL"
+];
+
+foreach ($required_columns as $col => $def) {
+    $check = $conn->query("SHOW COLUMNS FROM official_trips LIKE '{$col}'");
+    if ($check && $check->num_rows == 0) {
+        $conn->query("ALTER TABLE official_trips ADD COLUMN {$col} {$def}");
+    }
+}
+
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($id <= 0) {
+    header("Location: admin.php");
+    exit();
+}
+
+$message = "";
+$message_type = "success";
+
+// เมื่อกดบันทึกการแก้ไข
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $doc_number        = trim($_POST['doc_number'] ?? '');
+    $applicant_name    = trim($_POST['applicant_name'] ?? '');
+    $position          = trim($_POST['position'] ?? '');
+    $academic_standing = trim($_POST['academic_standing'] ?? '');
+    $department        = trim($_POST['department'] ?? '');
+    $work_group        = trim($_POST['work_group'] ?? '');
+    $head_group_name   = trim($_POST['head_group_name'] ?? '');
+    $subject           = trim($_POST['subject'] ?? '');
+    $destination       = trim($_POST['destination'] ?? '');
+    $ref_document      = trim($_POST['ref_document'] ?? '');
+    $ref_date          = !empty($_POST['ref_date']) ? $_POST['ref_date'] : NULL;
+    $start_date        = $_POST['start_date'] ?? '';
+    $end_date          = $_POST['end_date'] ?? '';
+    $half_day_time     = trim($_POST['half_day_time'] ?? '');
+    $vehicle_type      = $_POST['vehicle_type'] ?? '';
+    $vehicle_license_plate = trim($_POST['vehicle_license_plate'] ?? '');
+    $driver_name       = trim($_POST['driver_name'] ?? '');
+    $sign_mode         = $_POST['sign_mode'] ?? 'director';
+    $acting_name       = ($sign_mode === 'acting') ? trim($_POST['acting_name'] ?? '') : '';
+    $status            = $_POST['status'] ?? 'ปกติ';
+
+    $update_sql = "UPDATE official_trips SET 
+        doc_number = ?, applicant_name = ?, position = ?, academic_standing = ?, 
+        department = ?, work_group = ?, head_group_name = ?, subject = ?, 
+        destination = ?, ref_document = ?, ref_date = ?, start_date = ?, 
+        end_date = ?, half_day_time = ?, vehicle_type = ?, vehicle_license_plate = ?, 
+        driver_name = ?, sign_mode = ?, acting_name = ?, status = ?
+        WHERE id = ?";
+
+    $stmt = $conn->prepare($update_sql);
+    $stmt->bind_param("ssssssssssssssssssssi",
+        $doc_number, $applicant_name, $position, $academic_standing,
+        $department, $work_group, $head_group_name, $subject,
+        $destination, $ref_document, $ref_date, $start_date,
+        $end_date, $half_day_time, $vehicle_type, $vehicle_license_plate,
+        $driver_name, $sign_mode, $acting_name, $status, $id
+    );
+
+    if ($stmt->execute()) {
+        $message = "บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว";
+    } else {
+        $message = "เกิดข้อผิดพลาดในการบันทึก: " . $conn->error;
+        $message_type = "danger";
+    }
+}
+
+// ดึงข้อมูลเดิม
 $stmt = $conn->prepare("SELECT * FROM official_trips WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
-$result = $stmt->get_result();
-$trip = $result->fetch_assoc();
+$trip = $stmt->get_result()->fetch_assoc();
 
 if (!$trip) {
-    die("ไม่พบข้อมูลเอกสาร");
-}
-
-// ดึงข้อมูลผู้ร่วมเดินทาง
-$participants = [];
-$p_check = $conn->query("SHOW TABLES LIKE 'trip_participants'");
-if ($p_check && $p_check->num_rows > 0) {
-    $p_stmt = $conn->prepare("SELECT * FROM trip_participants WHERE trip_id = ? ORDER BY id ASC");
-    $p_stmt->bind_param("i", $id);
-    $p_stmt->execute();
-    $p_res = $p_stmt->get_result();
-    while ($p_row = $p_res->fetch_assoc()) {
-        $participants[] = $p_row;
-    }
-}
-
-function thai_date($date_str) {
-    if (!$date_str) return "";
-    $thai_months = [
-        "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-    ];
-    $time = strtotime($date_str);
-    $d = date('j', $time);
-    $m = $thai_months[intval(date('n', $time))];
-    $y = date('Y', $time) + 543;
-    return "$d $m $y";
-}
-
-// 1. เลขที่หนังสือ
-$doc_number_display = !empty($trip['doc_number']) ? htmlspecialchars($trip['doc_number']) : '...................................................';
-
-// 2. กำหนดการวันเวลา (กรณีครึ่งวัน)
-$start_t = thai_date($trip['start_date'] ?? '');
-$end_t   = thai_date($trip['end_date'] ?? '');
-$half_time = trim($trip['half_day_time'] ?? '');
-
-if (!empty($half_time)) {
-    if ($trip['start_date'] === $trip['end_date']) {
-        $schedule_prose = "ในวันที่ {$start_t} ({$half_time})";
-    } else {
-        $schedule_prose = "ตั้งแต่วันที่ {$start_t} ถึงวันที่ {$end_t} ({$half_time})";
-    }
-} else {
-    if ($trip['start_date'] === $trip['end_date']) {
-        $schedule_prose = "ในวันที่ {$start_t}";
-    } else {
-        $schedule_prose = "ตั้งแต่วันที่ {$start_t} ถึงวันที่ {$end_t}";
-    }
-}
-
-// 3. ยานพาหนะ และ พนักงานขับรถ
-$vehicle = $trip['vehicle_type'] ?? '';
-$plate = trim($trip['vehicle_license_plate'] ?? '');
-$driver = trim($trip['driver_name'] ?? '');
-$vehicle_prose = "";
-
-if (!empty($vehicle)) {
-    if ($vehicle === 'รถยนต์ราชการ') {
-        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ราชการ" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "") . (!empty($driver) ? " โดยมี {$driver} เป็นพนักงานขับรถ" : "");
-    } elseif ($vehicle === 'รถยนต์ส่วนตัว') {
-        $vehicle_prose = "เดินทางไปราชการด้วยรถยนต์ส่วนตัว" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "");
-    } else {
-        $vehicle_prose = "เดินทางโดย{$vehicle}" . (!empty($plate) ? " หมายเลขทะเบียน {$plate}" : "");
-    }
-}
-
-// 4. งบประมาณ
-$expense_raw = $trip['expense_type'] ?? '';
-$expense_prose_parts = [];
-
-if (strpos($expense_raw, "ไม่ขอเบิกค่าใช้จ่าย") !== false) {
-    $expense_prose_parts[] = "ไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการแต่อย่างใด";
-}
-if (strpos($expense_raw, "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณ") !== false) {
-    $expense_prose_parts[] = "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ";
-}
-if (strpos($expense_raw, "ขอเบิกเฉพาะค่าใช้จ่าย") !== false) {
-    $sub = trim($trip['expense_specific_details'] ?? '');
-    $expense_prose_parts[] = "ขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ " . (!empty($sub) ? $sub : "ตามที่เกิดขึ้นจริง");
-}
-if (!empty($trip['expense_other'])) {
-    $expense_prose_parts[] = "และ" . htmlspecialchars($trip['expense_other']);
-}
-
-$expense_final_prose = "";
-if (!empty($expense_prose_parts)) {
-    $expense_final_prose = "โดยข้าพเจ้า" . implode(" อีกทั้ง", $expense_prose_parts);
-} else {
-    $expense_final_prose = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายในการเดินทางไปราชการ";
-}
-
-$academic_text = !empty($trip['academic_standing']) ? ' วิทยฐานะ' . htmlspecialchars($trip['academic_standing']) : '';
-$ref_text = !empty($trip['ref_document']) ? 'ตามที่ได้มีหนังสือ ' . htmlspecialchars($trip['ref_document']) . (!empty($trip['ref_date']) ? ' ลงวันที่ ' . thai_date($trip['ref_date']) : '') . ' นั้น ' : '';
-
-// ข้อมูลหัวหน้ากลุ่มงาน
-$group_name = !empty($trip['work_group']) ? $trip['work_group'] : 'กลุ่มงาน';
-$group_title = ($group_name === 'ฝ่ายบริหารสถานศึกษา') ? 'ผู้บริหารสถานศึกษา' : 'หัวหน้า' . $group_name;
-$head_group_display = !empty($trip['head_group_name']) ? $trip['head_group_name'] : '.......................................................';
-
-// ผู้มีอำนาจลงนาม (ผอ. หรือ รอง ผอ. รักษาการ)
-$sign_mode = $trip['sign_mode'] ?? 'director';
-if ($sign_mode === 'acting' && !empty($trip['acting_name'])) {
-    $sign_name_display = htmlspecialchars($trip['acting_name']);
-    $sign_role_display = "รองผู้อำนวยการ รักษาการในตำแหน่ง<br>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์";
-} else {
-    $sign_name_display = "ว่าที่ร้อยโทจักรเพชร์ พรมยศ";
-    $sign_role_display = "ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์";
+    die("ไม่พบข้อมูลคำร้องที่ระบุ");
 }
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>บันทึกข้อความขออนุมัติไปราชการ</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แก้ไขข้อมูลคำร้อง #<?php echo $id; ?> - เจ้าหน้าที่งานบุคคล</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        @font-face {
-            font-family: 'TH Sarabun New';
-            src: local('TH Sarabun New'), local('THSarabunNew'),
-                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew-webfont.woff2') format('woff2');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'TH Sarabun New';
-            src: local('TH Sarabun New Bold'), local('THSarabunNew-Bold'),
-                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew_bold-webfont.woff2') format('woff2');
-            font-weight: bold;
-            font-style: normal;
-        }
-
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
-
-        body {
-            font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 15.5pt;
-            line-height: 1.15;
-            background-color: #525659;
-            margin: 0;
-            padding: 20px 0;
-            color: #000;
-        }
-
-        .sheet {
-            width: 210mm;
-            min-height: 297mm;
-            /* เว้นขอบบน 1.5 ซม. (15mm) ขอบขวา 20mm ขอบล่าง 12mm ขอบซ้าย 25mm */
-            padding: 15mm 20mm 12mm 25mm;
-            margin: 0 auto 20px auto;
-            background: #ffffff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            box-sizing: border-box;
-            position: relative;
-            page-break-after: always;
-        }
-
-        .sheet:last-child {
-            page-break-after: auto;
-        }
-
-        .header-box {
-            position: relative;
-            height: 55px;
-            margin-bottom: 4px;
-            text-align: center;
-        }
-
-        .garuda-img {
-            position: absolute;
-            left: 0;
-            top: -2px;
-            height: 55px;
-            width: auto;
-        }
-
-        .doc-title {
-            font-size: 29pt;
-            font-weight: bold;
-            line-height: 52px;
-            letter-spacing: 0.5px;
-        }
-
-        .meta-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 15.5pt;
-            line-height: 1.18;
-        }
-
-        .meta-table td {
-            vertical-align: bottom;
-            padding: 1px 0;
-        }
-
-        .divider-line {
-            border: 0;
-            border-top: 1.5px solid #000;
-            margin: 3px 0 6px 0;
-        }
-
-        .to-line {
-            font-size: 15.5pt;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-
-        .prose-body {
-            text-align: justify;
-            text-justify: inter-cluster;
-            text-indent: 2.2cm;
-            font-size: 15.5pt;
-            line-height: 1.18;
-            margin-top: 2px;
-        }
-
-        .applicant-sign-wrap {
-            margin-top: 6px;
-            margin-left: auto;
-            width: 52%;
-            text-align: center;
-            font-size: 15.5pt;
-            line-height: 1.15;
-        }
-
-        .opinion-section {
-            margin-top: 10px;
-            padding-top: 0;
-            font-size: 15pt;
-            line-height: 1.15;
-        }
-
-        .sign-sub-wrap {
-            margin-left: auto;
-            width: 52%;
-            text-align: center;
-            margin-top: 14px; /* เว้นระยะลงลายเซ็นกว้างโปร่ง */
-            line-height: 1.15;
-        }
-
-        .director-frame {
-            margin-top: 10px;
-            border: 1px solid #000;
-            padding: 6px 12px;
-            font-size: 15pt;
-            line-height: 1.15;
-        }
-
-        /* กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง */
-        .admin-stamp-box {
-            position: absolute;
-            right: 20mm;
-            bottom: 10mm;
-            width: 65mm;
-            border: 1px solid #333;
-            padding: 4px 8px;
-            font-size: 12.5pt;
-            line-height: 1.25;
-            background: #fff;
-            box-sizing: border-box;
-        }
-
-        .attachment-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 15pt;
-        }
-        .attachment-table th, .attachment-table td {
-            border: 1px solid #000;
-            padding: 5px 8px;
-            text-align: left;
-        }
-        .attachment-table th {
-            text-align: center;
-            background-color: #f2f2f2;
-        }
-
-        @media print {
-            body { background: transparent; padding: 0; }
-            .sheet { 
-                box-shadow: none; 
-                margin: 0; 
-                width: 210mm; 
-                min-height: 297mm; 
-                padding: 15mm 20mm 12mm 25mm; 
-                page-break-after: always; 
-            }
-            .sheet:last-child { page-break-after: auto; }
-            .no-print { display: none !important; }
-        }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
+        .edit-card { background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 40px; }
+        .section-header { font-weight: 600; color: #0d6efd; border-bottom: 2px solid #e9ecef; padding-bottom: 6px; margin-bottom: 18px; margin-top: 15px; }
     </style>
 </head>
-<body>
+<body class="py-4">
 
-<div class="text-center no-print" style="margin-bottom: 15px; text-align: center;">
-    <button onclick="window.print()" style="padding: 10px 24px; font-size: 16px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: bold;">🖨 สั่งพิมพ์เอกสาร (Print)</button>
-    <a href="index.php" style="margin-left: 10px; text-decoration: none; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border-radius: 4px; display: inline-block;">หน้ารายการทั้งหมด</a>
+<div class="container" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">แก้ไขข้อมูลคำร้องไปราชการ #<?php echo $id; ?></h4>
+            <small class="text-muted">ผู้ขออนุมัติ: <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?></small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="print.php?id=<?php echo $id; ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-printer"></i> ดูบันทึกข้อความ
+            </a>
+            <a href="admin.php" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> กลับหลังบ้าน
+            </a>
+        </div>
+    </div>
+
+    <?php if (!empty($message)): ?>
+        <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-1"></i> <?php echo htmlspecialchars($message); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="edit-card">
+        <form method="POST" action="edit.php?id=<?php echo $id; ?>">
+            <div class="section-header">1. ข้อมูลเลขหนังสือและสถานะ</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">เลขที่หนังสือราชการ (ที่):</label>
+                    <input type="text" name="doc_number" class="form-control" value="<?php echo htmlspecialchars($trip['doc_number'] ?? ''); ?>" placeholder="เช่น ศธ 04238.12/...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">สถานะคำร้อง:</label>
+                    <select name="status" class="form-select">
+                        <option value="ปกติ" <?php echo ($trip['status'] ?? 'ปกติ') === 'ปกติ' ? 'selected' : ''; ?>>ปกติ</option>
+                        <option value="ยกเลิก" <?php echo ($trip['status'] ?? '') === 'ยกเลิก' ? 'selected' : ''; ?>>ยกเลิก</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-header">2. ข้อมูลผู้ขออนุมัติ</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">ชื่อ-สกุล:</label>
+                    <input type="text" name="applicant_name" class="form-control" value="<?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">ตำแหน่ง:</label>
+                    <input type="text" name="position" class="form-control" value="<?php echo htmlspecialchars($trip['position'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">วิทยฐานะ:</label>
+                    <input type="text" name="academic_standing" class="form-control" value="<?php echo htmlspecialchars($trip['academic_standing'] ?? ''); ?>" placeholder="เช่น ชำนาญการพิเศษ">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">กลุ่มสาระการเรียนรู้ / กลุ่มงาน / สายงาน:</label>
+                    <select name="department" class="form-select" required>
+                        <?php $cur_dept = $trip['department'] ?? ''; ?>
+                        <option value="">-- เลือกกลุ่มสาระการเรียนรู้ / กลุ่มงาน / ฝ่าย --</option>
+                        <optgroup label="ผู้บริหารสถานศึกษา">
+                            <option value="ฝ่ายบริหารสถานศึกษา" <?php echo ($cur_dept === 'ฝ่ายบริหารสถานศึกษา') ? 'selected' : ''; ?>>ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
+                        </optgroup>
+                        <optgroup label="กลุ่มงานบริหาร (ฝ่าย/งาน)">
+                            <option value="กลุ่มงานบริหารวิชาการ" <?php echo ($cur_dept === 'กลุ่มงานบริหารวิชาการ') ? 'selected' : ''; ?>>กลุ่มงานบริหารวิชาการ</option>
+                            <option value="กลุ่มงานบริหารงบประมาณและแผนงาน" <?php echo ($cur_dept === 'กลุ่มงานบริหารงบประมาณและแผนงาน') ? 'selected' : ''; ?>>กลุ่มงานบริหารงบประมาณและแผนงาน</option>
+                            <option value="กลุ่มงานบริหารงานบุคคล" <?php echo ($cur_dept === 'กลุ่มงานบริหารงานบุคคล') ? 'selected' : ''; ?>>กลุ่มงานบริหารงานบุคคล</option>
+                            <option value="กลุ่มงานบริหารทั่วไป" <?php echo ($cur_dept === 'กลุ่มงานบริหารทั่วไป') ? 'selected' : ''; ?>>กลุ่มงานบริหารทั่วไป</option>
+                            <option value="กลุ่มงานกิจการนักเรียน" <?php echo ($cur_dept === 'กลุ่มงานกิจการนักเรียน') ? 'selected' : ''; ?>>กลุ่มงานกิจการนักเรียน</option>
+                        </optgroup>
+                        <optgroup label="กลุ่มสาระการเรียนรู้">
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาไทย" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ภาษาไทย') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ภาษาไทย</option>
+                            <option value="กลุ่มสาระการเรียนรู้คณิตศาสตร์" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้คณิตศาสตร์') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้คณิตศาสตร์</option>
+                            <option value="กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม</option>
+                            <option value="กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา</option>
+                            <option value="กลุ่มสาระการเรียนรู้ศิลปะ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ศิลปะ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ศิลปะ</option>
+                            <option value="กลุ่มสาระการเรียนรู้การงานอาชีพ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้การงานอาชีพ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้การงานอาชีพ</option>
+                            <option value="กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ" <?php echo ($cur_dept === 'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ') ? 'selected' : ''; ?>>กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ</option>
+                            <option value="กิจกรรมพัฒนาผู้เรียน" <?php echo ($cur_dept === 'กิจกรรมพัฒนาผู้เรียน') ? 'selected' : ''; ?>>กิจกรรมพัฒนาผู้เรียน</option>
+                        </optgroup>
+                        <optgroup label="สายสนับสนุนและบุคลากร">
+                            <option value="บุคลากรทางการศึกษา/เจ้าหน้าที่" <?php echo ($cur_dept === 'บุคลากรทางการศึกษา/เจ้าหน้าที่') ? 'selected' : ''; ?>>บุคลากรทางการศึกษา / เจ้าหน้าที่</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">กลุ่มงานที่เสนอ:</label>
+                    <select name="work_group" class="form-select" required>
+                        <?php $cur_wg = $trip['work_group'] ?? ''; ?>
+                        <option value="">-- เลือกกลุ่มงาน --</option>
+                        <option value="ฝ่ายบริหารสถานศึกษา" <?php echo ($cur_wg === 'ฝ่ายบริหารสถานศึกษา') ? 'selected' : ''; ?>>ฝ่ายบริหารสถานศึกษา (ผู้บริหาร)</option>
+                        <option value="กลุ่มงานบริหารวิชาการ" <?php echo ($cur_wg === 'กลุ่มงานบริหารวิชาการ') ? 'selected' : ''; ?>>กลุ่มงานบริหารวิชาการ</option>
+                        <option value="กลุ่มงานบริหารงบประมาณและแผนงาน" <?php echo ($cur_wg === 'กลุ่มงานบริหารงบประมาณและแผนงาน') ? 'selected' : ''; ?>>กลุ่มงานบริหารงบประมาณและแผนงาน</option>
+                        <option value="กลุ่มงานบริหารงานบุคคล" <?php echo ($cur_wg === 'กลุ่มงานบริหารงานบุคคล') ? 'selected' : ''; ?>>กลุ่มงานบริหารงานบุคคล</option>
+                        <option value="กลุ่มงานบริหารทั่วไป" <?php echo ($cur_wg === 'กลุ่มงานบริหารทั่วไป') ? 'selected' : ''; ?>>กลุ่มงานบริหารทั่วไป</option>
+                        <option value="กลุ่มงานกิจการนักเรียน" <?php echo ($cur_wg === 'กลุ่มงานกิจการนักเรียน') ? 'selected' : ''; ?>>กลุ่มงานกิจการนักเรียน</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">ชื่อหัวหน้ากลุ่มงาน:</label>
+                    <input type="text" name="head_group_name" class="form-control" value="<?php echo htmlspecialchars($trip['head_group_name'] ?? ''); ?>" required>
+                </div>
+            </div>
+
+            <div class="section-header">3. รายละเอียดการเดินทาง</div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label small fw-bold">วัตถุประสงค์ (ไปราชการเพื่อ):</label>
+                    <textarea name="subject" class="form-control" rows="2" required><?php echo htmlspecialchars($trip['subject'] ?? ''); ?></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small fw-bold">สถานที่ปลายทาง:</label>
+                    <input type="text" name="destination" class="form-control" value="<?php echo htmlspecialchars($trip['destination'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">หนังสืออ้างอิง:</label>
+                    <input type="text" name="ref_document" class="form-control" value="<?php echo htmlspecialchars($trip['ref_document'] ?? ''); ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">ลงวันที่ของหนังสืออ้างอิง:</label>
+                    <input type="date" name="ref_date" class="form-control" value="<?php echo htmlspecialchars($trip['ref_date'] ?? ''); ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">ตั้งแต่วันที่:</label>
+                    <input type="date" name="start_date" class="form-control" value="<?php echo htmlspecialchars($trip['start_date'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">ถึงวันที่:</label>
+                    <input type="date" name="end_date" class="form-control" value="<?php echo htmlspecialchars($trip['end_date'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">ช่วงเวลา (กรณีครึ่งวัน):</label>
+                    <input type="text" name="half_day_time" class="form-control" value="<?php echo htmlspecialchars($trip['half_day_time'] ?? ''); ?>" placeholder="เช่น เวลา 08.30 - 12.00 น.">
+                </div>
+            </div>
+
+            <div class="section-header">4. พาหนะและผู้ลงนาม</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">ยานพาหนะ:</label>
+                    <input type="text" name="vehicle_type" class="form-control" value="<?php echo htmlspecialchars($trip['vehicle_type'] ?? ''); ?>" placeholder="เช่น รถยนต์ส่วนตัว / รถยนต์ราชการ">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">หมายเลขทะเบียน:</label>
+                    <input type="text" name="vehicle_license_plate" class="form-control" value="<?php echo htmlspecialchars($trip['vehicle_license_plate'] ?? ''); ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">พนักงานขับรถ (กรณีรถราชการ):</label>
+                    <input type="text" name="driver_name" class="form-control" value="<?php echo htmlspecialchars($trip['driver_name'] ?? ''); ?>">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">รูปแบบการลงนามอนุมัติ:</label>
+                    <select name="sign_mode" class="form-select">
+                        <option value="director" <?php echo ($trip['sign_mode'] ?? 'director') === 'director' ? 'selected' : ''; ?>>ผู้อำนวยการโรงเรียน (ว่าที่ร้อยโทจักรเพชร์ พรมยศ)</option>
+                        <option value="acting" <?php echo ($trip['sign_mode'] ?? '') === 'acting' ? 'selected' : ''; ?>>รองผู้อำนวยการ รักษาการในตำแหน่งผู้อำนวยการฯ</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">ชื่อรอง ผอ. ที่รักษาการ:</label>
+                    <input type="text" name="acting_name" class="form-control" value="<?php echo htmlspecialchars($trip['acting_name'] ?? ''); ?>" placeholder="ระบุเฉพาะกรณีเป็นรักษาการ">
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top text-center">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                    <i class="bi bi-save"></i> บันทึกการเปลี่ยนแปลง
+                </button>
+                <a href="admin.php" class="btn btn-secondary px-4 py-2 ms-2">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
 </div>
 
-<!-- ================= หน้าที่ 1: บันทึกข้อความ ================= -->
-<div class="sheet">
-    <div class="header-box">
-        <img src="garuda.png" alt="ตราครุฑ" class="garuda-img">
-        <span class="doc-title">บันทึกข้อความ</span>
-    </div>
-    
-    <table class="meta-table">
-        <tr>
-            <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</td>
-        </tr>
-        <tr>
-            <td style="width: 58%;"><strong>ที่:</strong> <?php echo $doc_number_display; ?></td>
-            <td style="width: 42%;"><strong>วันที่:</strong> <?php echo thai_date($trip['created_date'] ?? ''); ?></td>
-        </tr>
-        <tr>
-            <td colspan="2"><strong>เรื่อง:</strong> ขออนุมัติเดินทางไปราชการ</td>
-        </tr>
-    </table>
-    
-    <div class="divider-line"></div>
-
-    <div class="to-line">เรียน &nbsp; ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
-
-    <div class="prose-body">
-        <?php echo $ref_text; ?>ด้วยข้าพเจ้า <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?><?php echo $academic_text; ?> กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($trip['department'] ?? ''); ?> มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($trip['subject'] ?? ''); ?> ณ <?php echo htmlspecialchars($trip['destination'] ?? ''); ?> พร้อมคณะ โดยมีกำหนดการ<?php echo htmlspecialchars($schedule_prose); ?> <?php echo !empty($vehicle_prose) ? "ในการนี้จะ" . htmlspecialchars($vehicle_prose) . " " : ""; ?><?php echo htmlspecialchars($expense_final_prose); ?> (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
-    </div>
-
-    <div class="prose-body">
-        จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
-    </div>
-
-    <!-- ลำดับที่ 1: ลายเซ็นผู้ขออนุมัติ -->
-    <div class="applicant-sign-wrap">
-        ลงชื่อ......................................................................<br>
-        ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
-        ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
-    </div>
-
-    <!-- ลำดับที่ 2: ความเห็นของหัวหน้ากลุ่มงาน (ไม่มีบรรทัดวันที่) -->
-    <div class="opinion-section">
-        <strong>ความเห็นของ<?php echo htmlspecialchars($group_title); ?>:</strong> ...........................................................................................................................<br>
-        <div class="sign-sub-wrap">
-            ลงชื่อ......................................................................<br>
-            ( <?php echo htmlspecialchars($head_group_display); ?> )<br>
-            <?php echo htmlspecialchars($group_title); ?>
-        </div>
-    </div>
-
-    <!-- ลำดับที่ 3: ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล (ไม่มีบรรทัดวันที่) -->
-    <div class="opinion-section">
-        <strong>ความเห็นของรองผู้อำนวยการกลุ่มบริหารงานบุคคล:</strong> ..........................................................................................................<br>
-        <div class="sign-sub-wrap">
-            ลงชื่อ......................................................................<br>
-            ( นางโรสนาร์นีย์ บุญณะ )<br>
-            รองผู้อำนวยการกลุ่มบริหารงานบุคคล
-        </div>
-    </div>
-
-    <!-- ลำดับที่ 4: คำสั่งและการอนุมัติของผู้อำนวยการโรงเรียน (ไม่มีบรรทัดวันที่) -->
-    <div class="director-frame">
-        <strong>คำสั่ง / การพิจารณา:</strong><br>
-        [ &nbsp; ] อนุมัติ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; [ &nbsp; ] ไม่อนุมัติ เนื่องจาก ..............................................................<br>
-        <div style="text-align: center; margin-top: 14px;">
-            ลงชื่อ......................................................................<br>
-            ( <?php echo $sign_name_display; ?> )<br>
-            <?php echo $sign_role_display; ?>
-        </div>
-    </div>
-
-    <!-- กล่องบันทึกสำหรับเจ้าหน้าที่งานบุคคล มุมขวาล่าง -->
-    <div class="admin-stamp-box">
-        <div style="font-weight: bold; text-align: center; border-bottom: 0.5px solid #666; margin-bottom: 2px; padding-bottom: 1px;">
-            สำหรับเจ้าหน้าที่งานบุคคล
-        </div>
-        <div>เลขที่รับ / ออกเลข: ..................................</div>
-        <div>วันที่ขอเลข: ........./........./.........................</div>
-        <div>ผู้ลงบันทึก: ............................................</div>
-    </div>
-</div>
-
-<!-- ================= หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย ================= -->
-<div class="sheet">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h3 style="font-weight: bold; margin-bottom: 5px;">บัญชีรายชื่อผู้ขออนุมัติเดินทางไปราชการแนบท้าย</h3>
-        <div>แนบท้ายบันทึกข้อความ ลงวันที่ <?php echo thai_date($trip['created_date'] ?? ''); ?></div>
-    </div>
-
-    <table class="attachment-table">
-        <thead>
-            <tr>
-                <th style="width: 10%;">ลำดับ</th>
-                <th style="width: 45%;">ชื่อ - สกุล</th>
-                <th style="width: 30%;">ตำแหน่ง / ระดับชั้น</th>
-                <th style="width: 15%;">หมายเหตุ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td style="text-align: center;">1</td>
-                <td><?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?></td>
-                <td><?php echo htmlspecialchars($trip['position'] ?? ''); ?></td>
-                <td style="text-align: center;">ผู้ขออนุมัติ</td>
-            </tr>
-            <?php if (!empty($participants)): ?>
-                <?php $i = 2; foreach ($participants as $p): ?>
-                <tr>
-                    <td style="text-align: center;"><?php echo $i++; ?></td>
-                    <td><?php echo htmlspecialchars($p['name'] ?? ''); ?></td>
-                    <td><?php echo htmlspecialchars($p['detail'] ?? ($p['position'] ?? '-')); ?></td>
-                    <td style="text-align: center;"><?php echo ($p['type'] ?? '') === 'student' ? 'นักเรียน' : 'ผู้ร่วมเดินทาง'; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td style="text-align: center;">2</td>
-                    <td>..............................................................................</td>
-                    <td>...................................................</td>
-                    <td style="text-align: center;">-</td>
-                </tr>
-                <tr>
-                    <td style="text-align: center;">3</td>
-                    <td>..............................................................................</td>
-                    <td>...................................................</td>
-                    <td style="text-align: center;">-</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-
-    <div style="margin-top: 50px; margin-left: auto; width: 50%; text-align: center;">
-        รับรองข้อมูลถูกต้อง<br><br><br>
-        ลงชื่อ......................................................................<br>
-        ( <?php echo htmlspecialchars($trip['applicant_name'] ?? ''); ?> )<br>
-        ตำแหน่ง <?php echo htmlspecialchars($trip['position'] ?? ''); ?>
-    </div>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
