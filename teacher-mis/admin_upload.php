@@ -10,7 +10,27 @@ require_once 'config.php';
 $message = "";
 $message_type = "info";
 
-// 1. ดาวน์โหลดเทมเพลต CSV ฉบับสมบูรณ์ (พร้อม birth_date และ start_date)
+// ฟังก์ชันช่วยจัดรูปแบบวันที่ให้ปลอดภัยสำหรับ MySQL (YYYY-MM-DD หรือ NULL)
+function cleanDate($date_str) {
+    $date_str = trim($date_str ?? '');
+    if (empty($date_str) || $date_str === '-' || $date_str === '0000-00-00') {
+        return null;
+    }
+    // ตรวจสอบถ้ามีรูปแบบ yyyy-mm-dd
+    $t = strtotime($date_str);
+    if ($t !== false) {
+        $year = (int)date('Y', $t);
+        // หากเผลอใส่วันเกิดเป็น พ.ศ. มา (เช่น 2518) ให้แปลงเป็น ค.ศ.
+        if ($year > 2400) {
+            $year -= 543;
+            return $year . date('-m-d', $t);
+        }
+        return date('Y-m-d', $t);
+    }
+    return null;
+}
+
+// 1. ดาวน์โหลดเทมเพลต CSV ฉบับสมบูรณ์
 if (isset($_GET['action']) && $_GET['action'] === 'download_template') {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=teacher_template.csv');
@@ -62,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     $first_name        = trim($_POST['first_name'] ?? '');
     $last_name         = trim($_POST['last_name'] ?? '');
     $gender            = trim($_POST['gender'] ?? 'ชาย');
-    $birth_date        = !empty($_POST['birth_date']) ? $_POST['birth_date'] : null;
-    $start_date        = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+    $birth_date        = cleanDate($_POST['birth_date'] ?? '');
+    $start_date        = cleanDate($_POST['start_date'] ?? '');
     $position          = trim($_POST['position'] ?? '');
     $academic_standing = trim($_POST['academic_standing'] ?? '');
     $department        = trim($_POST['department'] ?? '');
@@ -126,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     }
 }
 
-// 5. นำเข้าไฟล์ CSV
+// 5. นำเข้าไฟล์ CSV (รองรับทั้งไฟล์รูปแบบเดิมและรูปแบบใหม่ที่มีวันเกิด)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $file = $_FILES['csv_file']['tmp_name'];
     if (!empty($file) && is_uploaded_file($file)) {
@@ -135,7 +155,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
-        fgetcsv($handle); // ข้ามหัวคอลัมน์
+        $header = fgetcsv($handle); // ข้ามหัวคอลัมน์
+
+        // ตรวจสอบว่าหัวตารางมีกี่คอลัมน์ หรือมีคำว่า birth_date ไหม
+        $has_birth_col = false;
+        if ($header) {
+            foreach ($header as $h) {
+                if (stripos($h, 'birth') !== false || stripos($h, 'วันเกิด') !== false) {
+                    $has_birth_col = true;
+                    break;
+                }
+            }
+        }
 
         $success_count = 0;
         $stmt = $conn->prepare("INSERT INTO teachers 
@@ -151,23 +182,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
             if (empty($row[0])) continue;
-            $id_card           = trim($row[0]);
-            $prefix            = trim($row[1] ?? '');
-            $first_name        = trim($row[2] ?? '');
-            $last_name         = trim($row[3] ?? '');
-            $gender            = trim($row[4] ?? 'ชาย');
-            $birth_date        = !empty(trim($row[5] ?? '')) ? trim($row[5]) : null;
-            $start_date        = !empty(trim($row[6] ?? '')) ? trim($row[6]) : null;
-            $position          = trim($row[7] ?? '');
-            $academic_standing = trim($row[8] ?? '');
-            $department        = trim($row[9] ?? '');
-            $work_group        = trim($row[10] ?? '');
-            $education_level   = trim($row[11] ?? '');
-            $major_subject     = trim($row[12] ?? '');
-            $phone_number      = trim($row[13] ?? '');
-            $email             = trim($row[14] ?? '');
-            $photo_url         = trim($row[15] ?? '');
-            $sort_order        = (!empty($row[16]) && is_numeric($row[16])) ? intval($row[16]) : 999;
+
+            $id_card    = trim($row[0]);
+            $prefix     = trim($row[1] ?? '');
+            $first_name = trim($row[2] ?? '');
+            $last_name  = trim($row[3] ?? '');
+            $gender     = trim($row[4] ?? 'ชาย');
+
+            // ถ้ามีคอลัมน์วันเกิดใน CSV
+            if ($has_birth_col || count($row) >= 16) {
+                $birth_date        = cleanDate($row[5] ?? '');
+                $start_date        = cleanDate($row[6] ?? '');
+                $position          = trim($row[7] ?? '');
+                $academic_standing = trim($row[8] ?? '');
+                $department        = trim($row[9] ?? '');
+                $work_group        = trim($row[10] ?? '');
+                $education_level   = trim($row[11] ?? '');
+                $major_subject     = trim($row[12] ?? '');
+                $phone_number      = trim($row[13] ?? '');
+                $email             = trim($row[14] ?? '');
+                $photo_url         = trim($row[15] ?? '');
+                $sort_order        = (!empty($row[16]) && is_numeric($row[16])) ? intval($row[16]) : 999;
+            } else {
+                // ไฟล์แบบเก่า (ไม่มี birth_date, start_date)
+                $birth_date        = null;
+                $start_date        = null;
+                $position          = trim($row[5] ?? '');
+                $academic_standing = trim($row[6] ?? '');
+                $department        = trim($row[7] ?? '');
+                $work_group        = trim($row[8] ?? '');
+                $education_level   = trim($row[9] ?? '');
+                $major_subject     = trim($row[10] ?? '');
+                $phone_number      = trim($row[11] ?? '');
+                $email             = trim($row[12] ?? '');
+                $photo_url         = trim($row[13] ?? '');
+                $sort_order        = (!empty($row[14]) && is_numeric($row[14])) ? intval($row[14]) : 999;
+            }
 
             $stmt->bind_param("ssssssssssssssssi", 
                 $id_card, $prefix, $first_name, $last_name, $gender, 
