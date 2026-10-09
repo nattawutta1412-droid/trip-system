@@ -16,8 +16,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_template') {
     header('Content-Disposition: attachment; filename=teacher_template.csv');
     $output = fopen('php://output', 'w');
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-    fputcsv($output, ['id_card', 'prefix', 'first_name', 'last_name', 'gender', 'position', 'academic_standing', 'department', 'work_group', 'education_level', 'major_subject', 'phone_number', 'email', 'photo_url']);
-    fputcsv($output, ['1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 'ครู', 'ชำนาญการ', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', '0812345678', 'somsak@example.com', 'https://example.com/photo.jpg']);
+    fputcsv($output, ['id_card', 'prefix', 'first_name', 'last_name', 'gender', 'position', 'academic_standing', 'department', 'work_group', 'education_level', 'major_subject', 'phone_number', 'email', 'photo_url', 'sort_order']);
+    fputcsv($output, ['1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 'ครู (หัวหน้ากลุ่มสาระฯ)', 'ชำนาญการ', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', '0812345678', 'somsak@example.com', 'https://example.com/photo.jpg', '1']);
     fclose($output);
     exit();
 }
@@ -44,7 +44,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && !empty($_GET['id']
     }
 }
 
-// 4. ฟังก์ชัน: บันทึกข้อมูลครู (เพิ่มใหม่ หรือ อัปเดตรายคน)
+// 4. ฟังก์ชัน: บันทึกข้อมูลครู (เพิ่มใหม่ หรือ แก้ไข)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher'])) {
     $teacher_id        = !empty($_POST['teacher_id']) ? intval($_POST['teacher_id']) : null;
     $id_card           = trim($_POST['id_card'] ?? '');
@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     $phone_number      = trim($_POST['phone_number'] ?? '');
     $email             = trim($_POST['email'] ?? '');
     $photo_url         = trim($_POST['photo_url'] ?? '');
+    $sort_order        = !empty($_POST['sort_order']) ? intval($_POST['sort_order']) : 999;
 
     if (empty($id_card) || empty($first_name) || empty($last_name)) {
         $message = "กรุณากรอกเลขบัตรประชาชน, ชื่อ และนามสกุล ให้ครบถ้วน";
@@ -71,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
             $stmt = $conn->prepare("UPDATE teachers SET 
                 id_card=?, prefix=?, first_name=?, last_name=?, gender=?, position=?, 
                 academic_standing=?, department=?, work_group=?, education_level=?, 
-                major_subject=?, phone_number=?, email=?, photo_url=? WHERE id=?");
-            $stmt->bind_param("ssssssssssssssi", 
+                major_subject=?, phone_number=?, email=?, photo_url=?, sort_order=? WHERE id=?");
+            $stmt->bind_param("ssssssssssssssii", 
                 $id_card, $prefix, $first_name, $last_name, $gender, $position,
                 $academic_standing, $department, $work_group, $education_level,
-                $major_subject, $phone_number, $email, $photo_url, $teacher_id
+                $major_subject, $phone_number, $email, $photo_url, $sort_order, $teacher_id
             );
             if ($stmt->execute()) {
                 $message = "อัปเดตข้อมูลคุณครู {$first_name} {$last_name} เรียบร้อยแล้ว";
@@ -87,18 +88,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
         } else {
             // เพิ่มข้อมูลใหม่
             $stmt = $conn->prepare("INSERT INTO teachers 
-                (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                 prefix=VALUES(prefix), first_name=VALUES(first_name), last_name=VALUES(last_name),
                 gender=VALUES(gender), position=VALUES(position), academic_standing=VALUES(academic_standing),
                 department=VALUES(department), work_group=VALUES(work_group), education_level=VALUES(education_level),
                 major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email),
-                photo_url=VALUES(photo_url)");
-            $stmt->bind_param("ssssssssssssss", 
+                photo_url=VALUES(photo_url), sort_order=VALUES(sort_order)");
+            $stmt->bind_param("ssssssssssssssi", 
                 $id_card, $prefix, $first_name, $last_name, $gender, $position,
                 $academic_standing, $department, $work_group, $education_level,
-                $major_subject, $phone_number, $email, $photo_url
+                $major_subject, $phone_number, $email, $photo_url, $sort_order
             );
             if ($stmt->execute()) {
                 $message = "บันทึกข้อมูลคุณครู {$first_name} {$last_name} สำเร็จเรียบร้อย";
@@ -111,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     }
 }
 
-// 5. นำเข้าไฟล์ CSV
+// 5. นำเข้าไฟล์ CSV พร้อม sort_order
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $file = $_FILES['csv_file']['tmp_name'];
     if (!empty($file) && is_uploaded_file($file)) {
@@ -120,18 +121,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
-        fgetcsv($handle); // ข้ามหัวตาราง
+        fgetcsv($handle);
 
         $success_count = 0;
         $stmt = $conn->prepare("INSERT INTO teachers 
-            (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
             prefix=VALUES(prefix), first_name=VALUES(first_name), last_name=VALUES(last_name),
             gender=VALUES(gender), position=VALUES(position), academic_standing=VALUES(academic_standing),
             department=VALUES(department), work_group=VALUES(work_group), education_level=VALUES(education_level),
             major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email),
-            photo_url=VALUES(photo_url)");
+            photo_url=VALUES(photo_url), sort_order=VALUES(sort_order)");
 
         while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
             if (empty($row[0])) continue;
@@ -149,11 +150,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $phone_number      = trim($row[11] ?? '');
             $email             = trim($row[12] ?? '');
             $photo_url         = trim($row[13] ?? '');
+            $sort_order        = (!empty($row[14]) && is_numeric($row[14])) ? intval($row[14]) : 999;
 
-            $stmt->bind_param("ssssssssssssss", 
+            $stmt->bind_param("ssssssssssssssi", 
                 $id_card, $prefix, $first_name, $last_name, $gender, 
                 $position, $academic_standing, $department, $work_group, 
-                $education_level, $major_subject, $phone_number, $email, $photo_url
+                $education_level, $major_subject, $phone_number, $email, $photo_url, $sort_order
             );
             if ($stmt->execute()) {
                 $success_count++;
@@ -168,23 +170,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     }
 }
 
-// 6. ดึงข้อมูลรายการครูเพื่อแสดงและจัดการ
+// 6. ดึงข้อมูลรายการครูเพื่อแสดงและจัดการ เรียงตาม sort_order ก่อน
 $admin_search = trim($_GET['admin_search'] ?? '');
 $sql_list = "SELECT * FROM teachers";
 if (!empty($admin_search)) {
     $sql_list .= " WHERE first_name LIKE ? OR last_name LIKE ? OR department LIKE ? OR id_card LIKE ?";
-    $stmt_l = $conn->prepare($sql_list . " ORDER BY id DESC");
+    $stmt_l = $conn->prepare($sql_list . " ORDER BY sort_order ASC, id ASC");
     $s_term = "%{$admin_search}%";
     $stmt_l->bind_param("ssss", $s_term, $s_term, $s_term, $s_term);
     $stmt_l->execute();
     $all_teachers = $stmt_l->get_result();
 } else {
-    $all_teachers = $conn->query($sql_list . " ORDER BY id DESC");
+    $all_teachers = $conn->query($sql_list . " ORDER BY sort_order ASC, id ASC");
 }
 
 $total_current = $conn->query("SELECT COUNT(*) as total FROM teachers WHERE status='ปฏิบัติหน้าที่'")->fetch_assoc()['total'];
 
-// รายชื่อกลุ่มมาตรฐาน
 $standard_depts = [
     'กลุ่มบริหารสถานศึกษา',
     'กลุ่มสาระการเรียนรู้ภาษาไทย',
@@ -237,7 +238,7 @@ $standard_depts = [
         </div>
     <?php endif; ?>
 
-    <!-- กล่องอัปโหลด CSV (ยุบเปิด-ปิดได้) -->
+    <!-- กล่องอัปโหลด CSV -->
     <div class="accordion mb-4" id="uploadAccordion">
         <div class="accordion-item rounded-4 border-0 shadow-sm overflow-hidden">
             <h2 class="accordion-header">
@@ -265,15 +266,14 @@ $standard_depts = [
         </div>
     </div>
 
-    <!-- รายการตารางจัดการข้อมูลครู (มีปุ่ม เพิ่ม/แก้ไข/ลบ) -->
+    <!-- รายการตารางจัดการข้อมูลครู -->
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary me-2"></i>รายชื่อบุคลากรในระบบ (จัดการ เพิ่ม / แก้ไข / ลบ)</h5>
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary me-2"></i>รายชื่อบุคลากรในระบบ (เรียงตามลำดับแสดงผล)</h5>
                 
-                <!-- ค้นหาในแอดมิน -->
                 <form method="GET" action="admin_upload.php" class="d-flex gap-2" style="max-width: 360px;">
-                    <input type="text" name="admin_search" class="form-control form-control-sm" placeholder="ค้นหาชื่อ, กลุ่มสาระฯ, เลขบัตร..." value="<?php echo htmlspecialchars($admin_search); ?>">
+                    <input type="text" name="admin_search" class="form-control form-control-sm" placeholder="ค้นหาชื่อ, กลุ่มสาระฯ..." value="<?php echo htmlspecialchars($admin_search); ?>">
                     <button type="submit" class="btn btn-sm btn-primary">ค้นหา</button>
                     <?php if (!empty($admin_search)): ?>
                         <a href="admin_upload.php" class="btn btn-sm btn-outline-secondary">ล้าง</a>
@@ -285,6 +285,7 @@ $standard_depts = [
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
+                            <th style="width: 7%;" class="text-center">ลำดับ</th>
                             <th style="width: 5%;">รูป</th>
                             <th>ชื่อ - สกุล</th>
                             <th>ตำแหน่ง</th>
@@ -298,8 +299,12 @@ $standard_depts = [
                         <?php if ($all_teachers && $all_teachers->num_rows > 0): ?>
                             <?php while ($t = $all_teachers->fetch_assoc()): 
                                 $t_json = htmlspecialchars(json_encode($t), ENT_QUOTES, 'UTF-8');
+                                $order_val = ($t['sort_order'] == 999) ? '-' : $t['sort_order'];
                             ?>
                                 <tr>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-primary border fs-6"><?php echo $order_val; ?></span>
+                                    </td>
                                     <td>
                                         <div style="width: 40px; height: 45px; border-radius: 6px; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center;">
                                             <?php if (!empty($t['photo_url'])): ?>
@@ -311,7 +316,6 @@ $standard_depts = [
                                     </td>
                                     <td>
                                         <strong><?php echo htmlspecialchars($t['prefix'] . $t['first_name'] . ' ' . $t['last_name']); ?></strong>
-                                        <div class="small text-muted">บัตร: <?php echo htmlspecialchars($t['id_card']); ?></div>
                                     </td>
                                     <td><?php echo htmlspecialchars($t['position']); ?></td>
                                     <td><span class="badge bg-info-subtle text-info-emphasis"><?php echo htmlspecialchars($t['academic_standing'] ?: '-'); ?></span></td>
@@ -329,7 +333,7 @@ $standard_depts = [
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">ไม่พบข้อมูลบุคลากร</td>
+                                <td colspan="8" class="text-center py-4 text-muted">ไม่พบข้อมูลบุคลากร</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -339,7 +343,7 @@ $standard_depts = [
     </div>
 </div>
 
-<!-- Modal สำหรับเพิ่ม / แก้ไขข้อมูลครูรายบุคคล -->
+<!-- Modal สำหรับเพิ่ม / แก้ไขข้อมูลครู -->
 <div class="modal fade" id="teacherModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow">
@@ -352,36 +356,47 @@ $standard_depts = [
                     <input type="hidden" name="save_single_teacher" value="1">
                     <input type="hidden" name="teacher_id" id="teacher_id" value="">
 
+                    <!-- ลำดับก่อน-หลัง (ใส่เลขน้อยให้อยู่บนสุด เช่น 1 สำหรับหัวหน้ากลุ่มสาระ) -->
+                    <div class="alert alert-warning py-2 mb-3 small d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill fs-5 me-2"></i>
+                        <span><strong>การจัดลำดับ:</strong> กำหนดตัวเลขน้อย (เช่น <strong>1</strong>) เพื่อให้แสดงอยู่บนสุด เช่น หัวหน้ากลุ่มสาระ หรือหัวหน้างาน</span>
+                    </div>
+
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary">ลำดับการแสดงผล (1, 2, ...)</label>
+                            <input type="number" name="sort_order" id="sort_order" class="form-control border-primary" value="999" min="1">
+                        </div>
+                        <div class="col-md-5">
                             <label class="form-label small fw-bold">เลขบัตรประชาชน (13 หลัก) <span class="text-danger">*</span></label>
                             <input type="text" name="id_card" id="id_card" class="form-control" required maxlength="13">
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold">คำนำหน้า <span class="text-danger">*</span></label>
-                            <input type="text" name="prefix" id="prefix" class="form-control" required placeholder="นาย/นาง/นางสาว">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold">ชื่อ <span class="text-danger">*</span></label>
-                            <input type="text" name="first_name" id="first_name" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold">นามสกุล <span class="text-danger">*</span></label>
-                            <input type="text" name="last_name" id="last_name" class="form-control" required>
-                        </div>
-
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small fw-bold">เพศ</label>
                             <select name="gender" id="gender" class="form-select">
                                 <option value="ชาย">ชาย</option>
                                 <option value="หญิง">หญิง</option>
                             </select>
                         </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">คำนำหน้า <span class="text-danger">*</span></label>
+                            <input type="text" name="prefix" id="prefix" class="form-control" required placeholder="นาย/นาง/นางสาว">
+                        </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">ตำแหน่ง <span class="text-danger">*</span></label>
-                            <input type="text" name="position" id="position" class="form-control" required placeholder="เช่น ครู, ครูผู้ช่วย, ผู้อำนวยการ">
+                            <label class="form-label small fw-bold">ชื่อ <span class="text-danger">*</span></label>
+                            <input type="text" name="first_name" id="first_name" class="form-control" required>
                         </div>
                         <div class="col-md-5">
+                            <label class="form-label small fw-bold">นามสกุล <span class="text-danger">*</span></label>
+                            <input type="text" name="last_name" id="last_name" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">ตำแหน่ง <span class="text-danger">*</span></label>
+                            <input type="text" name="position" id="position" class="form-control" required placeholder="เช่น ครู, หัวหน้ากลุ่มสาระฯ, ผู้อำนวยการ">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label small fw-bold">วิทยฐานะ</label>
                             <input type="text" name="academic_standing" id="academic_standing" class="form-control" placeholder="เช่น ชำนาญการ, ชำนาญการพิเศษ">
                         </div>
@@ -397,28 +412,28 @@ $standard_depts = [
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">กลุ่มงานบริหาร</label>
-                            <input type="text" name="work_group" id="work_group" class="form-control" placeholder="เช่น กลุ่มงานบริหารวิชาการ, กลุ่มงานบริหารบุคคล">
+                            <input type="text" name="work_group" id="work_group" class="form-control" placeholder="เช่น กลุ่มงานบริหารวิชาการ">
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">วิชาเอก</label>
-                            <input type="text" name="major_subject" id="major_subject" class="form-control" placeholder="เช่น คณิตศาสตร์, ภาษาอังกฤษ">
+                            <input type="text" name="major_subject" id="major_subject" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">ระดับการศึกษาสูงสุด</label>
-                            <input type="text" name="education_level" id="education_level" class="form-control" placeholder="เช่น ปริญญาตรี, ปริญญาโท">
+                            <input type="text" name="education_level" id="education_level" class="form-control">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">เบอร์โทรศัพท์</label>
-                            <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="08xxxxxxxx">
+                            <input type="text" name="phone_number" id="phone_number" class="form-control">
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">อีเมล</label>
-                            <input type="email" name="email" id="email" class="form-control" placeholder="example@school.ac.th">
+                            <input type="email" name="email" id="email" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">URL รูปภาพครู (ถ้ามี)</label>
+                            <label class="form-label small fw-bold">URL รูปภาพครู</label>
                             <input type="url" name="photo_url" id="photo_url" class="form-control" placeholder="https://example.com/photo.jpg">
                         </div>
                     </div>
@@ -437,6 +452,7 @@ $standard_depts = [
 function resetForm() {
     document.getElementById('modalTitle').innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i>เพิ่มข้อมูลครู (รายคน)';
     document.getElementById('teacher_id').value = '';
+    document.getElementById('sort_order').value = '999';
     document.getElementById('id_card').value = '';
     document.getElementById('prefix').value = '';
     document.getElementById('first_name').value = '';
@@ -456,6 +472,7 @@ function resetForm() {
 function editTeacher(t) {
     document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square text-warning me-2"></i>แก้ไขข้อมูลครู';
     document.getElementById('teacher_id').value = t.id || '';
+    document.getElementById('sort_order').value = t.sort_order || '999';
     document.getElementById('id_card').value = t.id_card || '';
     document.getElementById('prefix').value = t.prefix || '';
     document.getElementById('first_name').value = t.first_name || '';
