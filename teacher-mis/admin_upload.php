@@ -494,3 +494,7 @@ function editTeacher(t) {
 </script>
 </body>
 </html>
+<div class="col-md-4">
+    <label class="form-label small fw-bold">วันเดือนปีเกิด (ค.ศ.)</label>
+    <input type="date" name="birth_date" id="birth_date" class="form-control">
+</div>
