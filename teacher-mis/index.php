@@ -58,7 +58,7 @@ $teachers = $stmt->get_result();
 <body class="py-4">
 
 <div class="container-fluid px-4">
-    <!-- ส่วนหัวพร้อมโลโก้โรงเรียน -->
+    <!-- ส่วนหัวพร้อมโลโก้โรงเรียนและปุ่มเครื่องมือ -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 bg-white p-3 rounded-4 shadow-sm">
         <div class="d-flex align-items-center gap-3">
             <img src="../logo.png" alt="โลโก้โรงเรียน" class="school-logo">
@@ -67,7 +67,10 @@ $teachers = $stmt->get_result();
                 <span class="text-muted fw-medium">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</span>
             </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="export_summary.php" class="btn btn-primary fw-medium">
+                <i class="bi bi-file-earmark-arrow-down"></i> ส่งออกรายงานสรุป (Excel)
+            </a>
             <a href="import.php" class="btn btn-success fw-medium">
                 <i class="bi bi-file-earmark-arrow-up"></i> นำเข้าข้อมูล (CSV / Sheets)
             </a>
