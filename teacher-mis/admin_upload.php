@@ -10,14 +10,14 @@ require_once 'config.php';
 $message = "";
 $message_type = "info";
 
-// 1. ดาวน์โหลดเทมเพลตมาตรฐาน
+// 1. ดาวน์โหลดเทมเพลตมาตรฐาน (เพิ่มคอลัมน์ photo_url)
 if (isset($_GET['action']) && $_GET['action'] === 'download_template') {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=teacher_template.csv');
     $output = fopen('php://output', 'w');
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-    fputcsv($output, ['id_card', 'prefix', 'first_name', 'last_name', 'gender', 'position', 'academic_standing', 'department', 'work_group', 'education_level', 'major_subject', 'phone_number', 'email']);
-    fputcsv($output, ['1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 'ครู', 'ชำนาญการ', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', '0812345678', 'somsak@example.com']);
+    fputcsv($output, ['id_card', 'prefix', 'first_name', 'last_name', 'gender', 'position', 'academic_standing', 'department', 'work_group', 'education_level', 'major_subject', 'phone_number', 'email', 'photo_url']);
+    fputcsv($output, ['1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 'ครู', 'ชำนาญการ', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', '0812345678', 'somsak@example.com', 'https://example.com/photo.jpg']);
     fclose($output);
     exit();
 }
@@ -30,7 +30,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit();
 }
 
-// 3. ประมวลผลนำเข้าไฟล์ CSV
+// 3. ประมวลผลนำเข้าไฟล์ CSV พร้อมรูปภาพ
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $file = $_FILES['csv_file']['tmp_name'];
 
@@ -40,17 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
-        fgetcsv($handle); // ข้ามหัวตาราง
+        fgetcsv($handle); // ข้ามแถวหัวตาราง
 
         $success_count = 0;
         $stmt = $conn->prepare("INSERT INTO teachers 
-            (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
             prefix=VALUES(prefix), first_name=VALUES(first_name), last_name=VALUES(last_name),
             gender=VALUES(gender), position=VALUES(position), academic_standing=VALUES(academic_standing),
             department=VALUES(department), work_group=VALUES(work_group), education_level=VALUES(education_level),
-            major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email)");
+            major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email),
+            photo_url=VALUES(photo_url)");
 
         while (($row = fgetcsv($handle, 10000, ",")) !== FALSE) {
             if (empty($row[0])) continue;
@@ -68,11 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $major_subject     = trim($row[10] ?? '');
             $phone_number      = trim($row[11] ?? '');
             $email             = trim($row[12] ?? '');
+            $photo_url         = trim($row[13] ?? '');
 
-            $stmt->bind_param("sssssssssssss", 
+            $stmt->bind_param("ssssssssssssss", 
                 $id_card, $prefix, $first_name, $last_name, $gender, 
                 $position, $academic_standing, $department, $work_group, 
-                $education_level, $major_subject, $phone_number, $email
+                $education_level, $major_subject, $phone_number, $email, $photo_url
             );
 
             if ($stmt->execute()) {
@@ -120,7 +122,7 @@ $total_current = $conn->query("SELECT COUNT(*) as total FROM teachers WHERE stat
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body p-4 p-md-5">
             <h4 class="fw-bold mb-3"><i class="bi bi-cloud-arrow-up text-primary"></i> นำเข้า / อัปเดตข้อมูลบุคลากรทางการศึกษา</h4>
-            <p class="text-muted small">ใช้สำหรับอัปโหลดข้อมูลครูและบุคลากรจาก Google Sheets หรือ Excel (ระบบใช้เลขบัตรประชาชนตรวจสอบข้อมูลซ้ำเพื่ออัปเดตอัตโนมัติ)</p>
+            <p class="text-muted small">นำเข้าข้อมูลครูพร้อมลิงก์รูปภาพ (ช่อง photo_url สามารถใส่ URL รูปภาพตรงๆ ได้)</p>
 
             <?php if (!empty($message)): ?>
                 <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show">
@@ -132,7 +134,7 @@ $total_current = $conn->query("SELECT COUNT(*) as total FROM teachers WHERE stat
             <div class="p-3 bg-light rounded-3 mb-4 border">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <strong class="text-dark small d-block"><i class="bi bi-filetype-csv"></i> รูปแบบไฟล์เทมเพลตมาตรฐาน</strong>
+                        <strong class="text-dark small d-block"><i class="bi bi-filetype-csv"></i> รูปแบบไฟล์เทมเพลตมาตรฐาน (พร้อมช่องรูปภาพ)</strong>
                         <span class="text-muted small">กรุณาจัดเรียงคอลัมน์ตามเทมเพลตที่ระบบกำหนด</span>
                     </div>
                     <a href="admin_upload.php?action=download_template" class="btn btn-sm btn-outline-primary">
