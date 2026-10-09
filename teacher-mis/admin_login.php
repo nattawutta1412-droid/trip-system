@@ -1,11 +1,10 @@
 <?php
 session_start();
 
-// ตั้งรหัสผ่าน Admin สำหรับเข้าจัดการระบบ
-$ADMIN_USERNAME = "admin";
-$ADMIN_PASSWORD = "ykr12345; // **สามารถเปลี่ยนรหัสผ่านนี้ตามต้องการ**
+$ADMIN_USERNAME = 'admin';
+$ADMIN_PASSWORD = 'password123';
 
-$error = "";
+$error = '';
 
 if (isset($_POST['login'])) {
     $username = trim($_POST['username'] ?? '');
@@ -13,10 +12,10 @@ if (isset($_POST['login'])) {
 
     if ($username === $ADMIN_USERNAME && $password === $ADMIN_PASSWORD) {
         $_SESSION['teacher_admin_logged_in'] = true;
-        header("Location: admin_upload.php");
+        header('Location: admin_upload.php');
         exit();
     } else {
-        $error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        $error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
 }
 ?>
