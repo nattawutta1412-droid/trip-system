@@ -1,4 +1,4 @@
 <?php
-// ดึงการตั้งค่าฐานข้อมูล TiDB Cloud จาก config.php ตัวหลักที่อยู่นอกโฟลเดอร์มาใช้งาน
+// ดึงการเชื่อมต่อ TiDB Cloud จาก config.php ด้านนอกมาใช้ทันที
 require_once dirname(__DIR__) . '/config.php';
 ?>
