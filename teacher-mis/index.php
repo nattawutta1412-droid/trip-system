@@ -69,7 +69,7 @@ if (!empty($selected_group)) {
 
 $where_sql = implode(" AND ", $where);
 
-// จัดลำดับ: เรียงตาม sort_order ก่อน (ใครใส่ 1, 2 จะขึ้นบนสุด) ตามด้วยลำดับตำแหน่งผู้บริหาร และ id
+// จัดลำดับ: เรียงตาม sort_order ก่อน (ใครใส่ 1 จะขึ้นบนสุด) ตามด้วยตำแหน่งและ id
 $sql = "SELECT * FROM teachers WHERE {$where_sql} ORDER BY 
         sort_order ASC,
         CASE 
@@ -109,7 +109,6 @@ while ($row = $teachers->fetch_assoc()) {
         .group-card.active { background-color: #e7f1ff; border-left-color: #0b5ed7; font-weight: bold; }
         .school-logo { width: 55px; height: auto; object-fit: contain; }
         
-        /* สไตล์การ์ดรูปภาพครู */
         .teacher-card {
             border-radius: 16px;
             border: none;
@@ -157,8 +156,11 @@ while ($row = $teachers->fetch_assoc()) {
             </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+            <a href="retirement.php" class="btn btn-outline-danger fw-medium">
+                <i class="bi bi-hourglass-split"></i> ข้อมูลวันเกษียณอายุ
+            </a>
             <a href="export_word.php" class="btn btn-info text-white fw-medium">
-                <i class="bi bi-file-earmark-word"></i> ส่งออกรายงานสรุป (Word)
+                <i class="bi bi-file-earmark-word"></i> ส่งออกสรุป (Word)
             </a>
             <a href="export_summary.php" class="btn btn-primary fw-medium">
                 <i class="bi bi-file-earmark-excel"></i> ส่งออกข้อมูล (Excel)
@@ -194,7 +196,7 @@ while ($row = $teachers->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- การ์ด 10 กลุ่มสาระฯ (คลิกเพื่อเลือกดูทำเนียบ) -->
+    <!-- การ์ด 10 กลุ่มสาระฯ ด้านบน -->
     <h5 class="fw-bold mb-3 text-secondary">
         <i class="bi bi-diagram-3-fill text-primary me-2"></i>เลือกกลุ่มสาระฯ เพื่อดูทำเนียบรูปภาพครู
     </h5>
@@ -268,7 +270,7 @@ while ($row = $teachers->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- แสดงทำเนียบเป็นการ์ดรูปภาพครู (เรียงตามลำดับ sort_order ก่อนเสมอ) -->
+    <!-- แสดงทำเนียบเป็นการ์ดรูปภาพครู -->
     <?php if (!empty($teacher_list)): ?>
         <div class="row g-4 mb-5">
             <?php foreach ($teacher_list as $t): 
@@ -277,7 +279,6 @@ while ($row = $teachers->fetch_assoc()) {
             ?>
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="card teacher-card shadow-sm h-100 text-center p-3 <?php echo $is_boss ? 'border border-warning border-2' : ''; ?>">
-                        <!-- รูปภาพครู -->
                         <div class="teacher-photo-container">
                             <?php if (!empty($photo)): ?>
                                 <img src="<?php echo htmlspecialchars($photo); ?>" alt="รูปภาพครู" class="teacher-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -337,6 +338,3 @@ while ($row = $teachers->fetch_assoc()) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-<a href="retirement.php" class="btn btn-outline-danger fw-medium">
-    <i class="bi bi-hourglass-split"></i> ข้อมูลวันเกษียณอายุ
-</a>
