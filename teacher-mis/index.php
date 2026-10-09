@@ -68,8 +68,11 @@ $teachers = $stmt->get_result();
             </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+            <a href="export_word.php" class="btn btn-info text-white fw-medium">
+                <i class="bi bi-file-earmark-word"></i> ส่งออกรายงานสรุป (Word)
+            </a>
             <a href="export_summary.php" class="btn btn-primary fw-medium">
-                <i class="bi bi-file-earmark-arrow-down"></i> ส่งออกรายงานสรุป (Excel)
+                <i class="bi bi-file-earmark-excel"></i> ส่งออกข้อมูล (Excel)
             </a>
             <a href="import.php" class="btn btn-success fw-medium">
                 <i class="bi bi-file-earmark-arrow-up"></i> นำเข้าข้อมูล (CSV / Sheets)
