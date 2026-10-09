@@ -314,3 +314,22 @@ function thai_date_short($date_str) {
         </div>
     </div>
 </footer>
+<!-- Footer ส่วนท้ายระบบงานสารสนเทศโรงเรียน -->
+<footer class="mt-5 py-4 bg-light text-center border-top">
+    <div class="container">
+        <p class="mb-2 text-muted small fw-medium">
+            ระบบบริหารการขออนุญาตไปราชการ | โรงเรียนย่านตาขาวรัฐชนูปถัมภ์
+        </p>
+        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+            <!-- ปุ่มไประบบสารสนเทศบุคลากร (ใช้งานได้แล้ว) -->
+            <a href="teacher-mis/" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-people-fill me-1"></i> ระบบสารสนเทศบุคลากร (Teacher MIS)
+            </a>
+
+            <!-- ปุ่มเตรียมไว้สำหรับระบบสถิติการมาทำงานและการลา (เตรียมพร้อมเปิดใช้งาน) -->
+            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm disabled" tabindex="-1" aria-disabled="true" title="อยู่ระหว่างการพัฒนา">
+                <i class="bi bi-calendar-check me-1"></i> สถิติการมาทำงาน / การลาครู <span class="badge bg-secondary ms-1">เร็วๆ นี้</span>
+            </a>
+        </div>
+    </div>
+</footer>
