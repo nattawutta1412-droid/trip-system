@@ -1,16 +1,16 @@
 <?php
 session_start();
 
-$ADMIN_USERNAME = 'admin';
-$ADMIN_PASSWORD = 'password123';
+$ADMIN_USER = 'admin';
+$ADMIN_PASS = 'password123';
 
 $error = '';
 
-if (isset($_POST['login'])) {
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $u = trim($_POST['username'] ?? '');
+    $p = trim($_POST['password'] ?? '');
 
-    if ($username === $ADMIN_USERNAME && $password === $ADMIN_PASSWORD) {
+    if ($u === $ADMIN_USER && $p === $ADMIN_PASS) {
         $_SESSION['teacher_admin_logged_in'] = true;
         header('Location: admin_upload.php');
         exit();
@@ -24,7 +24,7 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เข้าสู่ระบบจัดการข้อมูลบุคลากร - Admin</title>
+    <title>เข้าสู่ระบบ Admin - Teacher MIS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -62,7 +62,7 @@ if (isset($_POST['login'])) {
                 <input type="password" name="password" class="form-control" required placeholder="••••••••">
             </div>
         </div>
-        <button type="submit" name="login" class="btn btn-primary w-100 py-2 fw-medium mb-2">
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-medium mb-2">
             เข้าสู่ระบบ
         </button>
         <a href="index.php" class="btn btn-light w-100 text-muted small">กลับหน้าหลัก</a>
