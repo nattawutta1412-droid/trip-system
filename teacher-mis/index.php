@@ -42,7 +42,6 @@ $academic_stats = $conn->query("SELECT IF(academic_standing IS NULL OR academic_
 // 4. เงื่อนไขการค้นหาและกรองข้อมูล
 $search = trim($_GET['search'] ?? '');
 $selected_group = trim($_GET['group'] ?? '');
-$view_mode = trim($_GET['view'] ?? 'card'); // โหมดการแสดงผลเริ่มต้น: card
 
 $where = ["status='ปฏิบัติหน้าที่'"];
 $params = [];
@@ -87,7 +86,6 @@ if (!empty($params)) {
 $stmt->execute();
 $teachers = $stmt->get_result();
 
-// ดึงข้อมูลใส่ array เพื่อให้แสดงผลซ้ำได้สะดวก
 $teacher_list = [];
 while ($row = $teachers->fetch_assoc()) {
     $teacher_list[] = $row;
@@ -104,7 +102,7 @@ while ($row = $teachers->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
-        .stat-card { border-radius: 14px; border: none; transition: all 0.2s ease-in-out; }
+        .stat-card { border-radius: 14px; border: none; }
         .group-card { cursor: pointer; border-radius: 12px; transition: transform 0.15s, box-shadow 0.15s; border-left: 4px solid #0d6efd; }
         .group-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .group-card.active { background-color: #e7f1ff; border-left-color: #0b5ed7; font-weight: bold; }
@@ -195,7 +193,7 @@ while ($row = $teachers->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- เมนูเลือกกลุ่มสาระฯ (คลิกเพื่อดูทำเนียบ) -->
+    <!-- การ์ด 10 กลุ่มสาระฯ ด้านบน (เลือกตรงนี้แบบเดียว) -->
     <h5 class="fw-bold mb-3 text-secondary">
         <i class="bi bi-diagram-3-fill text-primary me-2"></i>เลือกกลุ่มสาระฯ เพื่อดูทำเนียบรูปภาพครู
     </h5>
@@ -206,7 +204,7 @@ while ($row = $teachers->fetch_assoc()) {
             $is_activity_grp = ($grp === 'กลุ่มกิจกรรมพัฒนาผู้เรียน');
         ?>
             <div class="col-lg-4 col-md-6">
-                <a href="index.php?group=<?php echo urlencode($grp); ?>&view=<?php echo $view_mode; ?>" class="text-decoration-none">
+                <a href="index.php?group=<?php echo urlencode($grp); ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="text-decoration-none">
                     <div class="card p-3 shadow-sm group-card <?php echo $is_active ? 'active' : 'bg-white'; ?> <?php echo $is_admin_grp ? 'border-warning border-start-4' : ($is_activity_grp ? 'border-success border-start-4' : ''); ?>">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="<?php echo $is_admin_grp ? 'text-danger fw-bold' : ($is_activity_grp ? 'text-success fw-bold' : 'text-dark'); ?>">
@@ -231,27 +229,22 @@ while ($row = $teachers->fetch_assoc()) {
         <?php endforeach; ?>
     </div>
 
-    <!-- ส่วนค้นหาและแถบสลับโหมดการแสดงผล (การ์ดรูปภาพ / ตาราง) -->
+    <!-- ส่วนค้นหาชื่อ/วิชาเอก (ตัด Dropdown กลุ่มสาระออกแล้ว เหลือแค่ช่องค้นหากับปุ่ม) -->
     <div class="card shadow-sm border-0 rounded-4 mb-4">
-        <div class="card-body p-4">
+        <div class="card-body p-3">
             <form method="GET" action="index.php" class="row g-2 align-items-center">
-                <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
-                <div class="col-md-5">
-                    <input type="text" name="search" class="form-control" placeholder="ค้นหาชื่อ, นามสกุล, ตำแหน่ง, วิชาเอก..." value="<?php echo htmlspecialchars($search); ?>">
-                </div>
-                <div class="col-md-4">
-                    <select name="group" class="form-select">
-                        <option value="">-- แสดงทั้งหมด (10 กลุ่มโครงสร้าง) --</option>
-                        <?php foreach ($standard_groups as $grp): ?>
-                            <option value="<?php echo htmlspecialchars($grp); ?>" <?php echo ($selected_group === $grp) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($grp); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <?php if (!empty($selected_group)): ?>
+                    <input type="hidden" name="group" value="<?php echo htmlspecialchars($selected_group); ?>">
+                <?php endif; ?>
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="พิมพ์ชื่อ, นามสกุล, ตำแหน่ง หรือวิชาเอก เพื่อค้นหา..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> ค้นหา</button>
-                    <a href="index.php?view=<?php echo $view_mode; ?>" class="btn btn-outline-secondary">ล้างค่า</a>
+                    <a href="index.php" class="btn btn-outline-secondary">ล้างค่าทั้งหมด</a>
                 </div>
             </form>
 
@@ -262,143 +255,79 @@ while ($row = $teachers->fetch_assoc()) {
                     <?php if (!empty($selected_group)): ?>
                         <span class="fs-5 fw-bold text-primary"><i class="bi bi-folder2-open me-1"></i> <?php echo htmlspecialchars($selected_group); ?></span>
                         <span class="badge bg-secondary ms-2"><?php echo count($teacher_list); ?> คน</span>
+                        <a href="index.php<?php echo !empty($search) ? '?search=' . urlencode($search) : ''; ?>" class="btn btn-sm btn-link text-danger text-decoration-none ms-2">
+                            <i class="bi bi-x-circle"></i> ยกเลิกตัวกรองกลุ่มสาระฯ
+                        </a>
                     <?php else: ?>
                         <span class="fs-5 fw-bold text-dark"><i class="bi bi-people-fill me-1"></i> รายชื่อบุคลากรทั้งหมด</span>
                         <span class="badge bg-secondary ms-2"><?php echo count($teacher_list); ?> คน</span>
                     <?php endif; ?>
                 </div>
-                
-                <!-- ปุ่มสลับรูปแบบการดู Card vs Table -->
-                <div class="btn-group" role="group">
-                    <a href="index.php?group=<?php echo urlencode($selected_group); ?>&search=<?php echo urlencode($search); ?>&view=card" 
-                       class="btn btn-sm <?php echo ($view_mode === 'card') ? 'btn-primary' : 'btn-outline-primary'; ?>">
-                        <i class="bi bi-grid-fill me-1"></i> แบบรูปภาพ (การ์ด)
-                    </a>
-                    <a href="index.php?group=<?php echo urlencode($selected_group); ?>&search=<?php echo urlencode($search); ?>&view=table" 
-                       class="btn btn-sm <?php echo ($view_mode === 'table') ? 'btn-primary' : 'btn-outline-primary'; ?>">
-                        <i class="bi bi-table me-1"></i> แบบตารางรายชื่อ
-                    </a>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- โหมดที่ 1: แสดงเป็นการ์ดพร้อมรูปภาพครู (Teacher Profile Cards) -->
-    <?php if ($view_mode === 'card'): ?>
-        <?php if (!empty($teacher_list)): ?>
-            <div class="row g-4 mb-5">
-                <?php foreach ($teacher_list as $t): 
-                    $is_boss = (strpos($t['position'], 'ผู้อำนวยการ') !== false || $t['department'] === 'กลุ่มบริหารสถานศึกษา');
-                    $photo = !empty($t['photo_url']) ? $t['photo_url'] : '';
-                ?>
-                    <div class="col-xl-3 col-lg-4 col-md-6">
-                        <div class="card teacher-card shadow-sm h-100 text-center p-3 <?php echo $is_boss ? 'border border-warning border-2' : ''; ?>">
-                            <!-- รูปภาพครู -->
-                            <div class="teacher-photo-container">
-                                <?php if (!empty($photo)): ?>
-                                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="รูปภาพครู" class="teacher-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div class="teacher-avatar-fallback" style="display:none;"><i class="bi bi-person-fill"></i></div>
+    <!-- แสดงทำเนียบเป็นการ์ดรูปภาพครู -->
+    <?php if (!empty($teacher_list)): ?>
+        <div class="row g-4 mb-5">
+            <?php foreach ($teacher_list as $t): 
+                $is_boss = (strpos($t['position'], 'ผู้อำนวยการ') !== false || $t['department'] === 'กลุ่มบริหารสถานศึกษา');
+                $photo = !empty($t['photo_url']) ? $t['photo_url'] : '';
+            ?>
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="card teacher-card shadow-sm h-100 text-center p-3 <?php echo $is_boss ? 'border border-warning border-2' : ''; ?>">
+                        <!-- รูปภาพครู -->
+                        <div class="teacher-photo-container">
+                            <?php if (!empty($photo)): ?>
+                                <img src="<?php echo htmlspecialchars($photo); ?>" alt="รูปภาพครู" class="teacher-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="teacher-avatar-fallback" style="display:none;"><i class="bi bi-person-fill"></i></div>
+                            <?php else: ?>
+                                <div class="teacher-avatar-fallback">
+                                    <i class="bi <?php echo ($t['gender'] === 'หญิง') ? 'bi-person-standing-dress' : 'bi-person-fill'; ?>"></i>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="card-body p-2 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="fw-bold mb-1 text-dark">
+                                    <?php echo htmlspecialchars($t['prefix'] . $t['first_name'] . ' ' . $t['last_name']); ?>
+                                </h5>
+                                <div class="text-primary fw-medium small mb-1"><?php echo htmlspecialchars($t['position']); ?></div>
+                                
+                                <?php if (!empty($t['academic_standing'])): ?>
+                                    <span class="badge bg-info-subtle text-info-emphasis mb-2">
+                                        วิทยฐานะ<?php echo htmlspecialchars($t['academic_standing']); ?>
+                                    </span>
                                 <?php else: ?>
-                                    <div class="teacher-avatar-fallback">
-                                        <i class="bi <?php echo ($t['gender'] === 'หญิง') ? 'bi-person-standing-dress' : 'bi-person-fill'; ?>"></i>
-                                    </div>
+                                    <span class="badge bg-light text-muted border mb-2">-</span>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="card-body p-2 d-flex flex-column justify-content-between">
-                                <div>
-                                    <h5 class="fw-bold mb-1 text-dark">
-                                        <?php echo htmlspecialchars($t['prefix'] . $t['first_name'] . ' ' . $t['last_name']); ?>
-                                    </h5>
-                                    <div class="text-primary fw-medium small mb-1"><?php echo htmlspecialchars($t['position']); ?></div>
-                                    
-                                    <?php if (!empty($t['academic_standing'])): ?>
-                                        <span class="badge bg-info-subtle text-info-emphasis mb-2">
-                                            วิทยฐานะ<?php echo htmlspecialchars($t['academic_standing']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="badge bg-light text-muted border mb-2">-</span>
-                                    <?php endif; ?>
+                            <div class="border-top pt-2 mt-2 text-start small text-muted">
+                                <div class="text-truncate mb-1" title="<?php echo htmlspecialchars($t['department']); ?>">
+                                    <i class="bi bi-building me-1 text-secondary"></i> <strong>สังกัด:</strong> <?php echo htmlspecialchars($t['department']); ?>
                                 </div>
-
-                                <div class="border-top pt-2 mt-2 text-start small text-muted">
-                                    <div class="text-truncate mb-1" title="<?php echo htmlspecialchars($t['department']); ?>">
-                                        <i class="bi bi-building me-1 text-secondary"></i> <strong>สังกัด:</strong> <?php echo htmlspecialchars($t['department']); ?>
+                                <?php if (!empty($t['major_subject'])): ?>
+                                    <div class="text-truncate mb-1" title="<?php echo htmlspecialchars($t['major_subject']); ?>">
+                                        <i class="bi bi-mortarboard me-1 text-secondary"></i> <strong>วิชาเอก:</strong> <?php echo htmlspecialchars($t['major_subject']); ?>
                                     </div>
-                                    <?php if (!empty($t['major_subject'])): ?>
-                                        <div class="text-truncate mb-1" title="<?php echo htmlspecialchars($t['major_subject']); ?>">
-                                            <i class="bi bi-mortarboard me-1 text-secondary"></i> <strong>วิชาเอก:</strong> <?php echo htmlspecialchars($t['major_subject']); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($t['phone_number'])): ?>
-                                        <div class="mb-1">
-                                            <i class="bi bi-telephone me-1 text-secondary"></i> <strong>โทร:</strong> <a href="tel:<?php echo htmlspecialchars($t['phone_number']); ?>" class="text-decoration-none text-muted"><?php echo htmlspecialchars($t['phone_number']); ?></a>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($t['phone_number'])): ?>
+                                    <div class="mb-1">
+                                        <i class="bi bi-telephone me-1 text-secondary"></i> <strong>โทร:</strong> <a href="tel:<?php echo htmlspecialchars($t['phone_number']); ?>" class="text-decoration-none text-muted"><?php echo htmlspecialchars($t['phone_number']); ?></a>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="card shadow-sm border-0 rounded-4 text-center py-5 mb-5 bg-white">
-                <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
-                <h6 class="text-muted mt-2">ไม่พบข้อมูลบุคลากรในกลุ่มสาระฯ หรือเงื่อนไขที่เลือก</h6>
-            </div>
-        <?php endif; ?>
-
-    <!-- โหมดที่ 2: แสดงเป็นตารางรายชื่อ (Table View) -->
-    <?php else: ?>
-        <div class="card shadow-sm border-0 rounded-4 mb-5">
-            <div class="card-body p-4">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 5%;">ลำดับ</th>
-                                <th>รูปภาพ</th>
-                                <th>ชื่อ - สกุล</th>
-                                <th>ตำแหน่ง</th>
-                                <th>วิทยฐานะ</th>
-                                <th>กลุ่มสาระฯ / สังกัด</th>
-                                <th>วิชาเอก</th>
-                                <th>เบอร์โทรศัพท์</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($teacher_list)): ?>
-                                <?php $i = 1; foreach ($teacher_list as $t): 
-                                    $photo = !empty($t['photo_url']) ? $t['photo_url'] : '';
-                                ?>
-                                    <tr>
-                                        <td><?php echo $i++; ?></td>
-                                        <td>
-                                            <div style="width: 45px; height: 50px; border-radius: 6px; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center;">
-                                                <?php if (!empty($photo)): ?>
-                                                    <img src="<?php echo htmlspecialchars($photo); ?>" style="width: 100%; height: 100%; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <i class="bi bi-person-fill text-muted fs-4"></i>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                        <td><strong><?php echo htmlspecialchars($t['prefix'] . $t['first_name'] . ' ' . $t['last_name']); ?></strong></td>
-                                        <td><?php echo htmlspecialchars($t['position']); ?></td>
-                                        <td><span class="badge bg-info-subtle text-info-emphasis"><?php echo htmlspecialchars($t['academic_standing'] ?: '-'); ?></span></td>
-                                        <td><?php echo htmlspecialchars($t['department']); ?></td>
-                                        <td><?php echo htmlspecialchars($t['major_subject'] ?: '-'); ?></td>
-                                        <td><?php echo htmlspecialchars($t['phone_number'] ?: '-'); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">ไม่พบข้อมูลบุคลากรในกลุ่มสาระฯ ที่เลือก</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
                 </div>
-            </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="card shadow-sm border-0 rounded-4 text-center py-5 mb-5 bg-white">
+            <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+            <h6 class="text-muted mt-2">ไม่พบข้อมูลบุคลากรในกลุ่มสาระฯ หรือคำค้นหาที่ระบุ</h6>
         </div>
     <?php endif; ?>
 
