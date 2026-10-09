@@ -10,14 +10,24 @@ require_once 'config.php';
 $message = "";
 $message_type = "info";
 
-// 1. ดาวน์โหลดเทมเพลตมาตรฐาน
+// 1. ดาวน์โหลดเทมเพลต CSV ฉบับสมบูรณ์ (พร้อม birth_date และ start_date)
 if (isset($_GET['action']) && $_GET['action'] === 'download_template') {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=teacher_template.csv');
     $output = fopen('php://output', 'w');
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-    fputcsv($output, ['id_card', 'prefix', 'first_name', 'last_name', 'gender', 'position', 'academic_standing', 'department', 'work_group', 'education_level', 'major_subject', 'phone_number', 'email', 'photo_url', 'sort_order']);
-    fputcsv($output, ['1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 'ครู (หัวหน้ากลุ่มสาระฯ)', 'ชำนาญการ', 'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', '0812345678', 'somsak@example.com', 'https://example.com/photo.jpg', '1']);
+    fputcsv($output, [
+        'id_card', 'prefix', 'first_name', 'last_name', 'gender', 
+        'birth_date', 'start_date', 'position', 'academic_standing', 
+        'department', 'work_group', 'education_level', 'major_subject', 
+        'phone_number', 'email', 'photo_url', 'sort_order'
+    ]);
+    fputcsv($output, [
+        '1929900123456', 'นาย', 'สมศักดิ์', 'รักเรียน', 'ชาย', 
+        '1975-05-20', '2005-10-01', 'ครู', 'ชำนาญการพิเศษ', 
+        'กลุ่มสาระการเรียนรู้คณิตศาสตร์', 'กลุ่มงานบริหารวิชาการ', 'ปริญญาโท', 'การสอนคณิตศาสตร์', 
+        '0812345678', 'somsak@school.ac.th', 'https://example.com/photo.jpg', '1'
+    ]);
     fclose($output);
     exit();
 }
@@ -44,7 +54,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && !empty($_GET['id']
     }
 }
 
-// 4. ฟังก์ชัน: บันทึกข้อมูลครู (เพิ่มใหม่ หรือ แก้ไข)
+// 4. ฟังก์ชัน: บันทึกข้อมูลครู (เพิ่มใหม่ หรือ แก้ไขรายคน)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher'])) {
     $teacher_id        = !empty($_POST['teacher_id']) ? intval($_POST['teacher_id']) : null;
     $id_card           = trim($_POST['id_card'] ?? '');
@@ -52,6 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     $first_name        = trim($_POST['first_name'] ?? '');
     $last_name         = trim($_POST['last_name'] ?? '');
     $gender            = trim($_POST['gender'] ?? 'ชาย');
+    $birth_date        = !empty($_POST['birth_date']) ? $_POST['birth_date'] : null;
+    $start_date        = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $position          = trim($_POST['position'] ?? '');
     $academic_standing = trim($_POST['academic_standing'] ?? '');
     $department        = trim($_POST['department'] ?? '');
@@ -68,15 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
         $message_type = "danger";
     } else {
         if ($teacher_id) {
-            // อัปเดตข้อมูลเดิม
             $stmt = $conn->prepare("UPDATE teachers SET 
-                id_card=?, prefix=?, first_name=?, last_name=?, gender=?, position=?, 
-                academic_standing=?, department=?, work_group=?, education_level=?, 
-                major_subject=?, phone_number=?, email=?, photo_url=?, sort_order=? WHERE id=?");
-            $stmt->bind_param("ssssssssssssssii", 
-                $id_card, $prefix, $first_name, $last_name, $gender, $position,
-                $academic_standing, $department, $work_group, $education_level,
-                $major_subject, $phone_number, $email, $photo_url, $sort_order, $teacher_id
+                id_card=?, prefix=?, first_name=?, last_name=?, gender=?, 
+                birth_date=?, start_date=?, position=?, academic_standing=?, 
+                department=?, work_group=?, education_level=?, major_subject=?, 
+                phone_number=?, email=?, photo_url=?, sort_order=? WHERE id=?");
+            $stmt->bind_param("ssssssssssssssssii", 
+                $id_card, $prefix, $first_name, $last_name, $gender, 
+                $birth_date, $start_date, $position, $academic_standing, 
+                $department, $work_group, $education_level, $major_subject, 
+                $phone_number, $email, $photo_url, $sort_order, $teacher_id
             );
             if ($stmt->execute()) {
                 $message = "อัปเดตข้อมูลคุณครู {$first_name} {$last_name} เรียบร้อยแล้ว";
@@ -86,20 +99,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
                 $message_type = "danger";
             }
         } else {
-            // เพิ่มข้อมูลใหม่
             $stmt = $conn->prepare("INSERT INTO teachers 
-                (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id_card, prefix, first_name, last_name, gender, birth_date, start_date, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                 prefix=VALUES(prefix), first_name=VALUES(first_name), last_name=VALUES(last_name),
-                gender=VALUES(gender), position=VALUES(position), academic_standing=VALUES(academic_standing),
+                gender=VALUES(gender), birth_date=VALUES(birth_date), start_date=VALUES(start_date),
+                position=VALUES(position), academic_standing=VALUES(academic_standing),
                 department=VALUES(department), work_group=VALUES(work_group), education_level=VALUES(education_level),
                 major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email),
                 photo_url=VALUES(photo_url), sort_order=VALUES(sort_order)");
-            $stmt->bind_param("ssssssssssssssi", 
-                $id_card, $prefix, $first_name, $last_name, $gender, $position,
-                $academic_standing, $department, $work_group, $education_level,
-                $major_subject, $phone_number, $email, $photo_url, $sort_order
+            $stmt->bind_param("ssssssssssssssssi", 
+                $id_card, $prefix, $first_name, $last_name, $gender, 
+                $birth_date, $start_date, $position, $academic_standing, 
+                $department, $work_group, $education_level, $major_subject, 
+                $phone_number, $email, $photo_url, $sort_order
             );
             if ($stmt->execute()) {
                 $message = "บันทึกข้อมูลคุณครู {$first_name} {$last_name} สำเร็จเรียบร้อย";
@@ -112,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_single_teacher']
     }
 }
 
-// 5. นำเข้าไฟล์ CSV พร้อม sort_order
+// 5. นำเข้าไฟล์ CSV
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $file = $_FILES['csv_file']['tmp_name'];
     if (!empty($file) && is_uploaded_file($file)) {
@@ -121,15 +135,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
-        fgetcsv($handle);
+        fgetcsv($handle); // ข้ามหัวคอลัมน์
 
         $success_count = 0;
         $stmt = $conn->prepare("INSERT INTO teachers 
-            (id_card, prefix, first_name, last_name, gender, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id_card, prefix, first_name, last_name, gender, birth_date, start_date, position, academic_standing, department, work_group, education_level, major_subject, phone_number, email, photo_url, sort_order) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
             prefix=VALUES(prefix), first_name=VALUES(first_name), last_name=VALUES(last_name),
-            gender=VALUES(gender), position=VALUES(position), academic_standing=VALUES(academic_standing),
+            gender=VALUES(gender), birth_date=VALUES(birth_date), start_date=VALUES(start_date),
+            position=VALUES(position), academic_standing=VALUES(academic_standing),
             department=VALUES(department), work_group=VALUES(work_group), education_level=VALUES(education_level),
             major_subject=VALUES(major_subject), phone_number=VALUES(phone_number), email=VALUES(email),
             photo_url=VALUES(photo_url), sort_order=VALUES(sort_order)");
@@ -141,21 +156,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $first_name        = trim($row[2] ?? '');
             $last_name         = trim($row[3] ?? '');
             $gender            = trim($row[4] ?? 'ชาย');
-            $position          = trim($row[5] ?? '');
-            $academic_standing = trim($row[6] ?? '');
-            $department        = trim($row[7] ?? '');
-            $work_group        = trim($row[8] ?? '');
-            $education_level   = trim($row[9] ?? '');
-            $major_subject     = trim($row[10] ?? '');
-            $phone_number      = trim($row[11] ?? '');
-            $email             = trim($row[12] ?? '');
-            $photo_url         = trim($row[13] ?? '');
-            $sort_order        = (!empty($row[14]) && is_numeric($row[14])) ? intval($row[14]) : 999;
+            $birth_date        = !empty(trim($row[5] ?? '')) ? trim($row[5]) : null;
+            $start_date        = !empty(trim($row[6] ?? '')) ? trim($row[6]) : null;
+            $position          = trim($row[7] ?? '');
+            $academic_standing = trim($row[8] ?? '');
+            $department        = trim($row[9] ?? '');
+            $work_group        = trim($row[10] ?? '');
+            $education_level   = trim($row[11] ?? '');
+            $major_subject     = trim($row[12] ?? '');
+            $phone_number      = trim($row[13] ?? '');
+            $email             = trim($row[14] ?? '');
+            $photo_url         = trim($row[15] ?? '');
+            $sort_order        = (!empty($row[16]) && is_numeric($row[16])) ? intval($row[16]) : 999;
 
-            $stmt->bind_param("ssssssssssssssi", 
+            $stmt->bind_param("ssssssssssssssssi", 
                 $id_card, $prefix, $first_name, $last_name, $gender, 
-                $position, $academic_standing, $department, $work_group, 
-                $education_level, $major_subject, $phone_number, $email, $photo_url, $sort_order
+                $birth_date, $start_date, $position, $academic_standing, 
+                $department, $work_group, $education_level, $major_subject, 
+                $phone_number, $email, $photo_url, $sort_order
             );
             if ($stmt->execute()) {
                 $success_count++;
@@ -170,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     }
 }
 
-// 6. ดึงข้อมูลรายการครูเพื่อแสดงและจัดการ เรียงตาม sort_order ก่อน
+// 6. ดึงข้อมูลรายชื่อครู
 $admin_search = trim($_GET['admin_search'] ?? '');
 $sql_list = "SELECT * FROM teachers";
 if (!empty($admin_search)) {
@@ -226,6 +244,7 @@ $standard_depts = [
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teacherModal" onclick="resetForm()">
                 <i class="bi bi-person-plus-fill"></i> เพิ่มข้อมูลครู (รายคน)
             </button>
+            <a href="retirement.php" class="btn btn-outline-danger"><i class="bi bi-hourglass-split"></i> ข้อมูลเกษียณ</a>
             <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-house-door"></i> หน้าหลัก</a>
             <a href="admin_upload.php?action=logout" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> ออกจากระบบ</a>
         </div>
@@ -257,7 +276,7 @@ $standard_depts = [
                         </div>
                         <div class="col-md-5 text-md-end mt-2 mt-md-0">
                             <a href="admin_upload.php?action=download_template" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-download"></i> ดาวน์โหลดเทมเพลต CSV
+                                <i class="bi bi-download"></i> ดาวน์โหลดเทมเพลต CSV ฉบับใหม่
                             </a>
                         </div>
                     </div>
@@ -288,9 +307,10 @@ $standard_depts = [
                             <th style="width: 7%;" class="text-center">ลำดับ</th>
                             <th style="width: 5%;">รูป</th>
                             <th>ชื่อ - สกุล</th>
-                            <th>ตำแหน่ง</th>
-                            <th>วิทยฐานะ</th>
+                            <th>ตำแหน่ง / วิทยฐานะ</th>
                             <th>กลุ่มสาระการเรียนรู้</th>
+                            <th>วันเกิด</th>
+                            <th>วันบรรจุ</th>
                             <th>เบอร์โทร</th>
                             <th class="text-center" style="width: 15%;">การจัดการ</th>
                         </tr>
@@ -300,6 +320,8 @@ $standard_depts = [
                             <?php while ($t = $all_teachers->fetch_assoc()): 
                                 $t_json = htmlspecialchars(json_encode($t), ENT_QUOTES, 'UTF-8');
                                 $order_val = ($t['sort_order'] == 999) ? '-' : $t['sort_order'];
+                                $b_date = !empty($t['birth_date']) ? date('d/m/Y', strtotime($t['birth_date'])) : '-';
+                                $s_date = !empty($t['start_date']) ? date('d/m/Y', strtotime($t['start_date'])) : '-';
                             ?>
                                 <tr>
                                     <td class="text-center">
@@ -317,9 +339,15 @@ $standard_depts = [
                                     <td>
                                         <strong><?php echo htmlspecialchars($t['prefix'] . $t['first_name'] . ' ' . $t['last_name']); ?></strong>
                                     </td>
-                                    <td><?php echo htmlspecialchars($t['position']); ?></td>
-                                    <td><span class="badge bg-info-subtle text-info-emphasis"><?php echo htmlspecialchars($t['academic_standing'] ?: '-'); ?></span></td>
+                                    <td>
+                                        <?php echo htmlspecialchars($t['position']); ?>
+                                        <?php if (!empty($t['academic_standing'])): ?>
+                                            <span class="badge bg-info-subtle text-info-emphasis ms-1"><?php echo htmlspecialchars($t['academic_standing']); ?></span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo htmlspecialchars($t['department']); ?></td>
+                                    <td><?php echo $b_date; ?></td>
+                                    <td><?php echo $s_date; ?></td>
                                     <td><?php echo htmlspecialchars($t['phone_number'] ?: '-'); ?></td>
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-outline-warning me-1" onclick='editTeacher(<?php echo $t_json; ?>)' title="แก้ไข">
@@ -333,7 +361,7 @@ $standard_depts = [
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">ไม่พบข้อมูลบุคลากร</td>
+                                <td colspan="9" class="text-center py-4 text-muted">ไม่พบข้อมูลบุคลากร</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -343,7 +371,7 @@ $standard_depts = [
     </div>
 </div>
 
-<!-- Modal สำหรับเพิ่ม / แก้ไขข้อมูลครู -->
+<!-- Modal เพิ่ม/แก้ไขข้อมูลครู -->
 <div class="modal fade" id="teacherModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow">
@@ -356,7 +384,6 @@ $standard_depts = [
                     <input type="hidden" name="save_single_teacher" value="1">
                     <input type="hidden" name="teacher_id" id="teacher_id" value="">
 
-                    <!-- ลำดับก่อน-หลัง (ใส่เลขน้อยให้อยู่บนสุด เช่น 1 สำหรับหัวหน้ากลุ่มสาระ) -->
                     <div class="alert alert-warning py-2 mb-3 small d-flex align-items-center">
                         <i class="bi bi-info-circle-fill fs-5 me-2"></i>
                         <span><strong>การจัดลำดับ:</strong> กำหนดตัวเลขน้อย (เช่น <strong>1</strong>) เพื่อให้แสดงอยู่บนสุด เช่น หัวหน้ากลุ่มสาระ หรือหัวหน้างาน</span>
@@ -392,9 +419,19 @@ $standard_depts = [
                             <input type="text" name="last_name" id="last_name" class="form-control" required>
                         </div>
 
+                        <!-- ฟิลด์วันเกิด และ วันบรรจุ -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-danger">วันเดือนปีเกิด (ค.ศ.)</label>
+                            <input type="date" name="birth_date" id="birth_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-success">วันบรรจุรับราชการ (ค.ศ.)</label>
+                            <input type="date" name="start_date" id="start_date" class="form-control">
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">ตำแหน่ง <span class="text-danger">*</span></label>
-                            <input type="text" name="position" id="position" class="form-control" required placeholder="เช่น ครู, หัวหน้ากลุ่มสาระฯ, ผู้อำนวยการ">
+                            <input type="text" name="position" id="position" class="form-control" required placeholder="เช่น ครู, ผู้อำนวยการ">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">วิทยฐานะ</label>
@@ -458,6 +495,8 @@ function resetForm() {
     document.getElementById('first_name').value = '';
     document.getElementById('last_name').value = '';
     document.getElementById('gender').value = 'ชาย';
+    document.getElementById('birth_date').value = '';
+    document.getElementById('start_date').value = '';
     document.getElementById('position').value = '';
     document.getElementById('academic_standing').value = '';
     document.getElementById('department').value = '';
@@ -478,6 +517,8 @@ function editTeacher(t) {
     document.getElementById('first_name').value = t.first_name || '';
     document.getElementById('last_name').value = t.last_name || '';
     document.getElementById('gender').value = t.gender || 'ชาย';
+    document.getElementById('birth_date').value = t.birth_date || '';
+    document.getElementById('start_date').value = t.start_date || '';
     document.getElementById('position').value = t.position || '';
     document.getElementById('academic_standing').value = t.academic_standing || '';
     document.getElementById('department').value = t.department || '';
@@ -494,7 +535,3 @@ function editTeacher(t) {
 </script>
 </body>
 </html>
-<div class="col-md-4">
-    <label class="form-label small fw-bold">วันเดือนปีเกิด (ค.ศ.)</label>
-    <input type="date" name="birth_date" id="birth_date" class="form-control">
-</div>
