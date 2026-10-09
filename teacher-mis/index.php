@@ -74,8 +74,8 @@ $teachers = $stmt->get_result();
             <a href="export_summary.php" class="btn btn-primary fw-medium">
                 <i class="bi bi-file-earmark-excel"></i> ส่งออกข้อมูล (Excel)
             </a>
-            <a href="import.php" class="btn btn-success fw-medium">
-                <i class="bi bi-file-earmark-arrow-up"></i> นำเข้าข้อมูล (CSV / Sheets)
+            <a href="admin_login.php" class="btn btn-warning fw-medium text-dark">
+                <i class="bi bi-shield-lock"></i> จัดการข้อมูล (Admin)
             </a>
             <a href="../index.php" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> ไประบบขอไปราชการ
@@ -177,7 +177,7 @@ $teachers = $stmt->get_result();
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">ยังไม่มีข้อมูลบุคลากรในระบบ (กรุณากดปุ่ม "นำเข้าข้อมูล" เพื่อเพิ่มข้อมูล)</td>
+                                <td colspan="8" class="text-center py-4 text-muted">ยังไม่มีข้อมูลบุคลากรในระบบ</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
