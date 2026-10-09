@@ -1,12 +1,12 @@
 <?php
 require_once 'config.php';
 
-// ดึงข้อมูลครูที่มีวันเกิด
+// ดึงข้อมูลครูพร้อมคำนวณวันเกษียณอายุราชการ (30 กันยายน ของปีที่อายุครบ 60 ปีบริบูรณ์)
+// เกิดหลัง 1 ต.ค. (ตั้งแต่ 2 ต.ค. เป็นต้นไป) เกษียณปีถัดไป (+61 จากปีเกิด)
 $sql = "SELECT *, 
         CASE 
             WHEN birth_date IS NOT NULL THEN
                 CASE 
-                    -- เกิดหลัง 1 ต.ค. (ตั้งแต่ 2 ต.ค. เป็นต้นไป) เกษียณปีที่อายุครบ 60 + 1 ปี
                     WHEN DATE_FORMAT(birth_date, '%m%d') > '1001' 
                     THEN STR_TO_DATE(CONCAT(YEAR(birth_date) + 61, '-09-30'), '%Y-%m-%d')
                     ELSE STR_TO_DATE(CONCAT(YEAR(birth_date) + 60, '-09-30'), '%Y-%m-%d')
@@ -25,6 +25,7 @@ $teachers = [];
 $today = new DateTime();
 
 while ($row = $result->fetch_assoc()) {
+    // 1. คำนวณวันเกษียณและเวลานับถอยหลัง
     if (!empty($row['retirement_date'])) {
         $ret_date = new DateTime($row['retirement_date']);
         $diff = $today->diff($ret_date);
@@ -45,6 +46,16 @@ while ($row = $result->fetch_assoc()) {
         $row['remaining_text'] = '<span class="text-muted">-</span>';
         $row['is_retired'] = false;
     }
+
+    // 2. คำนวณอายุราชการ (ถ้ามีวันบรรจุ)
+    if (!empty($row['start_date'])) {
+        $s_date = new DateTime($row['start_date']);
+        $diff_service = $today->diff($s_date);
+        $row['service_text'] = "{$diff_service->y} ปี {$diff_service->m} เดือน";
+    } else {
+        $row['service_text'] = "-";
+    }
+
     $teachers[] = $row;
 }
 ?>
@@ -59,8 +70,7 @@ while ($row = $result->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
-        .school-logo { width: 55px; height: auto; }
-        .retire-card { border-radius: 14px; border: none; }
+        .school-logo { width: 55px; height: auto; object-fit: contain; }
     </style>
 </head>
 <body class="py-4">
@@ -77,7 +87,7 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="d-flex gap-2">
             <a href="index.php" class="btn btn-outline-primary"><i class="bi bi-people me-1"></i> ทำเนียบครู</a>
-            <a href="admin_upload.php" class="btn btn-warning fw-medium"><i class="bi bi-pencil-square me-1"></i> จัดการข้อมูล (Admin)</a>
+            <a href="admin_upload.php" class="btn btn-warning fw-medium"><i class="bi bi-shield-lock me-1"></i> จัดการข้อมูล (Admin)</a>
         </div>
     </div>
 
@@ -93,7 +103,8 @@ while ($row = $result->fetch_assoc()) {
                             <th>ชื่อ - สกุล</th>
                             <th>ตำแหน่ง / วิทยฐานะ</th>
                             <th>กลุ่มสาระการเรียนรู้</th>
-                            <th>วัน/เดือน/ปีเกิด</th>
+                            <th>วันเกิด</th>
+                            <th>อายุราชการ</th>
                             <th class="text-center text-primary">ปี พ.ศ. ที่เกษียณ</th>
                             <th class="text-center">วันที่เกษียณอายุ</th>
                             <th class="text-center text-danger">ระยะเวลาคงเหลือ</th>
@@ -127,6 +138,7 @@ while ($row = $result->fetch_assoc()) {
                                     </td>
                                     <td><?php echo htmlspecialchars($t['department']); ?></td>
                                     <td><?php echo $b_date_th; ?></td>
+                                    <td><span class="badge bg-light text-dark border"><?php echo $t['service_text']; ?></span></td>
                                     <td class="text-center">
                                         <span class="badge bg-primary fs-6 px-3 py-1">พ.ศ. <?php echo $t['retire_year_th']; ?></span>
                                     </td>
@@ -136,7 +148,7 @@ while ($row = $result->fetch_assoc()) {
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-muted">ไม่พบข้อมูล</td>
+                                <td colspan="10" class="text-center py-4 text-muted">ยังไม่มีข้อมูลบุคลากรในระบบ</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
