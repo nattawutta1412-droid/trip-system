@@ -69,8 +69,9 @@ if (!empty($selected_group)) {
 
 $where_sql = implode(" AND ", $where);
 
-// จัดลำดับ: ผู้บริหารขึ้นก่อน
+// จัดลำดับ: เรียงตาม sort_order ก่อน (ใครใส่ 1, 2 จะขึ้นบนสุด) ตามด้วยลำดับตำแหน่งผู้บริหาร และ id
 $sql = "SELECT * FROM teachers WHERE {$where_sql} ORDER BY 
+        sort_order ASC,
         CASE 
             WHEN position LIKE '%ผู้อำนวยการเชี่ยวชาญ%' THEN 1
             WHEN position LIKE '%ผู้อำนวยการ%' AND position NOT LIKE '%รอง%' THEN 2
@@ -193,7 +194,7 @@ while ($row = $teachers->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- การ์ด 10 กลุ่มสาระฯ ด้านบน (เลือกตรงนี้แบบเดียว) -->
+    <!-- การ์ด 10 กลุ่มสาระฯ (คลิกเพื่อเลือกดูทำเนียบ) -->
     <h5 class="fw-bold mb-3 text-secondary">
         <i class="bi bi-diagram-3-fill text-primary me-2"></i>เลือกกลุ่มสาระฯ เพื่อดูทำเนียบรูปภาพครู
     </h5>
@@ -229,7 +230,7 @@ while ($row = $teachers->fetch_assoc()) {
         <?php endforeach; ?>
     </div>
 
-    <!-- ส่วนค้นหาชื่อ/วิชาเอก (ตัด Dropdown กลุ่มสาระออกแล้ว เหลือแค่ช่องค้นหากับปุ่ม) -->
+    <!-- ส่วนค้นหาชื่อ/วิชาเอก -->
     <div class="card shadow-sm border-0 rounded-4 mb-4">
         <div class="card-body p-3">
             <form method="GET" action="index.php" class="row g-2 align-items-center">
@@ -267,7 +268,7 @@ while ($row = $teachers->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- แสดงทำเนียบเป็นการ์ดรูปภาพครู -->
+    <!-- แสดงทำเนียบเป็นการ์ดรูปภาพครู (เรียงตามลำดับ sort_order ก่อนเสมอ) -->
     <?php if (!empty($teacher_list)): ?>
         <div class="row g-4 mb-5">
             <?php foreach ($teacher_list as $t): 
