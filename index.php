@@ -301,3 +301,16 @@ function thai_date_short($date_str) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<!-- Footer ส่วนท้ายพร้อมปุ่มลิงก์ไประบบสารสนเทศบุคลากร -->
+<footer class="mt-5 py-4 bg-light text-center border-top">
+    <div class="container">
+        <p class="mb-2 text-muted small">
+            ระบบบริหารการขออนุญาตไปราชการ | โรงเรียนย่านตาขาวรัฐชนูปถัมภ์
+        </p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <a href="teacher-mis/" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-people-fill me-1"></i> ระบบสารสนเทศบุคลากรทางการศึกษา (Teacher MIS)
+            </a>
+        </div>
+    </div>
+</footer>
