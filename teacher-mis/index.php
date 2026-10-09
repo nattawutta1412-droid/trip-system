@@ -337,3 +337,6 @@ while ($row = $teachers->fetch_assoc()) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<a href="retirement.php" class="btn btn-outline-danger fw-medium">
+    <i class="bi bi-hourglass-split"></i> ข้อมูลวันเกษียณอายุ
+</a>
