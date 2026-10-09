@@ -52,16 +52,20 @@ $teachers = $stmt->get_result();
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
         .stat-card { border-radius: 12px; border: none; transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-3px); }
+        .school-logo { width: 58px; height: auto; object-fit: contain; }
     </style>
 </head>
 <body class="py-4">
 
 <div class="container-fluid px-4">
-    <!-- ส่วนหัว -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div>
-            <h3 class="fw-bold mb-0">ระบบสารสนเทศบุคลากรทางการศึกษา (Teacher MIS)</h3>
-            <small class="text-muted">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</small>
+    <!-- ส่วนหัวพร้อมโลโก้โรงเรียน -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 bg-white p-3 rounded-4 shadow-sm">
+        <div class="d-flex align-items-center gap-3">
+            <img src="../logo.png" alt="โลโก้โรงเรียน" class="school-logo">
+            <div>
+                <h3 class="fw-bold mb-0 text-dark">ระบบสารสนเทศบุคลากรทางการศึกษา (Teacher MIS)</h3>
+                <span class="text-muted fw-medium">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</span>
+            </div>
         </div>
         <div class="d-flex gap-2">
             <a href="import.php" class="btn btn-success fw-medium">
@@ -76,13 +80,13 @@ $teachers = $stmt->get_result();
     <!-- สรุปสถิติ 3 การ์ด -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card stat-card bg-primary text-white shadow-sm p-3">
-                <div class="small">บุคลากรที่ปฏิบัติหน้าที่ทั้งหมด</div>
+            <div class="card stat-card bg-primary text-white shadow-sm p-3 h-100 justify-content-center">
+                <div class="small opacity-75">บุคลากรที่ปฏิบัติหน้าที่ทั้งหมด</div>
                 <div class="fs-2 fw-bold"><?php echo number_format($total_teachers); ?> <span class="fs-6 fw-normal">คน</span></div>
             </div>
         </div>
         <div class="col-md-5">
-            <div class="card stat-card bg-white shadow-sm p-3">
+            <div class="card stat-card bg-white shadow-sm p-3 h-100">
                 <div class="small fw-bold text-muted mb-2">สัดส่วนวิทยฐานะ:</div>
                 <div class="d-flex flex-wrap gap-2">
                     <?php while ($ac = $academic_stats->fetch_assoc()): ?>
@@ -94,7 +98,7 @@ $teachers = $stmt->get_result();
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card stat-card bg-white shadow-sm p-3">
+            <div class="card stat-card bg-white shadow-sm p-3 h-100">
                 <div class="small fw-bold text-muted mb-2">กลุ่มสาระการเรียนรู้ที่มีครูสูงสุด:</div>
                 <div class="d-flex flex-wrap gap-1">
                     <?php 
