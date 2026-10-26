@@ -92,49 +92,63 @@ foreach ($dest_fields as $df) {
     }
 }
 
-$created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']) : thai_date(date('Y-m-d'));
+$created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']) : (!empty($data['created_date']) ? thai_date($data['created_date']) : thai_date(date('Y-m-d')));
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ประมวลผลเรื่องงบประมาณ
-$budget_type = '';
+// ==================== ประมวลผลงบประมาณอย่างแม่นยำ ====================
+$raw_budget = '';
 $budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds', 'fund_type'];
 foreach ($budget_candidates as $bc) {
-    if (!empty($data[$bc])) {
-        $budget_type = trim($data[$bc]);
+    if (isset($data[$bc]) && trim($data[$bc]) !== '') {
+        $raw_budget = trim($data[$bc]);
         break;
     }
 }
 
-$expense_types = '';
+$raw_expenses = '';
 $expense_candidates = ['expense_types', 'expenses', 'expense_list', 'costs'];
 foreach ($expense_candidates as $ec) {
-    if (!empty($data[$ec])) {
-        $expense_types = trim($data[$ec]);
+    if (isset($data[$ec]) && trim($data[$ec]) !== '') {
+        $raw_expenses = trim($data[$ec]);
         break;
     }
 }
 
-$is_explicit_no_budget = in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0']);
-$has_expenses = (!empty($expense_types) && $expense_types !== '[]' && $expense_types !== 'ไม่มี');
-
-if ($is_explicit_no_budget && !$has_expenses) {
-    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
-} else {
-    $budget_source = "เงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา";
-    if ($budget_type === 'เงินงบประมาณสถานศึกษา') {
-        $budget_source = "เงินงบประมาณของสถานศึกษา";
-    } elseif ($budget_type === 'เงินนอกงบประมาณ') {
-        $budget_source = "เงินนอกงบประมาณของสถานศึกษา";
-    } elseif (!empty($budget_type) && !$is_explicit_no_budget) {
-        $budget_source = $budget_type;
+// ตรวจสอบเงื่อนไขไม่เบิกงบประมาณ
+$is_no_budget = false;
+if (empty($raw_budget) || in_array($raw_budget, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-'])) {
+    // ถ้าไม่ได้ระบุงบ และไม่มีรายการค่าใช้จ่ายที่เลือกไว้ = ไม่เบิกแน่นอน
+    if (empty($raw_expenses) || in_array($raw_expenses, ['[]', 'ไม่มี', '-'])) {
+        $is_no_budget = true;
     }
-
-    $expense_detail = !empty($expense_types) ? " ได้แก่ " . str_replace(',', ', ', $expense_types) : " ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก";
-    $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
-// ประมวลผลรายชื่อผู้ร่วมเดินทาง
+$budget_text = "";
+if ($is_no_budget) {
+    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+} else {
+    // แหล่งเงินงบประมาณ
+    $source_name = "เงินงบประมาณของสถานศึกษา";
+    if ($raw_budget === 'เงินนอกงบประมาณ') {
+        $source_name = "เงินนอกงบประมาณของสถานศึกษา";
+    } elseif ($raw_budget === 'งบประมาณจากหน่วยงานผู้จัด') {
+        $source_name = "งบประมาณจากหน่วยงานผู้จัด";
+    } elseif (!empty($raw_budget) && !in_array($raw_budget, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
+        $source_name = $raw_budget;
+    }
+
+    // รายการค่าใช้จ่ายที่ขอเบิก
+    $clean_expenses = trim($raw_expenses, "[]'\" ");
+    $expense_part = "";
+    if (!empty($clean_expenses) && $clean_expenses !== 'ไม่มี') {
+        $expense_part = " ได้แก่ " . str_replace(',', ', ', $clean_expenses);
+    }
+
+    $budget_text = "โดยข้าพเจ้าขออนุมัติเบิกค่าใช้จ่ายในการเดินทางไปราชการจาก{$source_name} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ{$expense_part} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+}
+
+// ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 foreach ($check_fields as $fld) {
