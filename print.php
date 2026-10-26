@@ -268,19 +268,22 @@ if (!empty($raw_companions)) {
             line-height: 1.08;
         }
 
-        /* กล่องลงรับของงานบุคคล */
-        .receive-box-table {
+        /* ตารางจัดวางความเห็น รอง ผอ. (ซ้าย) และ กล่องลงรับบุคคล (ขวาล่าง) */
+        .personnel-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 2px;
         }
-        .receive-box {
+        .personnel-table td {
+            padding: 0;
+        }
+        .receive-box-right {
             border: 1px solid #000;
             padding: 3px 6px;
             font-size: 14pt;
             line-height: 1.1;
-            width: 38%;
-            vertical-align: top;
+            width: 40%;
+            vertical-align: bottom;
         }
 
         .order-box {
@@ -422,25 +425,25 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการ พร้อมช่องลงรับงานบุคคล -->
+    <!-- ความเห็นของรองผู้อำนวยการ + กล่องลงรับบุคคลด้านขวาล่าง -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
         
-        <table class="receive-box-table">
+        <table class="personnel-table">
             <tr>
-                <!-- กล่องลงรับของงานบุคคล -->
-                <td class="receive-box">
+                <!-- ส่วนลงนามรอง ผอ. อยู่ฝั่งซ้าย -->
+                <td style="vertical-align: bottom; text-align: center; width: 60%; padding-bottom: 2px;">
+                    <div>ลงชื่อ..........................................................</div>
+                    <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
+                    <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
+                </td>
+                <!-- กล่องลงรับของงานบุคคล อยู่ฝั่งขวาล่าง -->
+                <td class="receive-box-right">
                     <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 2px;">กลุ่มงานบริหารบุคคล</div>
                     <div>เลขรับ..................................................</div>
                     <div>วันที่.........../.................../....................</div>
                     <div>เวลา.....................................................</div>
-                </td>
-                <!-- ส่วนลงนามรอง ผอ. -->
-                <td style="vertical-align: bottom; text-align: center; width: 62%;">
-                    <div>ลงชื่อ..........................................................</div>
-                    <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
-                    <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
                 </td>
             </tr>
         </table>
