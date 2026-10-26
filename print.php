@@ -45,6 +45,7 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
+// ฟังก์ชันแปลงวันที่ไทย (แก้ปัญหาปี พ.ศ. บวกซ้ำสองรอบ)
 function thai_date($date_str) {
     if (empty($date_str)) return "-";
     $months = [
@@ -54,9 +55,16 @@ function thai_date($date_str) {
     ];
     $time = strtotime($date_str);
     if ($time === false) return "-";
+    
     $d = date('j', $time);
     $m = $months[(int)date('n', $time)];
-    $y = (int)date('Y', $time) + 543;
+    $y = (int)date('Y', $time);
+    
+    // ตรวจสอบ: ถ้าปียังเป็น ค.ศ. (น้อยกว่า 2400) ให้บวก 543 แต่ถ้าเป็น พ.ศ. อยู่แล้วไม่ต้องบวกเพิ่ม
+    if ($y < 2400) {
+        $y += 543;
+    }
+    
     return "$d $m $y";
 }
 
