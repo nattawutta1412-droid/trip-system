@@ -42,74 +42,77 @@ if ($col_chk && $col_chk->num_rows == 0) {
     $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
 }
 
+// ดึงรายชื่อคอลัมน์ทั้งหมดที่มีอยู่จริงในตารางมาเก็บไว้
+$existing_columns = [];
+$res_cols = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
+if ($res_cols) {
+    while ($c = $res_cols->fetch_assoc()) {
+        $existing_columns[] = $c['Field'];
+    }
+}
+
 $message = "";
 $message_type = "";
 
 // 2. บันทึกข้อมูลเมื่อมีการส่งฟอร์ม (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $doc_no             = trim($_POST['doc_no'] ?? '');
-    $status             = trim($_POST['status'] ?? 'ปกติ');
-    $applicant_name     = trim($_POST['applicant_name'] ?? '');
-    $position           = trim($_POST['position'] ?? '');
-    $academic_standing  = trim($_POST['academic_standing'] ?? '');
-    $department         = trim($_POST['department'] ?? '');
-    $proposed_group     = trim($_POST['proposed_group'] ?? '');
-    $head_name          = trim($_POST['head_name'] ?? '');
-    $topic              = trim($_POST['topic'] ?? '');
-    $destination        = trim($_POST['destination'] ?? '');
-    $ref_doc            = trim($_POST['ref_doc'] ?? '');
-    $ref_date           = !empty($_POST['ref_date']) ? $_POST['ref_date'] : null;
-    $start_date         = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
-    $end_date           = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-    $time_period        = trim($_POST['time_period'] ?? '');
-    $companions         = trim($_POST['companions'] ?? '');
-    
-    // ข้อมูลการเบิกจ่ายและพาหนะ
-    $budget_type        = trim($_POST['budget_type'] ?? '');
-    $expense_types      = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
-    $vehicle_type       = trim($_POST['vehicle_type'] ?? '');
-    $vehicle_license    = trim($_POST['vehicle_license'] ?? '');
-
-    // อัปเดตข้อมูลคำร้อง
-    $update_fields = [
-        "doc_no = '" . $conn->real_escape_string($doc_no) . "'",
-        "status = '" . $conn->real_escape_string($status) . "'",
-        "applicant_name = '" . $conn->real_escape_string($applicant_name) . "'",
-        "position = '" . $conn->real_escape_string($position) . "'",
-        "academic_standing = '" . $conn->real_escape_string($academic_standing) . "'",
-        "department = '" . $conn->real_escape_string($department) . "'",
-        "proposed_group = '" . $conn->real_escape_string($proposed_group) . "'",
-        "head_name = '" . $conn->real_escape_string($head_name) . "'",
-        "topic = '" . $conn->real_escape_string($topic) . "'",
-        "destination = '" . $conn->real_escape_string($destination) . "'",
-        "ref_doc = '" . $conn->real_escape_string($ref_doc) . "'",
-        "time_period = '" . $conn->real_escape_string($time_period) . "'",
-        "companions = '" . $conn->real_escape_string($companions) . "'"
+    $raw_inputs = [
+        'doc_no'            => trim($_POST['doc_no'] ?? ''),
+        'status'            => trim($_POST['status'] ?? 'ปกติ'),
+        'applicant_name'    => trim($_POST['applicant_name'] ?? ''),
+        'name'              => trim($_POST['applicant_name'] ?? ''),
+        'position'          => trim($_POST['position'] ?? ''),
+        'academic_standing' => trim($_POST['academic_standing'] ?? ''),
+        'department'        => trim($_POST['department'] ?? ''),
+        'proposed_group'    => trim($_POST['proposed_group'] ?? ''),
+        'head_name'         => trim($_POST['head_name'] ?? ''),
+        'topic'             => trim($_POST['topic'] ?? ''),
+        'title'             => trim($_POST['topic'] ?? ''),
+        'purpose'           => trim($_POST['topic'] ?? ''),
+        'destination'       => trim($_POST['destination'] ?? ''),
+        'location'          => trim($_POST['destination'] ?? ''),
+        'ref_doc'           => trim($_POST['ref_doc'] ?? ''),
+        'time_period'       => trim($_POST['time_period'] ?? ''),
+        'companions'        => trim($_POST['companions'] ?? ''),
+        'budget_type'       => trim($_POST['budget_type'] ?? ''),
+        'vehicle_type'      => trim($_POST['vehicle_type'] ?? ''),
+        'vehicle'           => trim($_POST['vehicle_type'] ?? ''),
+        'vehicle_license'   => trim($_POST['vehicle_license'] ?? '')
     ];
 
-    if ($start_date) $update_fields[] = "start_date = '{$start_date}'";
-    if ($end_date) $update_fields[] = "end_date = '{$end_date}'";
-    if ($ref_date) $update_fields[] = "ref_date = '{$ref_date}'";
-
-    // ตรวจสอบคอลัมน์ด้านงบประมาณและพาหนะก่อนอัปเดตเพื่อไม่ให้ SQL Error
-    $cols = [];
-    $res_cols = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
-    while ($c = $res_cols->fetch_assoc()) {
-        $cols[] = $c['Field'];
+    $update_fields = [];
+    foreach ($raw_inputs as $col => $val) {
+        if (in_array($col, $existing_columns)) {
+            $update_fields[] = "`{$col}` = '" . $conn->real_escape_string($val) . "'";
+        }
     }
 
-    if (in_array('budget_type', $cols)) $update_fields[] = "budget_type = '" . $conn->real_escape_string($budget_type) . "'";
-    if (in_array('expense_types', $cols)) $update_fields[] = "expense_types = '" . $conn->real_escape_string($expense_types) . "'";
-    if (in_array('vehicle_type', $cols)) $update_fields[] = "vehicle_type = '" . $conn->real_escape_string($vehicle_type) . "'";
-    if (in_array('vehicle_license', $cols)) $update_fields[] = "vehicle_license = '" . $conn->real_escape_string($vehicle_license) . "'";
+    // จัดการค่าประเภท Checkbox (expense_types)
+    if (in_array('expense_types', $existing_columns)) {
+        $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
+        $update_fields[] = "`expense_types` = '" . $conn->real_escape_string($expense_types) . "'";
+    }
 
-    $sql_up = "UPDATE `{$target_table}` SET " . implode(', ', $update_fields) . " WHERE id = {$id}";
-    if ($conn->query($sql_up)) {
-        $message = "บันทึกและอัปเดตข้อมูลคำร้องเรียบร้อยแล้ว";
-        $message_type = "success";
-    } else {
-        $message = "เกิดข้อผิดพลาดในการบันทึก: " . $conn->error;
-        $message_type = "danger";
+    // จัดการวันที่
+    if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
+        $update_fields[] = "`start_date` = '" . $conn->real_escape_string($_POST['start_date']) . "'";
+    }
+    if (!empty($_POST['end_date']) && in_array('end_date', $existing_columns)) {
+        $update_fields[] = "`end_date` = '" . $conn->real_escape_string($_POST['end_date']) . "'";
+    }
+    if (!empty($_POST['ref_date']) && in_array('ref_date', $existing_columns)) {
+        $update_fields[] = "`ref_date` = '" . $conn->real_escape_string($_POST['ref_date']) . "'";
+    }
+
+    if (!empty($update_fields)) {
+        $sql_up = "UPDATE `{$target_table}` SET " . implode(', ', $update_fields) . " WHERE id = {$id}";
+        if ($conn->query($sql_up)) {
+            $message = "บันทึกและอัปเดตข้อมูลคำร้องเรียบร้อยแล้ว";
+            $message_type = "success";
+        } else {
+            $message = "เกิดข้อผิดพลาดในการบันทึก: " . $conn->error;
+            $message_type = "danger";
+        }
     }
 }
 
@@ -123,7 +126,6 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-// แปลงรายการค่าใช้จ่ายที่เคยเลือกไว้
 $saved_expenses = explode(',', $data['expense_types'] ?? '');
 
 $departments = [
@@ -183,7 +185,7 @@ $departments = [
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">เลขที่หนังสือราชการ (ที่):</label>
-                        <input type="text" name="doc_no" class="form-control" placeholder="เช่น ศธ 04238.12/..." value="<?php echo htmlspecialchars($data['doc_no'] ?? ''); ?>">
+                        <input type="text" name="doc_no" class="form-control" placeholder="เช่น ศธ 04238.12/..." value="<?php echo htmlspecialchars($data['doc_no'] ?? $data['document_no'] ?? ''); ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">สถานะคำร้อง:</label>
@@ -236,7 +238,7 @@ $departments = [
                 <div class="row g-3 mb-3">
                     <div class="col-12">
                         <label class="form-label small fw-bold">วัตถุประสงค์ (ไปราชการเพื่อ):</label>
-                        <textarea name="topic" class="form-control" rows="2" required><?php echo htmlspecialchars($data['topic'] ?? $data['purpose'] ?? ''); ?></textarea>
+                        <textarea name="topic" class="form-control" rows="2" required><?php echo htmlspecialchars($data['topic'] ?? $data['purpose'] ?? $data['title'] ?? ''); ?></textarea>
                     </div>
                     <div class="col-12">
                         <label class="form-label small fw-bold">สถานที่ปลายทาง:</label>
@@ -264,7 +266,7 @@ $departments = [
                     </div>
                 </div>
 
-                <!-- รายชื่อผู้ร่วมเดินทางไปราชการ (แนบท้าย) -->
+                <!-- รายชื่อผู้ร่วมเดินทางไปราชการ (หน้าที่ 2 แนบท้าย) -->
                 <div class="card p-3 mb-3 border bg-light rounded-3">
                     <label class="form-label fw-bold text-primary mb-1">
                         <i class="bi bi-people-fill me-1"></i> รายชื่อผู้ร่วมเดินทางไปราชการ (หน้าที่ 2 แนบท้าย)
@@ -275,7 +277,7 @@ $departments = [
                     <textarea name="companions" class="form-control bg-white" rows="3" placeholder="นายสมหมาย จริงใจ ตำแหน่ง ครู&#10;นางสาวพิมพา รักดี ตำแหน่ง ครูผู้ช่วย"><?php echo htmlspecialchars($data['companions'] ?? ''); ?></textarea>
                 </div>
 
-                <!-- 4. ข้อมูลการเบิกจ่ายงบประมาณ (ที่เพิ่มกลับเข้ามาอย่างสมบูรณ์) -->
+                <!-- 4. ข้อมูลการเบิกจ่ายงบประมาณ -->
                 <div class="section-title">4. ข้อมูลการเบิกจ่ายงบประมาณ</div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
