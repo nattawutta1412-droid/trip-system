@@ -200,7 +200,7 @@ if (!empty($raw_companions)) {
             background: white;
             width: 210mm;
             height: 297mm;
-            padding: 1.2cm 2cm 0.6cm 2.5cm;
+            padding: 1.0cm 2cm 0.5cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -259,22 +259,29 @@ if (!empty($raw_companions)) {
             float: right;
             width: 58%;
             margin-top: 2px;
-            line-height: 1.08;
+            line-height: 1.05;
         }
         .clear { clear: both; }
 
         .comment-section {
-            margin-top: 2px;
+            margin-top: 4px;
+            line-height: 1.05;
+        }
+
+        /* บรรทัดว่างสำหรับเขียนความเห็น เว้น 1 บรรทัดสวยงาม */
+        .comment-space-line {
+            border-bottom: 1px dotted #000;
+            height: 22px;
+            margin-bottom: 2px;
+        }
+
+        /* ส่วนคำสั่ง/การพิจารณา ผอ. */
+        .order-section {
+            margin-top: 4px;
             line-height: 1.08;
         }
 
-        /* ส่วนคำสั่ง/การพิจารณา ผอ. แบบไร้กรอบ */
-        .order-section {
-            margin-top: 4px;
-            line-height: 1.1;
-        }
-
-        /* ตารางวางกล่องลงรับงานบุคคลด้านขวาล่าง */
+        /* กล่องลงรับงานบุคคลด้านขวาล่าง */
         .receive-box-bottom-right {
             border: 1px solid #000;
             padding: 2px 6px;
@@ -331,7 +338,7 @@ if (!empty($raw_companions)) {
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 1.2cm 2cm 0.6cm 2.5cm;
+                padding: 1.0cm 2cm 0.5cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -407,8 +414,9 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
-        <div class="sign-block" style="margin-top: 1px;">
+        <!-- เว้น 1 บรรทัดสำหรับเขียนความเห็น -->
+        <div class="comment-space-line"></div>
+        <div class="sign-block">
             <div>ลงชื่อ..........................................................</div>
             <div style="margin-top: 1px;">( นางศุภลักษณ์ ดำชุม )</div>
             <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
@@ -419,8 +427,9 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
-        <div class="sign-block" style="margin-top: 1px;">
+        <!-- เว้น 1 บรรทัดสำหรับเขียนความเห็น -->
+        <div class="comment-space-line"></div>
+        <div class="sign-block">
             <div>ลงชื่อ..........................................................</div>
             <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
             <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
@@ -428,10 +437,11 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดกรอบสี่เหลี่ยมออก ปรับเป็นเส้นประตามระเบียบ) -->
+    <!-- คำสั่ง / การพิจารณา ผอ. -->
     <div class="order-section">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 14px; margin-bottom: 4px;"></div>
+        <!-- เว้น 1 บรรทัดสำหรับเขียนคำสั่ง -->
+        <div class="comment-space-line"></div>
         
         <table style="width: 100%; margin-top: 2px;">
             <tr>
@@ -440,15 +450,15 @@ if (!empty($raw_companions)) {
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 6px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 4px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
             <div style="margin-top: 1px;">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
         </div>
     </div>
 
-    <!-- กล่องลงรับของงานบุคคล อยู่ล่างจากลายเซ็น ผอ. ด้านขวาล่าง -->
-    <div style="margin-top: 6px;">
+    <!-- กล่องลงรับของงานบุคคล ด้านขวาล่าง -->
+    <div style="margin-top: 4px;">
         <div class="receive-box-bottom-right">
             <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
             <div>เลขรับ..................................................</div>
