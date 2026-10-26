@@ -42,7 +42,7 @@ if ($col_chk && $col_chk->num_rows == 0) {
     $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
 }
 
-// ดึงรายชื่อคอลัมน์ทั้งหมดที่มีอยู่จริงในตารางมาเก็บไว้
+// ดึงรายชื่อคอลัมน์ทั้งหมดที่มีอยู่จริงในตาราง
 $existing_columns = [];
 $res_cols = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
 if ($res_cols) {
@@ -87,13 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // จัดการค่าประเภท Checkbox (expense_types)
     if (in_array('expense_types', $existing_columns)) {
         $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
         $update_fields[] = "`expense_types` = '" . $conn->real_escape_string($expense_types) . "'";
     }
 
-    // จัดการวันที่
     if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
         $update_fields[] = "`start_date` = '" . $conn->real_escape_string($_POST['start_date']) . "'";
     }
@@ -228,7 +226,7 @@ $departments = [
                         <input type="text" name="proposed_group" class="form-control" value="<?php echo htmlspecialchars($data['proposed_group'] ?? 'กลุ่มงานบริหารวิชาการ'); ?>">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">ชื่อหัวหน้ากลุ่มงาน:</label>
+                        <label class="form-label small fw-bold">ชื่อผู้ช่วยผู้อำนวยการ:</label>
                         <input type="text" name="head_name" class="form-control" value="<?php echo htmlspecialchars($data['head_name'] ?? 'นางศุภลักษณ์ ดำชุม'); ?>">
                     </div>
                 </div>
