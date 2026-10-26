@@ -1,204 +1,221 @@
 <?php
 require_once 'config.php';
 
-// รับค่าตัวกรองเหมือนหน้า index
-$search = trim($_GET['search'] ?? '');
-$department = trim($_GET['department'] ?? '');
-$month = trim($_GET['month'] ?? '');
+// 1. ค้นหาชื่อตารางคำร้องอัตโนมัติ
+$target_table = null;
+$possible_tables = ['official_trips', 'trip_requests', 'trips', 'trip_records', 'forms', 'requests'];
 
-$where_clauses = ["1=1"];
-$params = [];
-$types = "";
-
-if ($search !== '') {
-    $where_clauses[] = "(applicant_name LIKE ? OR subject LIKE ? OR destination LIKE ? OR doc_number LIKE ?)";
-    $s_term = "%{$search}%";
-    $params[] = $s_term;
-    $params[] = $s_term;
-    $params[] = $s_term;
-    $params[] = $s_term;
-    $types .= "ssss";
+foreach ($possible_tables as $tbl) {
+    $chk = $conn->query("SHOW TABLES LIKE '{$tbl}'");
+    if ($chk && $chk->num_rows > 0) {
+        $target_table = $tbl;
+        break;
+    }
 }
 
-if ($department !== '') {
-    $where_clauses[] = "(department = ? OR work_group = ?)";
-    $params[] = $department;
-    $params[] = $department;
-    $types .= "ss";
+if (!$target_table) {
+    $all_tables = $conn->query("SHOW TABLES");
+    if ($all_tables) {
+        while ($t_row = $all_tables->fetch_array()) {
+            $curr_tbl = $t_row[0];
+            if ($curr_tbl !== 'teachers' && $curr_tbl !== 'users' && $curr_tbl !== 'admins') {
+                $target_table = $curr_tbl;
+                break;
+            }
+        }
+    }
 }
 
-if ($month !== '') {
-    $where_clauses[] = "DATE_FORMAT(created_date, '%Y-%m') = ?";
-    $params[] = $month;
-    $types .= "s";
+if (!$target_table) {
+    die("ไม่พบตารางข้อมูลคำร้องในระบบ");
 }
 
-$where_sql = implode(" AND ", $where_clauses);
-$sql = "SELECT * FROM official_trips WHERE {$where_sql} ORDER BY id DESC";
-$stmt = $conn->prepare($sql);
-
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-
-function thai_date_full($date_str) {
-    if (!$date_str) return "-";
-    $thai_months = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-    $t = strtotime($date_str);
-    return date('j', $t) . ' ' . $thai_months[intval(date('n', $t))] . ' ' . (date('Y', $t) + 543);
-}
-
+// ฟังก์ชันแปลงวันที่ไทยย่อ
 function thai_date_short($date_str) {
-    if (!$date_str) return "-";
-    $thai_months = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-    $t = strtotime($date_str);
-    return date('j', $t) . ' ' . $thai_months[intval(date('n', $t))] . ' ' . (date('Y', $t) + 543);
+    if (empty($date_str)) return "-";
+    $months = [
+        1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.',
+        5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.',
+        9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'
+    ];
+    $time = strtotime($date_str);
+    if ($time === false) return "-";
+    
+    $d = date('j', $time);
+    $m = $months[(int)date('n', $time)];
+    $y = (int)date('Y', $time);
+    if ($y < 2400) $y += 543;
+    
+    return "$d $m $y";
 }
 
-// ข้อความระบุเงื่อนไขรายงาน
-$filter_desc = [];
-if (!empty($month)) {
-    $m_time = strtotime($month . "-01");
-    $m_thai = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-    $filter_desc[] = "ประจำเดือน " . $m_thai[intval(date('n', $m_time))] . " " . (date('Y', $m_time) + 543);
-} else {
-    $filter_desc[] = "ข้อมูลทั้งหมด";
+// ดึงข้อมูลคำร้องทั้งหมด
+$sql = "SELECT * FROM `{$target_table}` ORDER BY id ASC";
+$result = $conn->query($sql);
+
+$total_count = 0;
+$normal_count = 0;
+$cancel_count = 0;
+$rows = [];
+
+if ($result) {
+    while ($r = $result->fetch_assoc()) {
+        $rows[] = $r;
+        $total_count++;
+        if (($r['status'] ?? 'ปกติ') === 'ยกเลิก') {
+            $cancel_count++;
+        } else {
+            $normal_count++;
+        }
+    }
 }
-if (!empty($department)) {
-    $filter_desc[] = "สังกัด/กลุ่มงาน: " . htmlspecialchars($department);
-}
-if (!empty($search)) {
-    $filter_desc[] = "คำค้นหา: \"" . htmlspecialchars($search) . "\"";
-}
-$filter_title = implode(" | ", $filter_desc);
+
+$today_thai = thai_date_short(date('Y-m-d'));
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>รายงานสรุปการขออนุมัติเดินทางไปราชการ</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap">
+    <title>รายงานสรุปการขออนุมัติเดินทางไปราชการ - โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</title>
     <style>
         @font-face {
             font-family: 'TH Sarabun New';
             src: local('TH Sarabun New'), local('THSarabunNew'),
-                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew-webfont.woff2') format('woff2');
+                 url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@v1.0.0/fonts/THSarabunNew/THSarabunNew.woff2') format('woff2');
             font-weight: normal;
+            font-style: normal;
         }
         @font-face {
             font-family: 'TH Sarabun New';
             src: local('TH Sarabun New Bold'), local('THSarabunNew-Bold'),
-                 url('https://cdn.jsdelivr.net/gh/pittss/thai-web-fonts@master/fonts/thsarabunnew/thsarabunnew_bold-webfont.woff2') format('woff2');
+                 url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@v1.0.0/fonts/THSarabunNew/THSarabunNew-Bold.woff2') format('woff2');
             font-weight: bold;
+            font-style: normal;
         }
 
         @page {
             size: A4 landscape;
-            margin: 12mm 15mm 12mm 15mm;
+            margin: 1.2cm 1.5cm 1.2cm 1.5cm;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-            font-size: 14pt;
-            line-height: 1.2;
+            font-family: 'TH Sarabun New', sans-serif;
+            font-size: 15pt;
+            line-height: 1.15;
             color: #000;
-            background-color: #525659;
+            background: #525659;
             margin: 0;
-            padding: 20px 0;
+            padding: 20px;
         }
 
         .report-page {
+            background: white;
             width: 297mm;
             min-height: 210mm;
-            padding: 15mm 20mm;
+            padding: 1.2cm 1.5cm;
             margin: 0 auto;
-            background: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            box-sizing: border-box;
             position: relative;
+        }
+
+        .text-center { text-align: center; }
+        .text-end { text-align: right; }
+        .fw-bold { font-weight: bold; }
+
+        .logo-img {
+            height: 1.8cm;
+            width: auto;
+            display: block;
+            margin: 0 auto 5px auto;
+        }
+
+        .header-title {
+            font-size: 20pt;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+        .header-subtitle {
+            font-size: 16pt;
+            line-height: 1.15;
+        }
+        .header-meta {
+            font-size: 14pt;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .table-report {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14pt;
+            margin-top: 8px;
+        }
+        .table-report th, .table-report td {
+            border: 1px solid #000;
+            padding: 5px 6px;
+            vertical-align: top;
+        }
+        .table-report th {
+            text-align: center;
+            font-weight: bold;
+            background-color: #f2f2f2;
+        }
+
+        /* ตารางคุมส่วนลงนามท้ายรายงาน */
+        .sign-layout-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 15pt;
+        }
+        .sign-layout-table td {
+            padding: 0;
+            vertical-align: top;
+        }
+
+        .signature-gap {
+            margin-top: 15px;
         }
 
         .no-print {
             text-align: center;
             margin-bottom: 15px;
         }
-
-        .btn-action {
-            padding: 8px 20px;
-            font-size: 15px;
-            border-radius: 4px;
+        .btn-print {
+            padding: 8px 22px;
+            font-size: 16px;
+            font-family: sans-serif;
+            background: #0d6efd;
+            color: white;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
             text-decoration: none;
             display: inline-block;
         }
-        .btn-print { background: #0d6efd; color: white; margin-right: 10px; }
-        .btn-back { background: #6c757d; color: white; }
-
-        .report-header {
-            text-align: center;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        .school-logo-img {
-            height: 60px;
-            width: auto;
-            margin-bottom: 6px;
-        }
-        .report-title {
-            font-size: 20pt;
-            font-weight: bold;
-            line-height: 1.2;
-        }
-        .report-subtitle {
-            font-size: 15pt;
-            color: #222;
-        }
-        .report-filter {
-            font-size: 13.5pt;
-            color: #444;
-            margin-top: 3px;
-        }
-
-        .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13pt;
-            margin-top: 10px;
-        }
-        .report-table th, .report-table td {
-            border: 1px solid #000;
-            padding: 5px 6px;
-            vertical-align: middle;
-        }
-        .report-table th {
-            background-color: #f0f0f0;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .text-center { text-align: center; }
-        .text-start { text-align: left; }
-
-        .signature-section {
-            margin-top: 25px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            page-break-inside: avoid;
-        }
-        .sign-box {
-            width: 48%;
-            text-align: center;
-            font-size: 14pt;
-            line-height: 1.35;
+        .btn-back {
+            padding: 8px 18px;
+            font-size: 16px;
+            font-family: sans-serif;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 8px;
         }
 
         @media print {
-            body { background: transparent; padding: 0; }
+            body {
+                background: white;
+                padding: 0;
+            }
             .report-page {
                 box-shadow: none;
                 margin: 0;
@@ -206,104 +223,117 @@ $filter_title = implode(" | ", $filter_desc);
                 min-height: auto;
                 padding: 0;
             }
-            .no-print { display: none !important; }
+            .no-print {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="no-print">
-    <button onclick="window.print()" class="btn-action btn-print">🖨 สั่งพิมพ์รายงาน (A4 แนวนอน)</button>
-    <a href="index.php" class="btn-action btn-back">กลับหน้าหลัก</a>
+    <button onclick="window.print()" class="btn-print">🖨️ สั่งพิมพ์รายงาน (A4 แนวนอน)</button>
+    <a href="admin.php" class="btn-back">กลับหน้าหลัก</a>
 </div>
 
 <div class="report-page">
-    <div class="report-header">
-        <img src="logo.png" alt="ตราประจำโรงเรียนย่านตาขาวรัฐชนูปถัมภ์" class="school-logo-img" onerror="this.src='https://placehold.co/60x60?text=YKR';"><br>
-        <div class="report-title">รายงานสรุปการขออนุมัติเดินทางไปราชการ</div>
-        <div class="report-subtitle">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</div>
-        <div class="report-filter">เงื่อนไข: <?php echo $filter_title; ?> (ข้อมูล ณ วันที่ <?php echo thai_date_full(date('Y-m-d')); ?>)</div>
+
+    <!-- ส่วนหัวรายงาน -->
+    <div class="text-center">
+        <img src="logo.png" alt="ตราโรงเรียน" class="logo-img" onerror="this.src='../logo.png';">
+        <div class="header-title">รายงานสรุปการขออนุมัติเดินทางไปราชการ</div>
+        <div class="header-subtitle">โรงเรียนย่านตาขาวรัฐชนูปถัมภ์ อำเภอย่านตาขาว จังหวัดตรัง</div>
+        <div class="header-meta">เงื่อนไข: ข้อมูลทั้งหมด (ข้อมูล ณ วันที่ <?php echo $today_thai; ?>)</div>
     </div>
 
-    <table class="report-table">
+    <!-- ตารางรายการ -->
+    <table class="table-report">
         <thead>
             <tr>
-                <th style="width: 4%;">ที่</th>
+                <th style="width: 5%;">ที่</th>
                 <th style="width: 11%;">วันที่ยื่น</th>
-                <th style="width: 18%;">ชื่อ - สกุล ผู้ขออนุมัติ</th>
-                <th style="width: 16%;">กลุ่มสาระฯ / กลุ่มงาน</th>
-                <th style="width: 25%;">วัตถุประสงค์และสถานที่ปลายทาง</th>
+                <th style="width: 17%;">ชื่อ - สกุล ผู้ขออนุมัติ</th>
+                <th style="width: 15%;">กลุ่มสาระฯ / กลุ่มงาน</th>
+                <th style="width: 28%;">วัตถุประสงค์และสถานที่ปลายทาง</th>
                 <th style="width: 16%;">ช่วงวันที่ไปราชการ</th>
-                <th style="width: 10%;">สถานะ</th>
+                <th style="width: 8%;">สถานะ</th>
             </tr>
         </thead>
         <tbody>
-            <?php if ($result && $result->num_rows > 0): ?>
-                <?php 
-                $count = 1;
-                $active_count = 0;
-                $cancel_count = 0;
-                while ($row = $result->fetch_assoc()): 
-                    $status = $row['status'] ?? 'ปกติ';
-                    if ($status === 'ยกเลิก') $cancel_count++; else $active_count++;
-                ?>
-                <tr>
-                    <td class="text-center"><?php echo $count++; ?></td>
-                    <td class="text-center"><?php echo thai_date_short($row['created_date'] ?? ''); ?></td>
-                    <td>
-                        <strong><?php echo htmlspecialchars($row['applicant_name'] ?? ''); ?></strong>
-                        <?php if (!empty($row['position'])): ?>
-                            <br><small style="font-size: 11pt; color: #333;"><?php echo htmlspecialchars($row['position']); ?><?php echo !empty($row['academic_standing']) ? ' ' . htmlspecialchars($row['academic_standing']) : ''; ?></small>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php echo htmlspecialchars($row['department'] ?? '-'); ?>
-                        <?php if (!empty($row['work_group'])): ?>
-                            <br><small style="font-size: 11pt; color: #555;">(<?php echo htmlspecialchars($row['work_group']); ?>)</small>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <div><?php echo htmlspecialchars($row['subject'] ?? '-'); ?></div>
-                        <small style="font-size: 11pt; color: #444;">ปลายทาง: <?php echo htmlspecialchars($row['destination'] ?? '-'); ?></small>
-                    </td>
-                    <td class="text-center">
-                        <?php echo thai_date_short($row['start_date'] ?? ''); ?> -<br>
-                        <?php echo thai_date_short($row['end_date'] ?? ''); ?>
-                    </td>
-                    <td class="text-center">
-                        <?php echo ($status === 'ยกเลิก') ? '<span style="color: red; font-weight: bold;">ยกเลิก</span>' : 'ปกติ'; ?>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-                <tr>
-                    <td colspan="7" style="background-color: #f9f9f9; padding: 6px 10px; font-weight: bold;">
-                        รวมรายการทั้งหมด: <?php echo ($count - 1); ?> รายการ (ปกติ: <?php echo $active_count; ?> รายการ | ยกเลิก: <?php echo $cancel_count; ?> รายการ)
-                    </td>
-                </tr>
+            <?php if (!empty($rows)): ?>
+                <?php $no = 1; foreach ($rows as $item): ?>
+                    <?php 
+                        $t_name = $item['applicant_name'] ?? $item['name'] ?? $item['fullname'] ?? '';
+                        $t_pos  = $item['position'] ?? 'ครู';
+                        $t_dept = $item['department'] ?? '-';
+                        
+                        // วัตถุประสงค์
+                        $t_topic = $item['topic'] ?? $item['purpose'] ?? $item['subject'] ?? $item['title'] ?? '-';
+                        // สถานที่ปลายทาง
+                        $t_dest  = $item['destination'] ?? $item['location'] ?? $item['place'] ?? '-';
+                        
+                        // วันที่ยื่น
+                        $sub_date = !empty($item['created_at']) ? thai_date_short($item['created_at']) : (!empty($item['created_date']) ? thai_date_short($item['created_date']) : '-');
+                        
+                        // ช่วงวันเดินทาง
+                        $s_date = !empty($item['start_date']) ? thai_date_short($item['start_date']) : '';
+                        $e_date = !empty($item['end_date']) ? thai_date_short($item['end_date']) : '';
+                        $trip_period = ($s_date && $e_date) ? "{$s_date} -<br>{$e_date}" : ($s_date ?: '-');
+                        
+                        $status_text = $item['status'] ?? 'ปกติ';
+                    ?>
+                    <tr>
+                        <td class="text-center"><?php echo $no++; ?></td>
+                        <td class="text-center"><?php echo $sub_date; ?></td>
+                        <td>
+                            <strong><?php echo htmlspecialchars($t_name); ?></strong><br>
+                            <span style="font-size: 13pt; color: #444;"><?php echo htmlspecialchars($t_pos); ?></span>
+                        </td>
+                        <td><?php echo htmlspecialchars($t_dept); ?></td>
+                        <td>
+                            <div><?php echo htmlspecialchars($t_topic); ?></div>
+                            <div style="font-size: 13pt; color: #444; margin-top: 2px;">
+                                <strong>ปลายทาง:</strong> <?php echo htmlspecialchars($t_dest); ?>
+                            </div>
+                        </td>
+                        <td class="text-center"><?php echo $trip_period; ?></td>
+                        <td class="text-center"><?php echo htmlspecialchars($status_text); ?></td>
+                    </tr>
+                <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 25px;">ไม่พบข้อมูลตามเงื่อนไขที่กำหนด</td>
+                    <td colspan="7" class="text-center" style="padding: 20px;">ไม่พบข้อมูลคำร้องขออนุมัติเดินทางไปราชการ</td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
 
-    <!-- ส่วนลงนามท้ายรายงาน -->
-    <div class="signature-section">
-        <div class="sign-box">
-            ลงชื่อ......................................................................ผู้รายงาน<br>
-            ( ...................................................................... )<br>
-            ตำแหน่ง เจ้าหน้าที่งานบุคคล<br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
-        </div>
-        <div class="sign-box">
-            ทราบ / พิจารณา<br><br>
-            ลงชื่อ......................................................................<br>
-            ( ว่าที่ร้อยโทจักรเพชร์ พรมยศ )<br>
-            ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์<br>
-            วันที่ ........ เดือน ........................ พ.ศ. ............
-        </div>
+    <div style="font-size: 14pt; margin-top: 5px; font-weight: bold;">
+        รวมรายการทั้งสิ้น: <?php echo $total_count; ?> รายการ (ปกติ: <?php echo $normal_count; ?> รายการ | ยกเลิก: <?php echo $cancel_count; ?> รายการ)
     </div>
+
+    <!-- ส่วนลงลายมือชื่อท้ายรายงาน จัดระนาบให้เสมอกันเป๊ะ -->
+    <table class="sign-layout-table">
+        <tr>
+            <!-- ฝั่งซ้าย: ผู้รายงาน -->
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+                <div>ลงชื่อ..........................................................ผู้รายงาน</div>
+                <div class="signature-gap">( .......................................................... )</div>
+                <div style="margin-top: 2px;">ตำแหน่ง เจ้าหน้าที่งานบุคคล</div>
+                <div style="margin-top: 4px;">วันที่ ........ เดือน .................... พ.ศ. ............</div>
+            </td>
+
+            <!-- ฝั่งขวา: ผู้อำนวยการโรงเรียน (ตัดคำว่าลงชื่อออก นำหน้าด้วย ว่าที่ร้อยโท) -->
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+                <div style="font-weight: bold; margin-bottom: 3px;">ทราบ / พิจารณา</div>
+                <div>ว่าที่ร้อยโท..........................................................</div>
+                <div class="signature-gap">(จักรเพชร์ พรมยศ)</div>
+                <div style="margin-top: 2px;">ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
+                <div style="margin-top: 4px;">วันที่ ........ เดือน .................... พ.ศ. ............</div>
+            </td>
+        </tr>
+    </table>
+
 </div>
 
 </body>
