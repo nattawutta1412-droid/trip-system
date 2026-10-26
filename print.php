@@ -6,7 +6,7 @@ if ($id <= 0) {
     die("ไม่พบรหัสคำร้อง");
 }
 
-// ระบบค้นหาชื่อตารางคำร้องอัตโนมัติ
+// 1. ค้นหาชื่อตารางคำร้องอัตโนมัติ
 $target_table = null;
 $possible_tables = ['official_trips', 'trip_requests', 'trips', 'trip_records', 'forms', 'requests'];
 
@@ -64,8 +64,26 @@ $applicant_name    = $data['applicant_name'] ?? $data['name'] ?? $data['fullname
 $position_name     = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
-$topic_name        = $data['topic'] ?? $data['title'] ?? $data['purpose'] ?? '';
-$destination_name  = $data['destination'] ?? $data['location'] ?? $data['place'] ?? '';
+
+// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ) จากทุกชื่อคอลัมน์ที่เป็นไปได้
+$topic_name = '';
+$topic_fields = ['topic', 'objective', 'subject', 'purpose', 'title', 'reason', 'details', 'trip_topic'];
+foreach ($topic_fields as $tf) {
+    if (!empty($data[$tf])) {
+        $topic_name = trim($data[$tf]);
+        break;
+    }
+}
+
+// ตรวจสอบฟิลด์สถานที่ปลายทาง
+$destination_name = '';
+$dest_fields = ['destination', 'location', 'place', 'target', 'travel_place'];
+foreach ($dest_fields as $df) {
+    if (!empty($data[$df])) {
+        $destination_name = trim($data[$df]);
+        break;
+    }
+}
 
 $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']) : thai_date(date('Y-m-d'));
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
@@ -82,16 +100,13 @@ if ($is_no_budget) {
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 } else {
     $budget_source = ($budget_type === 'เงินงบประมาณสถานศึกษา') ? "เงินงบประมาณของสถานศึกษา" : (($budget_type === 'เงินนอกงบประมาณ') ? "เงินนอกงบประมาณของสถานศึกษา" : $budget_type);
-    
     $expense_detail = !empty($expense_types) ? " ได้แก่ " . str_replace(',', ', ', $expense_types) : "";
-    
     $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
 // ประมวลผลรายชื่อผู้ร่วมเดินทาง
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
-
 foreach ($check_fields as $fld) {
     if (!empty($data[$fld])) {
         $raw_companions = $data[$fld];
