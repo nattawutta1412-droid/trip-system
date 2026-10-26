@@ -6,14 +6,24 @@ if ($id <= 0) {
     die("ไม่พบรหัสคำร้อง");
 }
 
-$stmt = $conn->prepare("SELECT * FROM requests WHERE id = ?");
+// ตรวจสอบชื่อตารางคำร้อง (รองรับทั้ง official_trips, trip_requests หรือ requests เดิม)
+$table_name = "official_trips";
+$check_table = $conn->query("SHOW TABLES LIKE 'official_trips'");
+if ($check_table->num_rows == 0) {
+    $check_table2 = $conn->query("SHOW TABLES LIKE 'trip_requests'");
+    if ($check_table2->num_rows > 0) {
+        $table_name = "trip_requests";
+    }
+}
+
+$stmt = $conn->prepare("SELECT * FROM {$table_name} WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
 $data = $result->fetch_assoc();
 
 if (!$data) {
-    die("ไม่พบข้อมูลคำร้อง");
+    die("ไม่พบข้อมูลคำร้องในระบบ");
 }
 
 function thai_date($date_str) {
@@ -31,12 +41,22 @@ function thai_date($date_str) {
 }
 
 $created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) : thai_date(date('Y-m-d'));
+$start_date_th = !empty($data['start_date']) ? thai_date($data['start_date']) : '';
+$end_date_th = !empty($data['end_date']) ? thai_date($data['end_date']) : '';
+
+// ตรวจสอบชื่อฟิลด์ผู้ขอและรายละเอียดคำร้องเพื่อรองรับทั้งสองแบบ
+$applicant_name = $data['applicant_name'] ?? $data['name'] ?? $data['teacher_name'] ?? '';
+$position_name = $data['position'] ?? 'ครู';
+$academic_standing = $data['academic_standing'] ?? '';
+$department_name = $data['department'] ?? '';
+$topic_name = $data['topic'] ?? $data['title'] ?? $data['purpose'] ?? '';
+$destination_name = $data['destination'] ?? $data['location'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>บันทึกข้อความขออนุมัติเดินทางไปราชการ - <?php echo htmlspecialchars($data['applicant_name'] ?? ''); ?></title>
+    <title>บันทึกข้อความขออนุมัติเดินทางไปราชการ - <?php echo htmlspecialchars($applicant_name); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -149,14 +169,16 @@ $created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) 
     </table>
 
     <div class="content-body">
-        ด้วยข้าพเจ้า <strong><?php echo htmlspecialchars($data['applicant_name'] ?? ''); ?></strong> 
-        ตำแหน่ง <?php echo htmlspecialchars($data['position'] ?? 'ครู'); ?> 
-        วิทยฐานะ<?php echo htmlspecialchars($data['academic_standing'] ?? 'ชำนาญการ'); ?> 
-        กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($data['department'] ?? ''); ?> 
-        มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($data['topic'] ?? ''); ?> 
-        ณ <?php echo htmlspecialchars($data['destination'] ?? ''); ?> 
-        โดยมีกำหนดการตั้งแต่วันที่ <?php echo thai_date($data['start_date'] ?? ''); ?> 
-        ถึงวันที่ <?php echo thai_date($data['end_date'] ?? ''); ?> 
+        ด้วยข้าพเจ้า <strong><?php echo htmlspecialchars($applicant_name); ?></strong> 
+        ตำแหน่ง <?php echo htmlspecialchars($position_name); ?> 
+        <?php if (!empty($academic_standing)): ?>
+            วิทยฐานะ<?php echo htmlspecialchars($academic_standing); ?> 
+        <?php endif; ?>
+        กลุ่มสาระการเรียนรู้/กลุ่มงาน <?php echo htmlspecialchars($department_name); ?> 
+        มีความประสงค์ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($topic_name); ?> 
+        ณ <?php echo htmlspecialchars($destination_name); ?> 
+        โดยมีกำหนดการตั้งแต่วันที่ <?php echo $start_date_th; ?> 
+        ถึงวันที่ <?php echo $end_date_th; ?> 
         โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา 
         (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ 
         อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
@@ -169,8 +191,8 @@ $created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) 
     <!-- ลายเซ็นผู้ขอ -->
     <div class="sign-block">
         <div>ลงชื่อ..........................................................</div>
-        <div style="margin-top: 3px;">( <?php echo htmlspecialchars($data['applicant_name'] ?? ''); ?> )</div>
-        <div style="margin-top: 3px;">ตำแหน่ง <?php echo htmlspecialchars($data['position'] ?? 'ครู'); ?></div>
+        <div style="margin-top: 3px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
+        <div style="margin-top: 3px;">ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
     </div>
     <div class="clear"></div>
 
@@ -198,7 +220,7 @@ $created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) 
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุด) -->
+    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุดตามระเบียบ) -->
     <div class="order-box">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
         <table style="width: 100%; margin-top: 6px;">
