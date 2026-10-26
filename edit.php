@@ -36,10 +36,14 @@ if (!$target_table) {
     die("ไม่พบตารางข้อมูลคำร้องในระบบ");
 }
 
-// ตรวจสอบและสร้างคอลัมน์ companions อัตโนมัติหากยังไม่มี
+// ตรวจสอบและสร้างคอลัมน์ companions และ expense_types อัตโนมัติหากยังไม่มี
 $col_chk = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'companions'");
 if ($col_chk && $col_chk->num_rows == 0) {
     $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
+}
+$col_exp = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'expense_types'");
+if ($col_exp && $col_exp->num_rows == 0) {
+    $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN expense_types TEXT NULL");
 }
 
 // ดึงรายชื่อคอลัมน์ทั้งหมดที่มีอยู่จริงในตาราง
@@ -54,31 +58,67 @@ if ($res_cols) {
 $message = "";
 $message_type = "";
 
-// 2. บันทึกข้อมูลเมื่อมีการส่งฟอร์ม (POST)
+// 2. บันทึกข้อมูลเมื่อมีการกด Submit (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $budget_type_val = trim($_POST['budget_type'] ?? 'ไม่ขอเบิกงบประมาณ');
+    $topic_val       = trim($_POST['topic'] ?? '');
+    $applicant_val   = trim($_POST['applicant_name'] ?? '');
+    $destination_val = trim($_POST['destination'] ?? '');
 
+    // อัปเดตรายการค่าใช้จ่าย
+    $expense_types_val = '';
+    if ($budget_type_val !== 'ไม่ขอเบิกงบประมาณ') {
+        if (isset($_POST['expense_types']) && is_array($_POST['expense_types'])) {
+            $expense_types_val = implode(',', $_POST['expense_types']);
+        } else {
+            $expense_types_val = trim($_POST['expense_types'] ?? '');
+        }
+    }
+
+    // แมปฟิลด์ครอบคลุมทุกคอลัมน์ที่เป็นไปได้ในตาราง
     $raw_inputs = [
         'doc_no'            => trim($_POST['doc_no'] ?? ''),
+        'document_no'       => trim($_POST['doc_no'] ?? ''),
         'status'            => trim($_POST['status'] ?? 'ปกติ'),
-        'applicant_name'    => trim($_POST['applicant_name'] ?? ''),
-        'name'              => trim($_POST['applicant_name'] ?? ''),
-        'position'          => trim($_POST['position'] ?? ''),
+        // ชื่อ-สกุล
+        'applicant_name'    => $applicant_val,
+        'name'              => $applicant_val,
+        'fullname'          => $applicant_val,
+        'teacher_name'      => $applicant_val,
+        // ตำแหน่งและสังกัด
+        'position'          => trim($_POST['position'] ?? 'ครู'),
         'academic_standing' => trim($_POST['academic_standing'] ?? ''),
         'department'        => trim($_POST['department'] ?? ''),
-        'proposed_group'    => trim($_POST['proposed_group'] ?? ''),
-        'head_name'         => trim($_POST['head_name'] ?? ''),
-        'topic'             => trim($_POST['topic'] ?? ''),
-        'title'             => trim($_POST['topic'] ?? ''),
-        'purpose'           => trim($_POST['topic'] ?? ''),
-        'destination'       => trim($_POST['destination'] ?? ''),
-        'location'          => trim($_POST['destination'] ?? ''),
+        'proposed_group'    => trim($_POST['proposed_group'] ?? 'กลุ่มงานบริหารวิชาการ'),
+        'head_name'         => trim($_POST['head_name'] ?? 'นางศุภลักษณ์ ดำชุม'),
+        // เรื่อง / วัตถุประสงค์ (อัปเดตทุกชื่อคอลัมน์พร้อมกัน)
+        'topic'             => $topic_val,
+        'subject'           => $topic_val,
+        'title'             => $topic_val,
+        'purpose'           => $topic_val,
+        'objective'         => $topic_val,
+        'details'           => $topic_val,
+        'reason'            => $topic_val,
+        'trip_topic'        => $topic_val,
+        // สถานที่
+        'destination'       => $destination_val,
+        'location'          => $destination_val,
+        'place'             => $destination_val,
+        'target'            => $destination_val,
+        'travel_place'      => $destination_val,
+        // หนังสืออ้างอิงและช่วงเวลา
         'ref_doc'           => trim($_POST['ref_doc'] ?? ''),
         'time_period'       => trim($_POST['time_period'] ?? ''),
         'companions'        => trim($_POST['companions'] ?? ''),
+        // งบประมาณและรายการค่าใช้จ่าย (อัปเดตทุกชื่อคอลัมน์พร้อมกัน)
         'budget_type'       => $budget_type_val,
         'budget'            => $budget_type_val,
         'budget_source'     => $budget_type_val,
+        'funds'             => $budget_type_val,
+        'expense_types'     => $expense_types_val,
+        'expenses'          => $expense_types_val,
+        'expense_list'      => $expense_types_val,
+        // พาหนะ
         'vehicle_type'      => trim($_POST['vehicle_type'] ?? ''),
         'vehicle'           => trim($_POST['vehicle_type'] ?? ''),
         'vehicle_license'   => trim($_POST['vehicle_license'] ?? '')
@@ -89,16 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (in_array($col, $existing_columns)) {
             $update_fields[] = "`{$col}` = '" . $conn->real_escape_string($val) . "'";
         }
-    }
-
-    // จัดการรายการค่าใช้จ่าย: หากเลือก "ไม่ขอเบิกงบประมาณ" ให้เคลียร์ค่าเป็นว่าง
-    if (in_array('expense_types', $existing_columns)) {
-        if ($budget_type_val === 'ไม่ขอเบิกงบประมาณ') {
-            $expense_types = '';
-        } else {
-            $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
-        }
-        $update_fields[] = "`expense_types` = '" . $conn->real_escape_string($expense_types) . "'";
     }
 
     if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
@@ -133,8 +163,49 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-$saved_expenses = explode(',', $data['expense_types'] ?? '');
-$current_budget_type = $data['budget_type'] ?? $data['budget'] ?? 'ไม่ขอเบิกงบประมาณ';
+// ค้นหาวัตถุประสงค์จากทุกชื่อคอลัมน์ที่เป็นไปได้
+$current_topic = '';
+$topic_candidates = ['topic', 'subject', 'purpose', 'title', 'objective', 'details', 'reason', 'trip_topic'];
+foreach ($topic_candidates as $tc) {
+    if (!empty($data[$tc])) {
+        $current_topic = trim($data[$tc]);
+        break;
+    }
+}
+
+// ค้นหาสถานที่
+$current_destination = '';
+$dest_candidates = ['destination', 'location', 'place', 'target', 'travel_place'];
+foreach ($dest_candidates as $dc) {
+    if (!empty($data[$dc])) {
+        $current_destination = trim($data[$dc]);
+        break;
+    }
+}
+
+// ค้นหางบประมาณ
+$current_budget_type = '';
+$budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds'];
+foreach ($budget_candidates as $bc) {
+    if (!empty($data[$bc])) {
+        $current_budget_type = trim($data[$bc]);
+        break;
+    }
+}
+if (empty($current_budget_type)) {
+    $current_budget_type = 'ไม่ขอเบิกงบประมาณ';
+}
+
+// ค้นหารายการค่าใช้จ่าย
+$current_expenses = '';
+$exp_candidates = ['expense_types', 'expenses', 'expense_list'];
+foreach ($exp_candidates as $ec) {
+    if (!empty($data[$ec])) {
+        $current_expenses = trim($data[$ec]);
+        break;
+    }
+}
+$saved_expenses = explode(',', $current_expenses);
 
 $departments = [
     'กลุ่มบริหารสถานศึกษา',
@@ -246,11 +317,11 @@ $departments = [
                 <div class="row g-3 mb-3">
                     <div class="col-12">
                         <label class="form-label small fw-bold">วัตถุประสงค์ (ไปราชการเพื่อ):</label>
-                        <textarea name="topic" class="form-control" rows="2" required><?php echo htmlspecialchars($data['topic'] ?? $data['purpose'] ?? $data['title'] ?? ''); ?></textarea>
+                        <textarea name="topic" class="form-control" rows="2" required><?php echo htmlspecialchars($current_topic); ?></textarea>
                     </div>
                     <div class="col-12">
                         <label class="form-label small fw-bold">สถานที่ปลายทาง:</label>
-                        <input type="text" name="destination" class="form-control" value="<?php echo htmlspecialchars($data['destination'] ?? $data['location'] ?? ''); ?>" required>
+                        <input type="text" name="destination" class="form-control" value="<?php echo htmlspecialchars($current_destination); ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">หนังสืออ้างอิง:</label>
@@ -298,7 +369,7 @@ $departments = [
                         </select>
                     </div>
 
-                    <!-- กล่องตัวเลือกรายการค่าใช้จ่าย (ซ่อนอัตโนมัติหากเลือก "ไม่ขอเบิกงบประมาณ") -->
+                    <!-- กล่องตัวเลือกรายการค่าใช้จ่าย -->
                     <div class="col-md-6" id="expense_options_wrapper" style="<?php echo ($current_budget_type === 'ไม่ขอเบิกงบประมาณ') ? 'display: none;' : ''; ?>">
                         <label class="form-label small fw-bold text-primary">รายการค่าใช้จ่ายที่ขอเบิก:</label>
                         <div class="d-flex flex-wrap gap-3 mt-2">
@@ -355,7 +426,6 @@ function toggleExpenseOptions() {
 
     if (budgetSelect.value === 'ไม่ขอเบิกงบประมาณ') {
         wrapper.style.display = 'none';
-        // เคลียร์ checkbox ทั้งหมดออก เพื่อไม่ให้ส่งค่าค้างไปบันทึก
         checkboxes.forEach(cb => cb.checked = false);
     } else {
         wrapper.style.display = 'block';
