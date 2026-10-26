@@ -83,6 +83,18 @@ foreach ($raw_inputs as $col => $val) {
     }
 }
 
+// แก้ไขปัญหาฟิลด์วันที่สร้างข้อมูล (created_date, created_at ฯลฯ)
+$now_datetime = date('Y-m-d H:i:s');
+$now_date = date('Y-m-d');
+$date_created_fields = ['created_date', 'created_at', 'create_time', 'date_created'];
+
+foreach ($date_created_fields as $df) {
+    if (in_array($df, $existing_columns)) {
+        $insert_cols[] = "`{$df}`";
+        $insert_vals[] = ($df === 'created_date' || $df === 'date_created') ? "'{$now_date}'" : "'{$now_datetime}'";
+    }
+}
+
 // รายการค่าใช้จ่าย
 if (in_array('expense_types', $existing_columns)) {
     $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : '';
@@ -90,7 +102,7 @@ if (in_array('expense_types', $existing_columns)) {
     $insert_vals[] = "'" . $conn->real_escape_string($expense_types) . "'";
 }
 
-// วันที่
+// วันที่เดินทางและวันที่หนังสืออ้างอิง
 if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
     $insert_cols[] = "`start_date`";
     $insert_vals[] = "'" . $conn->real_escape_string($_POST['start_date']) . "'";
