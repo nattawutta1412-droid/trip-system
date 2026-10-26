@@ -62,7 +62,7 @@ function thai_date($date_str) {
 
 $applicant_name    = $data['applicant_name'] ?? $data['name'] ?? $data['fullname'] ?? $data['teacher_name'] ?? '';
 $position_name     = $data['position'] ?? 'ครู';
-$academic_standing = $data['academic_standing'] ?? 'ชำนาญการ';
+$academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
 $topic_name        = $data['topic'] ?? $data['title'] ?? $data['purpose'] ?? '';
 $destination_name  = $data['destination'] ?? $data['location'] ?? $data['place'] ?? '';
@@ -71,7 +71,7 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ประมวลผลรายชื่อผู้ร่วมเดินทาง (รองรับทั้ง JSON หรือ ข้อความที่เว้นบรรทัด)
+// ประมวลผลรายชื่อผู้ร่วมเดินทาง
 $companions = [];
 $raw_companions = $data['companions'] ?? $data['members'] ?? $data['co_travelers'] ?? $data['passengers'] ?? '';
 
@@ -113,7 +113,7 @@ if (!empty($raw_companions)) {
 
         @page {
             size: A4 portrait;
-            margin: 1.5cm 2cm 1.2cm 2.5cm;
+            margin: 0; /* ล้าง margin ของเบราว์เซอร์เพื่อคุมพิกัดแน่นอน */
         }
 
         * {
@@ -123,7 +123,7 @@ if (!empty($raw_companions)) {
         body {
             font-family: 'TH Sarabun New', sans-serif;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
             color: #000;
             background: #525659;
             margin: 0;
@@ -133,44 +133,49 @@ if (!empty($raw_companions)) {
         .page {
             background: white;
             width: 210mm;
-            min-height: 297mm;
-            max-height: 297mm;
-            padding: 1.2cm 2cm 1.2cm 2.5cm;
+            height: 297mm;
+            padding: 1.5cm 2cm 1cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
             overflow: hidden;
         }
 
-        /* ตราครุฑ 1.5 ซม. */
-        .garuda-container {
-            position: absolute;
-            left: 2.5cm;
-            top: 1.2cm;
+        /* ตารางจัดหัวบันทึกข้อความและตราครุฑ */
+        .memo-header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+        }
+        .memo-header-table td {
+            padding: 0;
+            vertical-align: bottom;
+        }
+        .garuda-cell {
+            width: 1.5cm;
+            vertical-align: top !important;
         }
         .garuda-img {
             height: 1.5cm;
             width: auto;
             display: block;
         }
-
         .title-memo {
             font-size: 29pt;
             font-weight: bold;
             text-align: center;
             line-height: 1;
-            margin-bottom: 8px;
-            padding-top: 0.2cm;
+            padding-right: 1.5cm; /* ถ่วงดุลความกว้างของครุฑเพื่อให้อยู่กึ่งกลางหน้ากระดาษ */
         }
 
         .header-info {
             width: 100%;
             border-collapse: collapse;
             font-size: 16pt;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .header-info td {
-            padding: 1px 0;
+            padding: 0;
             vertical-align: bottom;
         }
 
@@ -179,33 +184,33 @@ if (!empty($raw_companions)) {
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.25;
-            margin-top: 4px;
-            margin-bottom: 4px;
+            line-height: 1.2;
+            margin-top: 2px;
+            margin-bottom: 2px;
         }
 
         .sign-block {
             text-align: center;
             float: right;
             width: 58%;
-            margin-top: 6px;
-            line-height: 1.15;
+            margin-top: 4px;
+            line-height: 1.1;
         }
         .clear { clear: both; }
 
         .comment-section {
-            margin-top: 4px;
-            line-height: 1.15;
+            margin-top: 3px;
+            line-height: 1.1;
         }
 
         .order-box {
             border: 1px solid #000;
-            padding: 6px 12px;
-            margin-top: 6px;
-            line-height: 1.15;
+            padding: 4px 10px;
+            margin-top: 4px;
+            line-height: 1.1;
         }
 
-        /* ตารางหน้าที่ 2 */
+        /* หน้า 2: ตารางแนบท้าย */
         .page-break {
             page-break-before: always;
             break-before: page;
@@ -214,12 +219,12 @@ if (!empty($raw_companions)) {
         .table-list {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 16pt;
         }
         .table-list th, .table-list td {
             border: 1px solid #000;
-            padding: 6px 10px;
+            padding: 4px 8px;
             text-align: left;
         }
         .table-list th {
@@ -251,10 +256,9 @@ if (!empty($raw_companions)) {
             .page {
                 box-shadow: none;
                 margin: 0;
-                width: 100%;
-                height: 100%;
-                max-height: none;
-                padding: 0;
+                width: 210mm;
+                height: 297mm;
+                padding: 1.5cm 2cm 1cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -272,13 +276,19 @@ if (!empty($raw_companions)) {
     <button onclick="window.print()" class="btn-print">พิมพ์เอกสาร</button>
 </div>
 
-<!-- ========================= หน้าที่ 1: บันทึกข้อความ (ควบคุมให้อยู่ใน 1 หน้าพอดี) ========================= -->
+<!-- ========================= หน้าที่ 1: บันทึกข้อความ ========================= -->
 <div class="page">
-    <div class="garuda-container">
-        <img src="garuda.png" alt="ครุฑ" class="garuda-img" onerror="this.src='../garuda.png';">
-    </div>
-
-    <div class="title-memo">บันทึกข้อความ</div>
+    <!-- ส่วนหัวใช้ตารางล็อกตำแหน่ง ครุฑ 1.5 ซม. ไม่หลุดตำแหน่งแน่นอน -->
+    <table class="memo-header-table">
+        <tr>
+            <td class="garuda-cell">
+                <img src="garuda.png" alt="ครุฑ" class="garuda-img" onerror="this.src='../garuda.png';">
+            </td>
+            <td>
+                <div class="title-memo">บันทึกข้อความ</div>
+            </td>
+        </tr>
+    </table>
 
     <table class="header-info">
         <tr>
@@ -312,7 +322,7 @@ if (!empty($raw_companions)) {
         อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
     </div>
 
-    <div class="content-body" style="margin-top: 2px; margin-bottom: 2px;">
+    <div class="content-body" style="margin-top: 1px; margin-bottom: 1px;">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
@@ -327,8 +337,8 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 16px;"></div>
-        <div class="sign-block" style="margin-top: 3px;">
+        <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
+        <div class="sign-block" style="margin-top: 2px;">
             <div>ลงชื่อ..........................................................</div>
             <div style="margin-top: 1px;">( นางศุภลักษณ์ ดำชุม )</div>
             <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
@@ -339,8 +349,8 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของรองผู้อำนวยการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 16px;"></div>
-        <div class="sign-block" style="margin-top: 3px;">
+        <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
+        <div class="sign-block" style="margin-top: 2px;">
             <div>ลงชื่อ..........................................................</div>
             <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
             <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
@@ -348,7 +358,7 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุด) -->
+    <!-- คำสั่ง / การพิจารณา ผอ. -->
     <div class="order-box">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
         <table style="width: 100%; margin-top: 1px;">
@@ -358,7 +368,7 @@ if (!empty($raw_companions)) {
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 6px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 4px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
             <div style="margin-top: 1px;">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
@@ -368,12 +378,12 @@ if (!empty($raw_companions)) {
 
 <!-- ========================= หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย ========================= -->
 <div class="page page-break">
-    <div style="text-align: center; margin-bottom: 20px;">
+    <div style="text-align: center; margin-bottom: 15px;">
         <h3 style="font-size: 20pt; font-weight: bold; margin: 0;">บัญชีรายชื่อผู้ขออนุมัติเดินทางไปราชการแนบท้าย</h3>
-        <div style="font-size: 16pt; margin-top: 5px;">
+        <div style="font-size: 16pt; margin-top: 4px;">
             ตามบันทึกข้อความ ที่ ................................................. วันที่ <?php echo $created_date_th; ?>
         </div>
-        <div style="font-size: 16pt; margin-top: 3px;">
+        <div style="font-size: 16pt; margin-top: 2px;">
             เรื่อง ขออนุมัติเดินทางไปราชการเพื่อ<?php echo htmlspecialchars($topic_name); ?>
         </div>
         <div style="font-size: 16pt;">
@@ -391,7 +401,6 @@ if (!empty($raw_companions)) {
             </tr>
         </thead>
         <tbody>
-            <!-- ลำดับที่ 1: ผู้ขออนุมัติหลัก -->
             <tr>
                 <td style="text-align: center;">1</td>
                 <td><?php echo htmlspecialchars($applicant_name); ?></td>
@@ -399,7 +408,6 @@ if (!empty($raw_companions)) {
                 <td style="text-align: center;">ผู้ขออนุมัติ</td>
             </tr>
 
-            <!-- ลำดับถัดไป: ผู้ร่วมเดินทาง -->
             <?php if (!empty($companions)): ?>
                 <?php $idx = 2; foreach ($companions as $c): 
                     $c_name = is_array($c) ? ($c['name'] ?? '') : $c;
@@ -413,7 +421,6 @@ if (!empty($raw_companions)) {
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
-                <!-- กรณีไม่มีข้อมูลในตาราง ให้แสดงแถวว่างมาตรฐานไว้ให้ -->
                 <tr>
                     <td style="text-align: center;">2</td>
                     <td>...........................................................................</td>
@@ -430,10 +437,9 @@ if (!empty($raw_companions)) {
         </tbody>
     </table>
 
-    <!-- ส่วนท้ายลงนามรับรองบัญชีแนบท้าย -->
-    <div class="sign-block" style="margin-top: 40px; float: right; width: 50%;">
+    <div class="sign-block" style="margin-top: 35px; float: right; width: 50%;">
         <div>(ลงชื่อ)............................................................ผู้ขออนุมัติ</div>
-        <div style="margin-top: 3px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
+        <div style="margin-top: 2px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
         <div>ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
     </div>
     <div class="clear"></div>
