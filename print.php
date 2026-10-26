@@ -71,7 +71,24 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ดึงข้อมูลผู้ร่วมเดินทางจากทุกฟิลด์ที่เป็นไปได้
+// ประมวลผลเรื่องงบประมาณ
+$budget_type   = trim($data['budget_type'] ?? '');
+$expense_types = trim($data['expense_types'] ?? '');
+
+$is_no_budget = (empty($budget_type) || $budget_type === 'ไม่ขอเบิกงบประมาณ' || $budget_type === 'ไม่เบิก' || $budget_type === 'ไม่ขอเบิก');
+
+$budget_text = "";
+if ($is_no_budget) {
+    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+} else {
+    $budget_source = ($budget_type === 'เงินงบประมาณสถานศึกษา') ? "เงินงบประมาณของสถานศึกษา" : (($budget_type === 'เงินนอกงบประมาณ') ? "เงินนอกงบประมาณของสถานศึกษา" : $budget_type);
+    
+    $expense_detail = !empty($expense_types) ? " ได้แก่ " . str_replace(',', ', ', $expense_types) : "";
+    
+    $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+}
+
+// ประมวลผลรายชื่อผู้ร่วมเดินทาง
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 
@@ -84,7 +101,6 @@ foreach ($check_fields as $fld) {
 
 $companions = [];
 if (!empty($raw_companions)) {
-    // 1. ตรวจสอบรูปแบบ JSON
     $decoded = json_decode($raw_companions, true);
     if (is_array($decoded)) {
         foreach ($decoded as $item) {
@@ -98,12 +114,10 @@ if (!empty($raw_companions)) {
             }
         }
     } else {
-        // 2. ตรวจสอบรูปแบบข้อความแยกบรรทัดหรือคั่นด้วยจุลภาค
         $clean_text = str_replace(["\r\n", "\r", ","], "\n", $raw_companions);
         $lines = explode("\n", $clean_text);
         foreach ($lines as $line) {
             $line = trim($line);
-            // ตัดตัวเลขนำหน้า เช่น 1. หรือ 2)
             $line = preg_replace('/^[0-9]+[\.\)\s\-]+/', '', $line);
             if (!empty($line)) {
                 $pos = 'ครู';
@@ -344,9 +358,7 @@ if (!empty($raw_companions)) {
         ณ <?php echo htmlspecialchars($destination_name); ?> 
         โดยมีกำหนดการตั้งแต่วันที่ <?php echo $start_date_th; ?> 
         ถึงวันที่ <?php echo $end_date_th; ?> 
-        โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา 
-        (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ 
-        อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
+        <?php echo $budget_text; ?>
     </div>
 
     <div class="content-body" style="margin-top: 1px; margin-bottom: 1px;">
@@ -373,7 +385,7 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการ -->
+    <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
