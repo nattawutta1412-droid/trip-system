@@ -45,7 +45,7 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-// ฟังก์ชันแปลงวันที่ไทย (แก้ปัญหาปี พ.ศ. บวกซ้ำสองรอบ)
+// ฟังก์ชันแปลงวันที่ไทย (ป้องกันปี พ.ศ. บวกซ้ำ)
 function thai_date($date_str) {
     if (empty($date_str)) return "-";
     $months = [
@@ -60,7 +60,6 @@ function thai_date($date_str) {
     $m = $months[(int)date('n', $time)];
     $y = (int)date('Y', $time);
     
-    // ตรวจสอบ: ถ้าปียังเป็น ค.ศ. (น้อยกว่า 2400) ให้บวก 543 แต่ถ้าเป็น พ.ศ. อยู่แล้วไม่ต้องบวกเพิ่ม
     if ($y < 2400) {
         $y += 543;
     }
@@ -73,7 +72,7 @@ $position_name     = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
 
-// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ) จากทุกชื่อคอลัมน์ที่เป็นไปได้
+// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ)
 $topic_name = '';
 $topic_fields = ['topic', 'objective', 'subject', 'purpose', 'title', 'reason', 'details', 'trip_topic'];
 foreach ($topic_fields as $tf) {
@@ -190,7 +189,7 @@ if (!empty($raw_companions)) {
         body {
             font-family: 'TH Sarabun New', sans-serif;
             font-size: 16pt;
-            line-height: 1.18;
+            line-height: 1.15;
             color: #000;
             background: #525659;
             margin: 0;
@@ -201,7 +200,7 @@ if (!empty($raw_companions)) {
             background: white;
             width: 210mm;
             height: 297mm;
-            padding: 1.5cm 2cm 1cm 2.5cm;
+            padding: 1.2cm 2cm 0.8cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -211,7 +210,7 @@ if (!empty($raw_companions)) {
         .memo-header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .memo-header-table td {
             padding: 0;
@@ -250,7 +249,7 @@ if (!empty($raw_companions)) {
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.2;
+            line-height: 1.18;
             margin-top: 2px;
             margin-bottom: 2px;
         }
@@ -259,21 +258,36 @@ if (!empty($raw_companions)) {
             text-align: center;
             float: right;
             width: 58%;
-            margin-top: 4px;
-            line-height: 1.1;
+            margin-top: 2px;
+            line-height: 1.08;
         }
         .clear { clear: both; }
 
         .comment-section {
-            margin-top: 3px;
+            margin-top: 2px;
+            line-height: 1.08;
+        }
+
+        /* กล่องลงรับของงานบุคคล */
+        .receive-box-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2px;
+        }
+        .receive-box {
+            border: 1px solid #000;
+            padding: 3px 6px;
+            font-size: 14pt;
             line-height: 1.1;
+            width: 38%;
+            vertical-align: top;
         }
 
         .order-box {
             border: 1px solid #000;
             padding: 4px 10px;
-            margin-top: 4px;
-            line-height: 1.1;
+            margin-top: 3px;
+            line-height: 1.08;
         }
 
         .page-break {
@@ -323,7 +337,7 @@ if (!empty($raw_companions)) {
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 1.5cm 2cm 1cm 2.5cm;
+                padding: 1.2cm 2cm 0.8cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -400,7 +414,7 @@ if (!empty($raw_companions)) {
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
-        <div class="sign-block" style="margin-top: 2px;">
+        <div class="sign-block" style="margin-top: 1px;">
             <div>ลงชื่อ..........................................................</div>
             <div style="margin-top: 1px;">( นางศุภลักษณ์ ดำชุม )</div>
             <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
@@ -408,16 +422,28 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
+    <!-- ความเห็นของรองผู้อำนวยการ พร้อมช่องลงรับงานบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
-        <div class="sign-block" style="margin-top: 2px;">
-            <div>ลงชื่อ..........................................................</div>
-            <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
-            <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
-        </div>
-        <div class="clear"></div>
+        
+        <table class="receive-box-table">
+            <tr>
+                <!-- กล่องลงรับของงานบุคคล -->
+                <td class="receive-box">
+                    <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 2px;">กลุ่มงานบริหารบุคคล</div>
+                    <div>เลขรับ..................................................</div>
+                    <div>วันที่.........../.................../....................</div>
+                    <div>เวลา.....................................................</div>
+                </td>
+                <!-- ส่วนลงนามรอง ผอ. -->
+                <td style="vertical-align: bottom; text-align: center; width: 62%;">
+                    <div>ลงชื่อ..........................................................</div>
+                    <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
+                    <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <!-- คำสั่ง / การพิจารณา ผอ. -->
@@ -430,7 +456,7 @@ if (!empty($raw_companions)) {
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 4px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 3px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
             <div style="margin-top: 1px;">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
