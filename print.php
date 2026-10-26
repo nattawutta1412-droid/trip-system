@@ -45,7 +45,7 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-// ฟังก์ชันแปลงวันที่ไทย
+// ฟังก์ชันแปลงวันที่ไทย (ป้องกันปี พ.ศ. บวกซ้ำ)
 function thai_date($date_str) {
     if (empty($date_str)) return "-";
     $months = [
@@ -97,62 +97,40 @@ $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
 // =========================================================================
-// ประมวลผลเรื่องงบประมาณ (แก้ไขตรงจุด ไม่กวาดคำมั่ว)
+// ประมวลผลเรื่องงบประมาณตามค่าที่บันทึกมาจาก edit.php อย่างแน่นอน
 // =========================================================================
-$budget_type = '';
-$budget_fields = ['budget_type', 'budget', 'budget_source', 'funds'];
-foreach ($budget_fields as $bf) {
-    if (isset($data[$bf]) && trim($data[$bf]) !== '') {
-        $budget_type = trim($data[$bf]);
-        break;
-    }
-}
+$budget_type = trim($data['budget_type'] ?? $data['budget'] ?? $data['budget_source'] ?? '');
+$expense_raw = trim($data['expense_types'] ?? $data['expenses'] ?? '');
 
-$expense_raw = '';
-$expense_fields = ['expense_types', 'expenses', 'expense_list'];
-foreach ($expense_fields as $ef) {
-    if (isset($data[$ef]) && trim($data[$ef]) !== '') {
-        $expense_raw = trim($data[$ef]);
-        break;
-    }
-}
-
-// ตรวจสอบว่าเป็น "ไม่ขอเบิก" หรือไม่
-$is_no_budget = false;
-if (empty($budget_type) || in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-'])) {
-    // ถ้าประเภทงบระบุว่าไม่เบิก หรือเป็นค่าว่าง และไม่มีการระบุรายการค่าใช้จ่ายที่ขอเบิก
-    if (empty($expense_raw) || in_array($expense_raw, ['[]', 'ไม่มี', '-'])) {
-        $is_no_budget = true;
-    }
-}
+$is_no_budget = (empty($budget_type) || in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-']));
 
 $budget_text = "";
 if ($is_no_budget) {
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 } else {
-    // กำหนดชื่อแหล่งงบประมาณ
+    // แหล่งงบประมาณ
     $source_name = "เงินงบประมาณของสถานศึกษา";
     if ($budget_type === 'เงินนอกงบประมาณ') {
         $source_name = "เงินนอกงบประมาณของสถานศึกษา";
     } elseif ($budget_type === 'งบประมาณจากหน่วยงานผู้จัด') {
         $source_name = "งบประมาณจากหน่วยงานผู้จัด";
-    } elseif (!empty($budget_type) && !in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
+    } elseif (!empty($budget_type)) {
         $source_name = $budget_type;
     }
 
-    // ทำความสะอาดและกรองเฉพาะรายการค่าใช้จ่ายจริง
-    $valid_items = [];
+    // รายการค่าใช้จ่ายที่ขอเบิก
+    $clean_items = [];
     $raw_list = explode(',', str_replace(['[', ']', '"', "'"], '', $expense_raw));
     foreach ($raw_list as $item) {
         $item = trim($item);
-        if (in_array($item, ['ค่าน้ำมัน', 'ค่าเบี้ยเลี้ยง', 'ค่าที่พัก', 'ค่ายานพาหนะเดินทาง', 'ค่าพาหนะ', 'ค่าลงทะเบียน'])) {
-            $valid_items[] = $item;
+        if (in_array($item, ['ค่าน้ำมันเชื้อเพลิง', 'ค่าน้ำมัน', 'ค่าเบี้ยเลี้ยง', 'ค่าที่พัก', 'ค่ายานพาหนะเดินทาง', 'ค่าพาหนะ', 'ค่าลงทะเบียน'])) {
+            $clean_items[] = ($item === 'ค่าน้ำมัน') ? 'ค่าน้ำมันเชื้อเพลิง' : (($item === 'ค่าพาหนะ') ? 'ค่ายานพาหนะเดินทาง' : $item);
         }
     }
 
     $expense_part = "";
-    if (!empty($valid_items)) {
-        $expense_part = " ได้แก่ " . implode(', ', array_unique($valid_items));
+    if (!empty($clean_items)) {
+        $expense_part = " ได้แก่ " . implode(', ', array_unique($clean_items));
     }
 
     $budget_text = "โดยข้าพเจ้าขออนุมัติเบิกค่าใช้จ่ายในการเดินทางไปราชการจาก{$source_name} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ{$expense_part} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
