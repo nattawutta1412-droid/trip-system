@@ -203,7 +203,7 @@ if (!empty($raw_companions)) {
             padding: 0.8cm 2cm 0.4cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            position: relative;
+            position: relative; /* ให้ลูกที่ใช้ absolute อิงพิกัดในหน้านี้ */
             overflow: hidden;
         }
 
@@ -254,7 +254,6 @@ if (!empty($raw_companions)) {
             margin-bottom: 1px;
         }
 
-        /* เคาะระยะลงมาจากบรรทัดบน */
         .sign-block {
             text-align: center;
             float: right;
@@ -264,7 +263,6 @@ if (!empty($raw_companions)) {
         }
         .clear { clear: both; }
 
-        /* เว้นระยะระหว่างเส้นจุดลงชื่อกับวงเล็บชื่อ-สกุล */
         .signature-gap {
             margin-top: 16px;
         }
@@ -285,13 +283,17 @@ if (!empty($raw_companions)) {
             line-height: 1.05;
         }
 
+        /* กล่องลงรับงานบุคคล ล็อกพิกัดไว้ที่มุมขวาล่างสุดของหน้ากระดาษ */
         .receive-box-bottom-right {
+            position: absolute;
+            bottom: 0.6cm;
+            right: 2cm;
             border: 1px solid #000;
             padding: 2px 6px;
             font-size: 13pt;
             line-height: 1.05;
             width: 38%;
-            float: right;
+            background: white;
         }
 
         .page-break {
@@ -406,7 +408,7 @@ if (!empty($raw_companions)) {
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลายเซ็นผู้ขอ (เคาะลงมาจากบรรทัดบน 14px + เว้นช่องเซ็น 16px) -->
+    <!-- ลายเซ็นผู้ขอ -->
     <div class="sign-block">
         <div>ลงชื่อ..........................................................</div>
         <div class="signature-gap">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
@@ -457,15 +459,12 @@ if (!empty($raw_companions)) {
         </div>
     </div>
 
-    <!-- กล่องลงรับของงานบุคคล ด้านขวาล่าง -->
-    <div style="margin-top: 2px;">
-        <div class="receive-box-bottom-right">
-            <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
-            <div>เลขรับ..................................................</div>
-            <div>วันที่.........../.................../....................</div>
-            <div>เวลา.....................................................</div>
-        </div>
-        <div class="clear"></div>
+    <!-- กล่องลงรับของงานบุคคล ล็อกติดมุมขวาล่างสุดของหน้า 1 (ไม่หลุดขอบ) -->
+    <div class="receive-box-bottom-right">
+        <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
+        <div>เลขรับ..................................................</div>
+        <div>วันที่.........../.................../....................</div>
+        <div>เวลา.....................................................</div>
     </div>
 
 </div>
