@@ -36,7 +36,7 @@ if (!$target_table) {
     die("ไม่พบตารางข้อมูลคำร้องในระบบ");
 }
 
-// ตรวจสอบและสร้างคอลัมน์ companions อัตโนมัติหากยังไม่มีในฐานข้อมูล
+// ตรวจสอบและสร้างคอลัมน์ companions อัตโนมัติหากยังไม่มี
 $col_chk = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'companions'");
 if ($col_chk && $col_chk->num_rows == 0) {
     $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
@@ -45,7 +45,7 @@ if ($col_chk && $col_chk->num_rows == 0) {
 $message = "";
 $message_type = "";
 
-// 2. บันทึกข้อมูลเมื่อมีการกด Submit
+// 2. บันทึกข้อมูลเมื่อมีการส่งฟอร์ม (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $doc_no             = trim($_POST['doc_no'] ?? '');
     $status             = trim($_POST['status'] ?? 'ปกติ');
@@ -63,40 +63,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $end_date           = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $time_period        = trim($_POST['time_period'] ?? '');
     $companions         = trim($_POST['companions'] ?? '');
+    
+    // ข้อมูลการเบิกจ่ายและพาหนะ
+    $budget_type        = trim($_POST['budget_type'] ?? '');
+    $expense_types      = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
+    $vehicle_type       = trim($_POST['vehicle_type'] ?? '');
+    $vehicle_license    = trim($_POST['vehicle_license'] ?? '');
 
     // อัปเดตข้อมูลคำร้อง
-    $sql_update = "UPDATE `{$target_table}` SET 
-        status = ?, 
-        applicant_name = ?, 
-        position = ?, 
-        academic_standing = ?, 
-        department = ?, 
-        topic = ?, 
-        destination = ?, 
-        start_date = ?, 
-        end_date = ?, 
-        companions = ?
-        WHERE id = ?";
+    $update_fields = [
+        "doc_no = '" . $conn->real_escape_string($doc_no) . "'",
+        "status = '" . $conn->real_escape_string($status) . "'",
+        "applicant_name = '" . $conn->real_escape_string($applicant_name) . "'",
+        "position = '" . $conn->real_escape_string($position) . "'",
+        "academic_standing = '" . $conn->real_escape_string($academic_standing) . "'",
+        "department = '" . $conn->real_escape_string($department) . "'",
+        "proposed_group = '" . $conn->real_escape_string($proposed_group) . "'",
+        "head_name = '" . $conn->real_escape_string($head_name) . "'",
+        "topic = '" . $conn->real_escape_string($topic) . "'",
+        "destination = '" . $conn->real_escape_string($destination) . "'",
+        "ref_doc = '" . $conn->real_escape_string($ref_doc) . "'",
+        "time_period = '" . $conn->real_escape_string($time_period) . "'",
+        "companions = '" . $conn->real_escape_string($companions) . "'"
+    ];
 
-    $stmt_up = $conn->prepare($sql_update);
-    if ($stmt_up) {
-        $stmt_up->bind_param("ssssssssssi", 
-            $status, $applicant_name, $position, $academic_standing, 
-            $department, $topic, $destination, $start_date, $end_date, 
-            $companions, $id
-        );
-        if ($stmt_up->execute()) {
-            $message = "บันทึกและอัปเดตข้อมูลคำร้องเรียบร้อยแล้ว";
-            $message_type = "success";
-        } else {
-            $message = "เกิดข้อผิดพลาดในการบันทึก: " . $conn->error;
-            $message_type = "danger";
-        }
-    } else {
-        // Fallback กรณีชื่อคอลัมน์ในตารางต่างกัน
-        $conn->query("UPDATE `{$target_table}` SET companions = '" . $conn->real_escape_string($companions) . "' WHERE id = {$id}");
-        $message = "บันทึกข้อมูลเรียบร้อยแล้ว";
+    if ($start_date) $update_fields[] = "start_date = '{$start_date}'";
+    if ($end_date) $update_fields[] = "end_date = '{$end_date}'";
+    if ($ref_date) $update_fields[] = "ref_date = '{$ref_date}'";
+
+    // ตรวจสอบคอลัมน์ด้านงบประมาณและพาหนะก่อนอัปเดตเพื่อไม่ให้ SQL Error
+    $cols = [];
+    $res_cols = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
+    while ($c = $res_cols->fetch_assoc()) {
+        $cols[] = $c['Field'];
+    }
+
+    if (in_array('budget_type', $cols)) $update_fields[] = "budget_type = '" . $conn->real_escape_string($budget_type) . "'";
+    if (in_array('expense_types', $cols)) $update_fields[] = "expense_types = '" . $conn->real_escape_string($expense_types) . "'";
+    if (in_array('vehicle_type', $cols)) $update_fields[] = "vehicle_type = '" . $conn->real_escape_string($vehicle_type) . "'";
+    if (in_array('vehicle_license', $cols)) $update_fields[] = "vehicle_license = '" . $conn->real_escape_string($vehicle_license) . "'";
+
+    $sql_up = "UPDATE `{$target_table}` SET " . implode(', ', $update_fields) . " WHERE id = {$id}";
+    if ($conn->query($sql_up)) {
+        $message = "บันทึกและอัปเดตข้อมูลคำร้องเรียบร้อยแล้ว";
         $message_type = "success";
+    } else {
+        $message = "เกิดข้อผิดพลาดในการบันทึก: " . $conn->error;
+        $message_type = "danger";
     }
 }
 
@@ -109,6 +122,9 @@ $data = $stmt->get_result()->fetch_assoc();
 if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
+
+// แปลงรายการค่าใช้จ่ายที่เคยเลือกไว้
+$saved_expenses = explode(',', $data['expense_types'] ?? '');
 
 $departments = [
     'กลุ่มบริหารสถานศึกษา',
@@ -134,7 +150,7 @@ $departments = [
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
-        .section-title { font-weight: 700; color: #0d6efd; margin-top: 15px; margin-bottom: 15px; }
+        .section-title { font-weight: 700; color: #0d6efd; margin-top: 20px; margin-bottom: 12px; }
         .card { border-radius: 12px; }
     </style>
 </head>
@@ -248,15 +264,63 @@ $departments = [
                     </div>
                 </div>
 
-                <!-- ส่วนที่เพิ่มใหม่: รายชื่อผู้ร่วมเดินทางไปราชการ -->
-                <div class="card p-3 mb-4 border bg-light rounded-3">
+                <!-- รายชื่อผู้ร่วมเดินทางไปราชการ (แนบท้าย) -->
+                <div class="card p-3 mb-3 border bg-light rounded-3">
                     <label class="form-label fw-bold text-primary mb-1">
                         <i class="bi bi-people-fill me-1"></i> รายชื่อผู้ร่วมเดินทางไปราชการ (หน้าที่ 2 แนบท้าย)
                     </label>
                     <div class="form-text text-muted mb-2">
                         พิมพ์รายชื่อผู้ร่วมเดินทาง <strong>1 ท่าน ต่อ 1 บรรทัด</strong> (เช่น <code>นายสมชาย สดใส ตำแหน่ง ครู</code>)
                     </div>
-                    <textarea name="companions" class="form-control bg-white" rows="4" placeholder="นายสมหมาย จริงใจ ตำแหน่ง ครู&#10;นางสาวพิมพา รักดี ตำแหน่ง ครูผู้ช่วย"><?php echo htmlspecialchars($data['companions'] ?? ''); ?></textarea>
+                    <textarea name="companions" class="form-control bg-white" rows="3" placeholder="นายสมหมาย จริงใจ ตำแหน่ง ครู&#10;นางสาวพิมพา รักดี ตำแหน่ง ครูผู้ช่วย"><?php echo htmlspecialchars($data['companions'] ?? ''); ?></textarea>
+                </div>
+
+                <!-- 4. ข้อมูลการเบิกจ่ายงบประมาณ (ที่เพิ่มกลับเข้ามาอย่างสมบูรณ์) -->
+                <div class="section-title">4. ข้อมูลการเบิกจ่ายงบประมาณ</div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">ประเภทงบประมาณ:</label>
+                        <select name="budget_type" class="form-select">
+                            <option value="ไม่ขอเบิกงบประมาณ" <?php echo (($data['budget_type'] ?? '') === 'ไม่ขอเบิกงบประมาณ') ? 'selected' : ''; ?>>ไม่ขอเบิกงบประมาณ</option>
+                            <option value="เงินงบประมาณสถานศึกษา" <?php echo (($data['budget_type'] ?? '') === 'เงินงบประมาณสถานศึกษา') ? 'selected' : ''; ?>>เงินงบประมาณสถานศึกษา</option>
+                            <option value="เงินนอกงบประมาณ" <?php echo (($data['budget_type'] ?? '') === 'เงินนอกงบประมาณ') ? 'selected' : ''; ?>>เงินนอกงบประมาณ</option>
+                            <option value="งบประมาณจากหน่วยงานผู้จัด" <?php echo (($data['budget_type'] ?? '') === 'งบประมาณจากหน่วยงานผู้จัด') ? 'selected' : ''; ?>>งบประมาณจากหน่วยงานผู้จัด</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">รายการค่าใช้จ่ายที่ขอเบิก:</label>
+                        <div class="d-flex flex-wrap gap-3 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าน้ำมัน" id="exp1" <?php echo in_array('ค่าน้ำมัน', $saved_expenses) ? 'checked' : ''; ?>>
+                                <label class="form-check-label small" for="exp1">ค่าน้ำมันเชื้อเพลิง</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าเบี้ยเลี้ยง" id="exp2" <?php echo in_array('ค่าเบี้ยเลี้ยง', $saved_expenses) ? 'checked' : ''; ?>>
+                                <label class="form-check-label small" for="exp2">ค่าเบี้ยเลี้ยง</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าที่พัก" id="exp3" <?php echo in_array('ค่าที่พัก', $saved_expenses) ? 'checked' : ''; ?>>
+                                <label class="form-check-label small" for="exp3">ค่าที่พัก</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่ายานพาหนะเดินทาง" id="exp4" <?php echo in_array('ค่ายานพาหนะเดินทาง', $saved_expenses) ? 'checked' : ''; ?>>
+                                <label class="form-check-label small" for="exp4">ค่าพาหนะ/รถรับจ้าง</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. พาหนะและผู้ลงนาม -->
+                <div class="section-title">5. พาหนะและผู้ลงนาม</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">ยานพาหนะ:</label>
+                        <input type="text" name="vehicle_type" class="form-control" placeholder="เช่น รถยนต์ส่วนบุคคล, รถโดยสารประจำทาง" value="<?php echo htmlspecialchars($data['vehicle_type'] ?? $data['vehicle'] ?? ''); ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">หมายเลขทะเบียน:</label>
+                        <input type="text" name="vehicle_license" class="form-control" placeholder="เช่น กข 1234 ตรัง" value="<?php echo htmlspecialchars($data['vehicle_license'] ?? ''); ?>">
+                    </div>
                 </div>
 
                 <div class="text-end">
