@@ -71,20 +71,50 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ประมวลผลรายชื่อผู้ร่วมเดินทาง
-$companions = [];
-$raw_companions = $data['companions'] ?? $data['members'] ?? $data['co_travelers'] ?? $data['passengers'] ?? '';
+// ดึงข้อมูลผู้ร่วมเดินทางจากทุกฟิลด์ที่เป็นไปได้
+$raw_companions = '';
+$check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 
+foreach ($check_fields as $fld) {
+    if (!empty($data[$fld])) {
+        $raw_companions = $data[$fld];
+        break;
+    }
+}
+
+$companions = [];
 if (!empty($raw_companions)) {
+    // 1. ตรวจสอบรูปแบบ JSON
     $decoded = json_decode($raw_companions, true);
     if (is_array($decoded)) {
-        $companions = $decoded;
+        foreach ($decoded as $item) {
+            if (is_array($item)) {
+                $companions[] = [
+                    'name' => $item['name'] ?? $item['teacher_name'] ?? reset($item),
+                    'position' => $item['position'] ?? 'ครู'
+                ];
+            } else if (!empty($item)) {
+                $companions[] = ['name' => $item, 'position' => 'ครู'];
+            }
+        }
     } else {
-        $lines = explode("\n", str_replace("\r", "", $raw_companions));
+        // 2. ตรวจสอบรูปแบบข้อความแยกบรรทัดหรือคั่นด้วยจุลภาค
+        $clean_text = str_replace(["\r\n", "\r", ","], "\n", $raw_companions);
+        $lines = explode("\n", $clean_text);
         foreach ($lines as $line) {
             $line = trim($line);
+            // ตัดตัวเลขนำหน้า เช่น 1. หรือ 2)
+            $line = preg_replace('/^[0-9]+[\.\)\s\-]+/', '', $line);
             if (!empty($line)) {
-                $companions[] = ['name' => $line, 'position' => ''];
+                $pos = 'ครู';
+                if (strpos($line, 'ตำแหน่ง') !== false) {
+                    $parts = explode('ตำแหน่ง', $line);
+                    $c_name = trim($parts[0]);
+                    $pos = trim($parts[1]) ?: 'ครู';
+                } else {
+                    $c_name = $line;
+                }
+                $companions[] = ['name' => $c_name, 'position' => $pos];
             }
         }
     }
@@ -113,7 +143,7 @@ if (!empty($raw_companions)) {
 
         @page {
             size: A4 portrait;
-            margin: 0; /* ล้าง margin ของเบราว์เซอร์เพื่อคุมพิกัดแน่นอน */
+            margin: 0;
         }
 
         * {
@@ -141,7 +171,6 @@ if (!empty($raw_companions)) {
             overflow: hidden;
         }
 
-        /* ตารางจัดหัวบันทึกข้อความและตราครุฑ */
         .memo-header-table {
             width: 100%;
             border-collapse: collapse;
@@ -165,7 +194,7 @@ if (!empty($raw_companions)) {
             font-weight: bold;
             text-align: center;
             line-height: 1;
-            padding-right: 1.5cm; /* ถ่วงดุลความกว้างของครุฑเพื่อให้อยู่กึ่งกลางหน้ากระดาษ */
+            padding-right: 1.5cm;
         }
 
         .header-info {
@@ -210,7 +239,6 @@ if (!empty($raw_companions)) {
             line-height: 1.1;
         }
 
-        /* หน้า 2: ตารางแนบท้าย */
         .page-break {
             page-break-before: always;
             break-before: page;
@@ -278,7 +306,6 @@ if (!empty($raw_companions)) {
 
 <!-- ========================= หน้าที่ 1: บันทึกข้อความ ========================= -->
 <div class="page">
-    <!-- ส่วนหัวใช้ตารางล็อกตำแหน่ง ครุฑ 1.5 ซม. ไม่หลุดตำแหน่งแน่นอน -->
     <table class="memo-header-table">
         <tr>
             <td class="garuda-cell">
@@ -409,14 +436,11 @@ if (!empty($raw_companions)) {
             </tr>
 
             <?php if (!empty($companions)): ?>
-                <?php $idx = 2; foreach ($companions as $c): 
-                    $c_name = is_array($c) ? ($c['name'] ?? '') : $c;
-                    $c_pos  = is_array($c) ? ($c['position'] ?? 'ครู') : 'ครู';
-                ?>
+                <?php $idx = 2; foreach ($companions as $c): ?>
                     <tr>
                         <td style="text-align: center;"><?php echo $idx++; ?></td>
-                        <td><?php echo htmlspecialchars($c_name); ?></td>
-                        <td><?php echo htmlspecialchars($c_pos ?: 'ครู'); ?></td>
+                        <td><?php echo htmlspecialchars($c['name']); ?></td>
+                        <td><?php echo htmlspecialchars($c['position']); ?></td>
                         <td style="text-align: center;">ผู้ร่วมเดินทาง</td>
                     </tr>
                 <?php endforeach; ?>
