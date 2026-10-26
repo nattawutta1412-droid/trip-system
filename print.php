@@ -45,7 +45,7 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-// ฟังก์ชันแปลงวันที่ไทย (ป้องกันปี พ.ศ. บวกซ้ำ)
+// ฟังก์ชันแปลงวันที่ไทย
 function thai_date($date_str) {
     if (empty($date_str)) return "-";
     $months = [
@@ -72,7 +72,7 @@ $position_name     = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
 
-// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ)
+// ตรวจสอบวัตถุประสงค์
 $topic_name = '';
 $topic_fields = ['topic', 'objective', 'subject', 'purpose', 'title', 'reason', 'details', 'trip_topic'];
 foreach ($topic_fields as $tf) {
@@ -97,12 +97,19 @@ $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
 // =========================================================================
-// ประมวลผลเรื่องงบประมาณตามค่าที่บันทึกมาจาก edit.php อย่างแน่นอน
+// ตรวจสอบและแสดงผลเรื่องงบประมาณตามที่ครูเลือกอย่างแท้จริง
 // =========================================================================
-$budget_type = trim($data['budget_type'] ?? $data['budget'] ?? $data['budget_source'] ?? '');
-$expense_raw = trim($data['expense_types'] ?? $data['expenses'] ?? '');
+$budget_type = trim($data['budget_type'] ?? $data['budget'] ?? $data['budget_source'] ?? $data['funds'] ?? '');
+$expense_raw = trim($data['expense_types'] ?? $data['expenses'] ?? $data['expense_list'] ?? '');
 
+// ตรวจสอบว่าครูเลือก "ไม่ขอเบิกงบประมาณ" หรือไม่
 $is_no_budget = (empty($budget_type) || in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-']));
+
+// แต่ถ้าประเภทงบเป็นค่าว่าง แต่มีรายการค่าใช้จ่ายถูกส่งมา ให้ถือว่าขอเบิก
+if (empty($budget_type) && !empty($expense_raw) && !in_array($expense_raw, ['[]', 'ไม่มี', '-'])) {
+    $is_no_budget = false;
+    $budget_type = 'เงินงบประมาณสถานศึกษา';
+}
 
 $budget_text = "";
 if ($is_no_budget) {
@@ -114,11 +121,11 @@ if ($is_no_budget) {
         $source_name = "เงินนอกงบประมาณของสถานศึกษา";
     } elseif ($budget_type === 'งบประมาณจากหน่วยงานผู้จัด') {
         $source_name = "งบประมาณจากหน่วยงานผู้จัด";
-    } elseif (!empty($budget_type)) {
+    } elseif (!empty($budget_type) && $budget_type !== 'เงินงบประมาณสถานศึกษา') {
         $source_name = $budget_type;
     }
 
-    // รายการค่าใช้จ่ายที่ขอเบิก
+    // ทำความสะอาดรายการค่าใช้จ่าย
     $clean_items = [];
     $raw_list = explode(',', str_replace(['[', ']', '"', "'"], '', $expense_raw));
     foreach ($raw_list as $item) {
