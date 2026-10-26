@@ -96,22 +96,50 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ประมวลผลเรื่องงบประมาณ
-$budget_type   = trim($data['budget_type'] ?? '');
-$expense_types = trim($data['expense_types'] ?? '');
-
-$is_no_budget = (empty($budget_type) || $budget_type === 'ไม่ขอเบิกงบประมาณ' || $budget_type === 'ไม่เบิก' || $budget_type === 'ไม่ขอเบิก');
-
-$budget_text = "";
-if ($is_no_budget) {
-    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
-} else {
-    $budget_source = ($budget_type === 'เงินงบประมาณสถานศึกษา') ? "เงินงบประมาณของสถานศึกษา" : (($budget_type === 'เงินนอกงบประมาณ') ? "เงินนอกงบประมาณของสถานศึกษา" : $budget_type);
-    $expense_detail = !empty($expense_types) ? " ได้แก่ " . str_replace(',', ', ', $expense_types) : "";
-    $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+// ==================== ประมวลผลเรื่องงบประมาณ (อัปเกรดใหม่) ====================
+// ตรวจหาคอลัมน์ประเภทงบประมาณจากทุกชื่อที่เป็นไปได้
+$budget_type = '';
+$budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds', 'fund_type'];
+foreach ($budget_candidates as $bc) {
+    if (!empty($data[$bc])) {
+        $budget_type = trim($data[$bc]);
+        break;
+    }
 }
 
-// ประมวลผลรายชื่อผู้ร่วมเดินทาง
+// ตรวจหาคอลัมน์รายการค่าใช้จ่ายที่ขอเบิก
+$expense_types = '';
+$expense_candidates = ['expense_types', 'expenses', 'expense_list', 'costs'];
+foreach ($expense_candidates as $ec) {
+    if (!empty($data[$ec])) {
+        $expense_types = trim($data[$ec]);
+        break;
+    }
+}
+
+// เงื่อนไขตัดสินว่า "ไม่เบิก" จริงหรือไม่:
+// ต้องระบุชัดเจนว่า "ไม่ขอเบิกงบประมาณ" หรือ "ไม่เบิก" และต้องไม่มีการเลือกรายการค่าใช้จ่ายใดๆ ไว้
+$is_explicit_no_budget = in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0']);
+$has_expenses = (!empty($expense_types) && $expense_types !== '[]' && $expense_types !== 'ไม่มี');
+
+if ($is_explicit_no_budget && !$has_expenses) {
+    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+} else {
+    // กรณีขอเบิก: ตรวจสอบแหล่งเงินงบประมาณ
+    $budget_source = "เงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา";
+    if ($budget_type === 'เงินงบประมาณสถานศึกษา') {
+        $budget_source = "เงินงบประมาณของสถานศึกษา";
+    } elseif ($budget_type === 'เงินนอกงบประมาณ') {
+        $budget_source = "เงินนอกงบประมาณของสถานศึกษา";
+    } elseif (!empty($budget_type) && !$is_explicit_no_budget) {
+        $budget_source = $budget_type;
+    }
+
+    $expense_detail = !empty($expense_types) ? " ได้แก่ " . str_replace(',', ', ', $expense_types) : " ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก";
+    $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+}
+
+// ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 foreach ($check_fields as $fld) {
@@ -203,7 +231,7 @@ if (!empty($raw_companions)) {
             padding: 0.8cm 2cm 0.4cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            position: relative; /* ให้ลูกที่ใช้ absolute อิงพิกัดในหน้านี้ */
+            position: relative;
             overflow: hidden;
         }
 
@@ -283,7 +311,6 @@ if (!empty($raw_companions)) {
             line-height: 1.05;
         }
 
-        /* กล่องลงรับงานบุคคล ล็อกพิกัดไว้ที่มุมขวาล่างสุดของหน้ากระดาษ */
         .receive-box-bottom-right {
             position: absolute;
             bottom: 0.6cm;
@@ -459,7 +486,7 @@ if (!empty($raw_companions)) {
         </div>
     </div>
 
-    <!-- กล่องลงรับของงานบุคคล ล็อกติดมุมขวาล่างสุดของหน้า 1 (ไม่หลุดขอบ) -->
+    <!-- กล่องลงรับของงานบุคคล ล็อกติดมุมขวาล่างสุดของหน้า 1 -->
     <div class="receive-box-bottom-right">
         <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
         <div>เลขรับ..................................................</div>
