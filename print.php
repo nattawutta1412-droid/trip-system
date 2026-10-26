@@ -96,7 +96,7 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ==================== ประมวลผลงบประมาณอย่างแม่นยำ ====================
+// ประมวลผลเรื่องงบประมาณ
 $raw_budget = '';
 $budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds', 'fund_type'];
 foreach ($budget_candidates as $bc) {
@@ -118,7 +118,6 @@ foreach ($expense_candidates as $ec) {
 // ตรวจสอบเงื่อนไขไม่เบิกงบประมาณ
 $is_no_budget = false;
 if (empty($raw_budget) || in_array($raw_budget, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-'])) {
-    // ถ้าไม่ได้ระบุงบ และไม่มีรายการค่าใช้จ่ายที่เลือกไว้ = ไม่เบิกแน่นอน
     if (empty($raw_expenses) || in_array($raw_expenses, ['[]', 'ไม่มี', '-'])) {
         $is_no_budget = true;
     }
@@ -128,7 +127,6 @@ $budget_text = "";
 if ($is_no_budget) {
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 } else {
-    // แหล่งเงินงบประมาณ
     $source_name = "เงินงบประมาณของสถานศึกษา";
     if ($raw_budget === 'เงินนอกงบประมาณ') {
         $source_name = "เงินนอกงบประมาณของสถานศึกษา";
@@ -138,7 +136,6 @@ if ($is_no_budget) {
         $source_name = $raw_budget;
     }
 
-    // รายการค่าใช้จ่ายที่ขอเบิก
     $clean_expenses = trim($raw_expenses, "[]'\" ");
     $expense_part = "";
     if (!empty($clean_expenses) && $clean_expenses !== 'ไม่มี') {
@@ -148,7 +145,7 @@ if ($is_no_budget) {
     $budget_text = "โดยข้าพเจ้าขออนุมัติเบิกค่าใช้จ่ายในการเดินทางไปราชการจาก{$source_name} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ{$expense_part} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
-// ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
+// ประมวลผลรายชื่อผู้ร่วมเดินทาง
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 foreach ($check_fields as $fld) {
@@ -490,7 +487,7 @@ if (!empty($raw_companions)) {
         
         <div style="text-align: center; margin-top: 14px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
-            <div class="signature-gap">(จักเพชร์ พรมยศ)</div>
+            <div class="signature-gap">(จักรเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
         </div>
     </div>
