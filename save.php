@@ -36,10 +36,18 @@ if (!$target_table) {
     die("ไม่พบตารางข้อมูลคำร้องในระบบ");
 }
 
-// ตรวจสอบและสร้างคอลัมน์ companions อัตโนมัติหากยังไม่มี
-$col_chk = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'companions'");
-if ($col_chk && $col_chk->num_rows == 0) {
-    $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
+// ตรวจสอบและสร้างคอลัมน์ที่จำเป็นอัตโนมัติหากในฐานข้อมูลยังไม่มี
+$need_columns = [
+    'companions'    => 'TEXT NULL',
+    'budget_type'   => 'VARCHAR(255) NULL',
+    'expense_types' => 'TEXT NULL'
+];
+
+foreach ($need_columns as $col_name => $col_def) {
+    $chk_c = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE '{$col_name}'");
+    if ($chk_c && $chk_c->num_rows == 0) {
+        $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN `{$col_name}` {$col_def}");
+    }
 }
 
 // ดึงรายละเอียดคอลัมน์ทั้งหมดในตาราง
@@ -69,6 +77,16 @@ $companions_val = trim($_POST['companions'] ?? '');
 $budget_val     = trim($_POST['budget_type'] ?? 'ไม่ขอเบิกงบประมาณ');
 $vehicle_val    = trim($_POST['vehicle_type'] ?? '');
 $license_val    = trim($_POST['vehicle_license'] ?? '');
+
+// รวมรายการค่าใช้จ่ายที่ขอเบิก
+$expense_types_val = '';
+if ($budget_val !== 'ไม่ขอเบิกงบประมาณ') {
+    if (isset($_POST['expense_types']) && is_array($_POST['expense_types'])) {
+        $expense_types_val = implode(',', $_POST['expense_types']);
+    } else {
+        $expense_types_val = trim($_POST['expense_types'] ?? '');
+    }
+}
 
 $raw_inputs = [
     // ชื่อ-สกุล
@@ -100,9 +118,15 @@ $raw_inputs = [
     'ref_doc'           => $ref_doc_val,
     'time_period'       => $time_val,
     'companions'        => $companions_val,
+    // เรื่องงบประมาณ (ลงทุกชื่อคอลัมน์ที่เป็นไปได้)
     'budget_type'       => $budget_val,
     'budget'            => $budget_val,
     'budget_source'     => $budget_val,
+    'funds'             => $budget_val,
+    'expense_types'     => $expense_types_val,
+    'expenses'          => $expense_types_val,
+    'expense_list'      => $expense_types_val,
+    // ยานพาหนะ
     'vehicle_type'      => $vehicle_val,
     'vehicle'           => $vehicle_val,
     'vehicle_license'   => $license_val,
@@ -126,12 +150,6 @@ foreach ($date_created_fields as $df) {
     }
 }
 
-// รายการค่าใช้จ่าย
-if (in_array('expense_types', $existing_columns)) {
-    $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : '';
-    $insert_data['expense_types'] = "'" . $conn->real_escape_string($expense_types) . "'";
-}
-
 // วันที่เดินทางและหนังสืออ้างอิง
 if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
     $insert_data['start_date'] = "'" . $conn->real_escape_string($_POST['start_date']) . "'";
@@ -143,11 +161,10 @@ if (!empty($_POST['ref_date']) && in_array('ref_date', $existing_columns)) {
     $insert_data['ref_date'] = "'" . $conn->real_escape_string($_POST['ref_date']) . "'";
 }
 
-// ตรวจสอบคอลัมน์ NOT NULL ที่เหลือเพื่อป้องกัน SQL Error ทุกกรณี
+// ตรวจสอบคอลัมน์ NOT NULL ที่เหลือเพื่อป้องกัน SQL Error
 foreach ($columns_info as $col_name => $info) {
-    if ($info['key'] === 'PRI') continue; // ข้าม Primary key id
+    if ($info['key'] === 'PRI') continue;
     if ($info['null'] === 'NO' && $info['default'] === null && !isset($insert_data[$col_name])) {
-        // ให้ค่าว่างปลอดภัยไว้ก่อนเพื่อไม่ให้ติด Fatal error
         $insert_data[$col_name] = "''";
     }
 }
