@@ -200,7 +200,7 @@ if (!empty($raw_companions)) {
             background: white;
             width: 210mm;
             height: 297mm;
-            padding: 1.2cm 2cm 0.8cm 2.5cm;
+            padding: 1.2cm 2cm 0.6cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -268,29 +268,29 @@ if (!empty($raw_companions)) {
             line-height: 1.08;
         }
 
-        /* ตารางจัดวางความเห็น รอง ผอ. (ซ้าย) และ กล่องลงรับบุคคล (ขวาล่าง) */
-        .personnel-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 2px;
-        }
-        .personnel-table td {
-            padding: 0;
-        }
-        .receive-box-right {
-            border: 1px solid #000;
-            padding: 3px 6px;
-            font-size: 14pt;
-            line-height: 1.1;
-            width: 40%;
-            vertical-align: bottom;
-        }
-
         .order-box {
             border: 1px solid #000;
             padding: 4px 10px;
             margin-top: 3px;
             line-height: 1.08;
+        }
+
+        /* ตารางวางกล่องลงรับงานบุคคลให้อยู่ขวาล่างสุดใต้กล่อง ผอ. */
+        .bottom-section {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 3px;
+        }
+        .bottom-section td {
+            padding: 0;
+        }
+        .receive-box-bottom-right {
+            border: 1px solid #000;
+            padding: 2px 6px;
+            font-size: 13pt;
+            line-height: 1.05;
+            width: 38%;
+            float: right;
         }
 
         .page-break {
@@ -340,7 +340,7 @@ if (!empty($raw_companions)) {
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 1.2cm 2cm 0.8cm 2.5cm;
+                padding: 1.2cm 2cm 0.6cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -425,28 +425,16 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการ + กล่องลงรับบุคคลด้านขวาล่าง -->
+    <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 14px;"></div>
-        
-        <table class="personnel-table">
-            <tr>
-                <!-- ส่วนลงนามรอง ผอ. อยู่ฝั่งซ้าย -->
-                <td style="vertical-align: bottom; text-align: center; width: 60%; padding-bottom: 2px;">
-                    <div>ลงชื่อ..........................................................</div>
-                    <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
-                    <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
-                </td>
-                <!-- กล่องลงรับของงานบุคคล อยู่ฝั่งขวาล่าง -->
-                <td class="receive-box-right">
-                    <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 2px;">กลุ่มงานบริหารบุคคล</div>
-                    <div>เลขรับ..................................................</div>
-                    <div>วันที่.........../.................../....................</div>
-                    <div>เวลา.....................................................</div>
-                </td>
-            </tr>
-        </table>
+        <div class="sign-block" style="margin-top: 1px;">
+            <div>ลงชื่อ..........................................................</div>
+            <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
+            <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
+        </div>
+        <div class="clear"></div>
     </div>
 
     <!-- คำสั่ง / การพิจารณา ผอ. -->
@@ -465,6 +453,18 @@ if (!empty($raw_companions)) {
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
         </div>
     </div>
+
+    <!-- กล่องลงรับของงานบุคคล อยู่ล่างจากลายเซ็น ผอ. ด้านขวาล่าง -->
+    <div style="margin-top: 4px;">
+        <div class="receive-box-bottom-right">
+            <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
+            <div>เลขรับ..................................................</div>
+            <div>วันที่.........../.................../....................</div>
+            <div>เวลา.....................................................</div>
+        </div>
+        <div class="clear"></div>
+    </div>
+
 </div>
 
 <!-- ========================= หน้าที่ 2: บัญชีรายชื่อผู้ร่วมเดินทางแนบท้าย ========================= -->
