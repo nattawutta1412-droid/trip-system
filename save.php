@@ -1,131 +1,116 @@
 <?php
+session_start();
 require_once 'config.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_type TEXT NULL");
-    $conn->query("ALTER TABLE official_trips MODIFY COLUMN expense_specific_details TEXT NULL");
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: form.php");
+    exit;
+}
 
-    // ตรวจสอบและเพิ่มคอลัมน์ sign_mode และ acting_name อัตโนมัติ
-    $required_columns = [
-        'work_group' => 'VARCHAR(150) NULL',
-        'head_group_name' => 'VARCHAR(255) NULL',
-        'half_day_time' => 'VARCHAR(100) NULL',
-        'driver_name' => 'VARCHAR(255) NULL',
-        'sign_mode' => "VARCHAR(50) DEFAULT 'director'",
-        'acting_name' => 'VARCHAR(255) NULL',
-        'expense_other' => 'TEXT NULL'
-    ];
+// 1. ค้นหาชื่อตารางคำร้องอัตโนมัติ
+$target_table = null;
+$possible_tables = ['official_trips', 'trip_requests', 'trips', 'trip_records', 'forms', 'requests'];
 
-    foreach ($required_columns as $col => $def) {
-        $check = $conn->query("SHOW COLUMNS FROM official_trips LIKE '{$col}'");
-        if ($check && $check->num_rows == 0) {
-            $conn->query("ALTER TABLE official_trips ADD COLUMN {$col} {$def}");
-        }
+foreach ($possible_tables as $tbl) {
+    $chk = $conn->query("SHOW TABLES LIKE '{$tbl}'");
+    if ($chk && $chk->num_rows > 0) {
+        $target_table = $tbl;
+        break;
     }
+}
 
-    // จัดการตาราง trip_participants
-    $create_participants_table = "CREATE TABLE IF NOT EXISTS trip_participants (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        trip_id INT NOT NULL,
-        name VARCHAR(255) NULL,
-        full_name VARCHAR(255) NULL,
-        position VARCHAR(255) NULL,
-        detail VARCHAR(255) NULL,
-        type VARCHAR(50) DEFAULT 'teacher',
-        INDEX (trip_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-    $conn->query($create_participants_table);
-
-    $conn->query("ALTER TABLE trip_participants MODIFY COLUMN full_name VARCHAR(255) NULL DEFAULT NULL");
-    $check_name = $conn->query("SHOW COLUMNS FROM trip_participants LIKE 'name'");
-    if ($check_name && $check_name->num_rows == 0) {
-        $conn->query("ALTER TABLE trip_participants ADD COLUMN name VARCHAR(255) NULL DEFAULT NULL");
-    }
-
-    // รับค่าจากฟอร์ม
-    $doc_number            = '';
-    $created_date          = $_POST['created_date'] ?? date('Y-m-d');
-    $applicant_name        = $_POST['applicant_name'] ?? '';
-    $position              = $_POST['position'] ?? '';
-    $academic_standing     = $_POST['academic_standing'] ?? '';
-    $department            = $_POST['department'] ?? '';
-    $work_group            = $_POST['work_group'] ?? '';
-    $head_group_name       = $_POST['head_group_name'] ?? '';
-    $subject               = $_POST['subject'] ?? '';
-    $destination           = $_POST['destination'] ?? '';
-    $ref_document          = $_POST['ref_document'] ?? '';
-    $ref_date              = !empty($_POST['ref_date']) ? $_POST['ref_date'] : NULL;
-    $start_date            = $_POST['start_date'] ?? '';
-    $end_date              = $_POST['end_date'] ?? '';
-    $half_day_time         = trim($_POST['half_day_time'] ?? '');
-
-    // ค่าใช้จ่าย
-    $expense_parts = [];
-    if (!empty($_POST['expense_option_no'])) {
-        $expense_parts[] = "ไม่ขอเบิกค่าใช้จ่าย";
-    }
-    if (!empty($_POST['expense_option_school'])) {
-        $expense_parts[] = "ขอเบิกค่าใช้จ่ายตามสิทธิจากเงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ";
-    }
-    if (!empty($_POST['expense_option_specific'])) {
-        $specific_items = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
-        $expense_parts[] = "ขอเบิกเฉพาะค่าใช้จ่าย (" . $specific_items . ")";
-    }
-    
-    // ยานพาหนะ
-    $vehicle_type = "";
-    $driver_name = "";
-    if (!empty($_POST['expense_option_vehicle'])) {
-        $vehicle_type = $_POST['vehicle_select'] ?? 'รถยนต์ส่วนตัว';
-        if ($vehicle_type === 'รถยนต์ราชการ') {
-            $driver_name = trim($_POST['driver_name'] ?? '');
-        }
-    }
-    $vehicle_license_plate = $_POST['vehicle_license_plate'] ?? '';
-
-    // ผู้มีอำนาจลงนาม
-    $sign_mode = $_POST['sign_mode'] ?? 'director';
-    $acting_name = ($sign_mode === 'acting') ? trim($_POST['acting_name'] ?? '') : '';
-
-    $expense_other = "";
-    if (!empty($_POST['expense_option_other']) && !empty($_POST['expense_other'])) {
-        $expense_other = trim($_POST['expense_other']);
-        $expense_parts[] = "อื่น ๆ: " . $expense_other;
-    }
-
-    $expense_type = !empty($expense_parts) ? implode(" | ", $expense_parts) : "ไม่ขอเบิกค่าใช้จ่าย";
-    $expense_specific_details = isset($_POST['specific_items']) ? implode(", ", $_POST['specific_items']) : "";
-
-    $stmt = $conn->prepare("INSERT INTO official_trips 
-        (doc_number, created_date, applicant_name, position, academic_standing, department, work_group, head_group_name, subject, destination, ref_document, ref_date, start_date, end_date, half_day_time, expense_type, expense_specific_details, vehicle_type, vehicle_license_plate, driver_name, sign_mode, acting_name, expense_other) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    $stmt->bind_param("sssssssssssssssssssssss", 
-        $doc_number, $created_date, $applicant_name, $position, $academic_standing, $department, $work_group, $head_group_name, $subject, $destination, $ref_document, $ref_date, $start_date, $end_date, $half_day_time, $expense_type, $expense_specific_details, $vehicle_type, $vehicle_license_plate, $driver_name, $sign_mode, $acting_name, $expense_other);
-
-    if ($stmt->execute()) {
-        $last_id = $conn->insert_id;
-
-        if (!empty($_POST['participants']) && is_array($_POST['participants'])) {
-            $p_stmt = $conn->prepare("INSERT INTO trip_participants (trip_id, name, full_name, detail, position, type) VALUES (?, ?, ?, ?, ?, ?)");
-            foreach ($_POST['participants'] as $p) {
-                $p_name = trim($p['name'] ?? '');
-                $p_detail = trim($p['detail'] ?? '');
-                $p_type = $p['type'] ?? 'teacher';
-                if ($p_name !== '') {
-                    $p_stmt->bind_param("isssss", $last_id, $p_name, $p_name, $p_detail, $p_detail, $p_type);
-                    $p_stmt->execute();
-                }
+if (!$target_table) {
+    $all_tables = $conn->query("SHOW TABLES");
+    if ($all_tables) {
+        while ($t_row = $all_tables->fetch_array()) {
+            $curr_tbl = $t_row[0];
+            if ($curr_tbl !== 'teachers' && $curr_tbl !== 'users' && $curr_tbl !== 'admins') {
+                $target_table = $curr_tbl;
+                break;
             }
         }
-
-        header("Location: print.php?id=" . $last_id);
-        exit();
-    } else {
-        die("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $stmt->error);
     }
+}
+
+if (!$target_table) {
+    die("ไม่พบตารางข้อมูลคำร้องในระบบ");
+}
+
+// ตรวจสอบและสร้างคอลัมน์ companions อัตโนมัติหากยังไม่มี
+$col_chk = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'companions'");
+if ($col_chk && $col_chk->num_rows == 0) {
+    $conn->query("ALTER TABLE `{$target_table}` ADD COLUMN companions TEXT NULL");
+}
+
+// ดึงคอลัมน์ที่มีอยู่จริงในตาราง
+$existing_columns = [];
+$res_cols = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
+while ($c = $res_cols->fetch_assoc()) {
+    $existing_columns[] = $c['Field'];
+}
+
+// 2. รับค่าจากฟอร์ม
+$raw_inputs = [
+    'applicant_name'    => trim($_POST['applicant_name'] ?? ''),
+    'name'              => trim($_POST['applicant_name'] ?? ''),
+    'position'          => trim($_POST['position'] ?? 'ครู'),
+    'academic_standing' => trim($_POST['academic_standing'] ?? ''),
+    'department'        => trim($_POST['department'] ?? ''),
+    'proposed_group'    => trim($_POST['proposed_group'] ?? 'กลุ่มงานบริหารวิชาการ'),
+    'head_name'         => trim($_POST['head_name'] ?? 'นางศุภลักษณ์ ดำชุม'),
+    'topic'             => trim($_POST['topic'] ?? ''),
+    'title'             => trim($_POST['topic'] ?? ''),
+    'purpose'           => trim($_POST['topic'] ?? ''),
+    'destination'       => trim($_POST['destination'] ?? ''),
+    'location'          => trim($_POST['destination'] ?? ''),
+    'ref_doc'           => trim($_POST['ref_doc'] ?? ''),
+    'time_period'       => trim($_POST['time_period'] ?? ''),
+    'companions'        => trim($_POST['companions'] ?? ''),
+    'budget_type'       => trim($_POST['budget_type'] ?? 'ไม่ขอเบิกงบประมาณ'),
+    'vehicle_type'      => trim($_POST['vehicle_type'] ?? ''),
+    'vehicle'           => trim($_POST['vehicle_type'] ?? ''),
+    'vehicle_license'   => trim($_POST['vehicle_license'] ?? ''),
+    'status'            => 'ปกติ'
+];
+
+$insert_cols = [];
+$insert_vals = [];
+
+foreach ($raw_inputs as $col => $val) {
+    if (in_array($col, $existing_columns)) {
+        $insert_cols[] = "`{$col}`";
+        $insert_vals[] = "'" . $conn->real_escape_string($val) . "'";
+    }
+}
+
+// รายการค่าใช้จ่าย
+if (in_array('expense_types', $existing_columns)) {
+    $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : '';
+    $insert_cols[] = "`expense_types`";
+    $insert_vals[] = "'" . $conn->real_escape_string($expense_types) . "'";
+}
+
+// วันที่
+if (!empty($_POST['start_date']) && in_array('start_date', $existing_columns)) {
+    $insert_cols[] = "`start_date`";
+    $insert_vals[] = "'" . $conn->real_escape_string($_POST['start_date']) . "'";
+}
+if (!empty($_POST['end_date']) && in_array('end_date', $existing_columns)) {
+    $insert_cols[] = "`end_date`";
+    $insert_vals[] = "'" . $conn->real_escape_string($_POST['end_date']) . "'";
+}
+if (!empty($_POST['ref_date']) && in_array('ref_date', $existing_columns)) {
+    $insert_cols[] = "`ref_date`";
+    $insert_vals[] = "'" . $conn->real_escape_string($_POST['ref_date']) . "'";
+}
+
+$sql = "INSERT INTO `{$target_table}` (" . implode(', ', $insert_cols) . ") VALUES (" . implode(', ', $insert_vals) . ")";
+
+if ($conn->query($sql)) {
+    $new_id = $conn->insert_id;
+    header("Location: print.php?id={$new_id}");
+    exit;
 } else {
-    header("Location: form.php");
-    exit();
+    die("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $conn->error);
 }
 ?>
