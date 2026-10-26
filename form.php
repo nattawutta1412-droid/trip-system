@@ -125,30 +125,32 @@ $departments = [
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">ประเภทงบประมาณ:</label>
-                        <select name="budget_type" class="form-select">
+                        <select name="budget_type" id="budget_type" class="form-select" onchange="toggleExpenseOptions()">
                             <option value="ไม่ขอเบิกงบประมาณ" selected>ไม่ขอเบิกงบประมาณ</option>
                             <option value="เงินงบประมาณสถานศึกษา">เงินงบประมาณสถานศึกษา</option>
                             <option value="เงินนอกงบประมาณ">เงินนอกงบประมาณ</option>
                             <option value="งบประมาณจากหน่วยงานผู้จัด">งบประมาณจากหน่วยงานผู้จัด</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">รายการค่าใช้จ่ายที่ขอเบิก (กรณีขอเบิก):</label>
+
+                    <!-- กล่องตัวเลือกรายการค่าใช้จ่าย (ซ่อนเริ่มต้นเมื่อเป็น ไม่ขอเบิกงบประมาณ) -->
+                    <div class="col-md-6" id="expense_options_wrapper" style="display: none;">
+                        <label class="form-label small fw-bold text-primary">รายการค่าใช้จ่ายที่ขอเบิก:</label>
                         <div class="d-flex flex-wrap gap-3 mt-2">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าน้ำมัน" id="exp1">
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าน้ำมันเชื้อเพลิง" id="exp1">
                                 <label class="form-check-label small" for="exp1">ค่าน้ำมันเชื้อเพลิง</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าเบี้ยเลี้ยง" id="exp2">
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าเบี้ยเลี้ยง" id="exp2">
                                 <label class="form-check-label small" for="exp2">ค่าเบี้ยเลี้ยง</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าที่พัก" id="exp3">
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าที่พัก" id="exp3">
                                 <label class="form-check-label small" for="exp3">ค่าที่พัก</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่ายานพาหนะเดินทาง" id="exp4">
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่ายานพาหนะเดินทาง" id="exp4">
                                 <label class="form-check-label small" for="exp4">ค่าพาหนะ/รถรับจ้าง</label>
                             </div>
                         </div>
@@ -180,5 +182,19 @@ $departments = [
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleExpenseOptions() {
+    const budgetSelect = document.getElementById('budget_type');
+    const wrapper = document.getElementById('expense_options_wrapper');
+    const checkboxes = document.querySelectorAll('.expense-item');
+
+    if (budgetSelect.value === 'ไม่ขอเบิกงบประมาณ') {
+        wrapper.style.display = 'none';
+        checkboxes.forEach(cb => cb.checked = false);
+    } else {
+        wrapper.style.display = 'block';
+    }
+}
+</script>
 </body>
 </html>
