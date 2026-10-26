@@ -72,7 +72,7 @@ $position_name     = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
 
-// ตรวจสอบฟิลด์วัตถุประสงค์
+// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ)
 $topic_name = '';
 $topic_fields = ['topic', 'objective', 'subject', 'purpose', 'title', 'reason', 'details', 'trip_topic'];
 foreach ($topic_fields as $tf) {
@@ -97,83 +97,65 @@ $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
 // =========================================================================
-// ตรวจสอบสถานะการเบิกงบประมาณเชิงลึก (แก้ปัญหาเบิก/ไม่เบิกไม่คงที่)
+// ประมวลผลเรื่องงบประมาณ (แก้ไขตรงจุด ไม่กวาดคำมั่ว)
 // =========================================================================
-$found_budget_type = '';
-$found_expenses = [];
-$is_explicit_no = false;
-
-// 1. ตรวจสอบค่าในทุก Field ของ Record นี้
-foreach ($data as $key => $val) {
-    if (empty($val) || is_null($val)) continue;
-    $v_str = trim((string)$val);
-    $k_lower = strtolower($key);
-
-    // ตรวจสอบกรณีระบุชัดเจนว่าไม่ขอเบิก
-    if (in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', 'ไม่เบิกงบประมาณ', 'ไม่เบิกค่าใช้จ่าย'])) {
-        $is_explicit_no = true;
-    }
-
-    // ตรวจหาประเภทงบประมาณ
-    if (strpos($k_lower, 'budget') !== false || strpos($k_lower, 'fund') !== false) {
-        if (!in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', 'no', 'false', 'none', '-'])) {
-            $found_budget_type = $v_str;
-        }
-    }
-
-    // ตรวจหาคำสำคัญของรายการค่าใช้จ่าย
-    $check_items = ['ค่าน้ำมัน', 'ค่าเบี้ยเลี้ยง', 'ค่าที่พัก', 'ค่ายานพาหนะ', 'ค่าพาหนะ', 'ค่าลงทะเบียน', 'ค่าใช้จ่าย'];
-    foreach ($check_items as $item) {
-        if (mb_strpos($v_str, $item) !== false && !in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
-            $found_expenses[] = $item;
-        }
+$budget_type = '';
+$budget_fields = ['budget_type', 'budget', 'budget_source', 'funds'];
+foreach ($budget_fields as $bf) {
+    if (isset($data[$bf]) && trim($data[$bf]) !== '') {
+        $budget_type = trim($data[$bf]);
+        break;
     }
 }
 
-// 2. ตรวจสอบฟิลด์ expense_types โดยตรง
-if (!empty($data['expense_types'])) {
-    $exp_clean = trim($data['expense_types'], "[]'\" ");
-    if (!empty($exp_clean) && $exp_clean !== 'ไม่มี' && $exp_clean !== '-') {
-        $exp_arr = explode(',', $exp_clean);
-        foreach ($exp_arr as $e) {
-            $e_trim = trim($e);
-            if (!empty($e_trim) && !in_array($e_trim, $found_expenses)) {
-                $found_expenses[] = $e_trim;
-            }
-        }
+$expense_raw = '';
+$expense_fields = ['expense_types', 'expenses', 'expense_list'];
+foreach ($expense_fields as $ef) {
+    if (isset($data[$ef]) && trim($data[$ef]) !== '') {
+        $expense_raw = trim($data[$ef]);
+        break;
     }
 }
 
-// 3. ตัดสินผล: ถ้ามีรายการค่าใช้จ่าย หรือ มีการระบุประเภทงบประมาณที่ต้องการเบิก จะถือว่า "ขอเบิก"
-$has_claim_items = (!empty($found_expenses) || (!empty($found_budget_type) && !$is_explicit_no));
+// ตรวจสอบว่าเป็น "ไม่ขอเบิก" หรือไม่
+$is_no_budget = false;
+if (empty($budget_type) || in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-'])) {
+    // ถ้าประเภทงบระบุว่าไม่เบิก หรือเป็นค่าว่าง และไม่มีการระบุรายการค่าใช้จ่ายที่ขอเบิก
+    if (empty($expense_raw) || in_array($expense_raw, ['[]', 'ไม่มี', '-'])) {
+        $is_no_budget = true;
+    }
+}
 
-if ($is_explicit_no && empty($found_expenses)) {
-    // กรณีระบุชัดเจนว่าไม่ขอเบิก และไม่มีรายการค่าใช้จ่าย
+$budget_text = "";
+if ($is_no_budget) {
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
-} elseif ($has_claim_items) {
-    // กรณีขอเบิกงบประมาณ
+} else {
+    // กำหนดชื่อแหล่งงบประมาณ
     $source_name = "เงินงบประมาณของสถานศึกษา";
-    if (!empty($found_budget_type)) {
-        if ($found_budget_type === 'เงินงบประมาณสถานศึกษา') {
-            $source_name = "เงินงบประมาณของสถานศึกษา";
-        } elseif ($found_budget_type === 'เงินนอกงบประมาณ') {
-            $source_name = "เงินนอกงบประมาณของสถานศึกษา";
-        } elseif ($found_budget_type === 'งบประมาณจากหน่วยงานผู้จัด') {
-            $source_name = "งบประมาณจากหน่วยงานผู้จัด";
-        } else {
-            $source_name = $found_budget_type;
+    if ($budget_type === 'เงินนอกงบประมาณ') {
+        $source_name = "เงินนอกงบประมาณของสถานศึกษา";
+    } elseif ($budget_type === 'งบประมาณจากหน่วยงานผู้จัด') {
+        $source_name = "งบประมาณจากหน่วยงานผู้จัด";
+    } elseif (!empty($budget_type) && !in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
+        $source_name = $budget_type;
+    }
+
+    // ทำความสะอาดและกรองเฉพาะรายการค่าใช้จ่ายจริง
+    $valid_items = [];
+    $raw_list = explode(',', str_replace(['[', ']', '"', "'"], '', $expense_raw));
+    foreach ($raw_list as $item) {
+        $item = trim($item);
+        if (in_array($item, ['ค่าน้ำมัน', 'ค่าเบี้ยเลี้ยง', 'ค่าที่พัก', 'ค่ายานพาหนะเดินทาง', 'ค่าพาหนะ', 'ค่าลงทะเบียน'])) {
+            $valid_items[] = $item;
         }
     }
 
     $expense_part = "";
-    if (!empty($found_expenses)) {
-        $expense_part = " ได้แก่ " . implode(', ', array_unique($found_expenses));
+    if (!empty($valid_items)) {
+        $expense_part = " ได้แก่ " . implode(', ', array_unique($valid_items));
     }
 
     $budget_text = "โดยข้าพเจ้าขออนุมัติเบิกค่าใช้จ่ายในการเดินทางไปราชการจาก{$source_name} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ{$expense_part} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
-} else {
-    // ค่าเริ่มต้นหากไม่มีการระบุข้อมูล
-    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
 // ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
