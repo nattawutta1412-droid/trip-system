@@ -56,6 +56,8 @@ $message_type = "";
 
 // 2. บันทึกข้อมูลเมื่อมีการส่งฟอร์ม (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $budget_type_val = trim($_POST['budget_type'] ?? 'ไม่ขอเบิกงบประมาณ');
+
     $raw_inputs = [
         'doc_no'            => trim($_POST['doc_no'] ?? ''),
         'status'            => trim($_POST['status'] ?? 'ปกติ'),
@@ -74,7 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'ref_doc'           => trim($_POST['ref_doc'] ?? ''),
         'time_period'       => trim($_POST['time_period'] ?? ''),
         'companions'        => trim($_POST['companions'] ?? ''),
-        'budget_type'       => trim($_POST['budget_type'] ?? ''),
+        'budget_type'       => $budget_type_val,
+        'budget'            => $budget_type_val,
+        'budget_source'     => $budget_type_val,
         'vehicle_type'      => trim($_POST['vehicle_type'] ?? ''),
         'vehicle'           => trim($_POST['vehicle_type'] ?? ''),
         'vehicle_license'   => trim($_POST['vehicle_license'] ?? '')
@@ -87,8 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // จัดการรายการค่าใช้จ่าย: หากเลือก "ไม่ขอเบิกงบประมาณ" ให้เคลียร์ค่าเป็นว่าง
     if (in_array('expense_types', $existing_columns)) {
-        $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
+        if ($budget_type_val === 'ไม่ขอเบิกงบประมาณ') {
+            $expense_types = '';
+        } else {
+            $expense_types = isset($_POST['expense_types']) && is_array($_POST['expense_types']) ? implode(',', $_POST['expense_types']) : trim($_POST['expense_types'] ?? '');
+        }
         $update_fields[] = "`expense_types` = '" . $conn->real_escape_string($expense_types) . "'";
     }
 
@@ -125,6 +134,7 @@ if (!$data) {
 }
 
 $saved_expenses = explode(',', $data['expense_types'] ?? '');
+$current_budget_type = $data['budget_type'] ?? $data['budget'] ?? 'ไม่ขอเบิกงบประมาณ';
 
 $departments = [
     'กลุ่มบริหารสถานศึกษา',
@@ -280,30 +290,32 @@ $departments = [
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">ประเภทงบประมาณ:</label>
-                        <select name="budget_type" class="form-select">
-                            <option value="ไม่ขอเบิกงบประมาณ" <?php echo (($data['budget_type'] ?? '') === 'ไม่ขอเบิกงบประมาณ') ? 'selected' : ''; ?>>ไม่ขอเบิกงบประมาณ</option>
-                            <option value="เงินงบประมาณสถานศึกษา" <?php echo (($data['budget_type'] ?? '') === 'เงินงบประมาณสถานศึกษา') ? 'selected' : ''; ?>>เงินงบประมาณสถานศึกษา</option>
-                            <option value="เงินนอกงบประมาณ" <?php echo (($data['budget_type'] ?? '') === 'เงินนอกงบประมาณ') ? 'selected' : ''; ?>>เงินนอกงบประมาณ</option>
-                            <option value="งบประมาณจากหน่วยงานผู้จัด" <?php echo (($data['budget_type'] ?? '') === 'งบประมาณจากหน่วยงานผู้จัด') ? 'selected' : ''; ?>>งบประมาณจากหน่วยงานผู้จัด</option>
+                        <select name="budget_type" id="budget_type" class="form-select" onchange="toggleExpenseOptions()">
+                            <option value="ไม่ขอเบิกงบประมาณ" <?php echo ($current_budget_type === 'ไม่ขอเบิกงบประมาณ') ? 'selected' : ''; ?>>ไม่ขอเบิกงบประมาณ</option>
+                            <option value="เงินงบประมาณสถานศึกษา" <?php echo ($current_budget_type === 'เงินงบประมาณสถานศึกษา') ? 'selected' : ''; ?>>เงินงบประมาณสถานศึกษา</option>
+                            <option value="เงินนอกงบประมาณ" <?php echo ($current_budget_type === 'เงินนอกงบประมาณ') ? 'selected' : ''; ?>>เงินนอกงบประมาณ</option>
+                            <option value="งบประมาณจากหน่วยงานผู้จัด" <?php echo ($current_budget_type === 'งบประมาณจากหน่วยงานผู้จัด') ? 'selected' : ''; ?>>งบประมาณจากหน่วยงานผู้จัด</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">รายการค่าใช้จ่ายที่ขอเบิก:</label>
+
+                    <!-- กล่องตัวเลือกรายการค่าใช้จ่าย (ซ่อนอัตโนมัติหากเลือก "ไม่ขอเบิกงบประมาณ") -->
+                    <div class="col-md-6" id="expense_options_wrapper" style="<?php echo ($current_budget_type === 'ไม่ขอเบิกงบประมาณ') ? 'display: none;' : ''; ?>">
+                        <label class="form-label small fw-bold text-primary">รายการค่าใช้จ่ายที่ขอเบิก:</label>
                         <div class="d-flex flex-wrap gap-3 mt-2">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าน้ำมัน" id="exp1" <?php echo in_array('ค่าน้ำมัน', $saved_expenses) ? 'checked' : ''; ?>>
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าน้ำมันเชื้อเพลิง" id="exp1" <?php echo (in_array('ค่าน้ำมันเชื้อเพลิง', $saved_expenses) || in_array('ค่าน้ำมัน', $saved_expenses)) ? 'checked' : ''; ?>>
                                 <label class="form-check-label small" for="exp1">ค่าน้ำมันเชื้อเพลิง</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าเบี้ยเลี้ยง" id="exp2" <?php echo in_array('ค่าเบี้ยเลี้ยง', $saved_expenses) ? 'checked' : ''; ?>>
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าเบี้ยเลี้ยง" id="exp2" <?php echo in_array('ค่าเบี้ยเลี้ยง', $saved_expenses) ? 'checked' : ''; ?>>
                                 <label class="form-check-label small" for="exp2">ค่าเบี้ยเลี้ยง</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่าที่พัก" id="exp3" <?php echo in_array('ค่าที่พัก', $saved_expenses) ? 'checked' : ''; ?>>
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่าที่พัก" id="exp3" <?php echo in_array('ค่าที่พัก', $saved_expenses) ? 'checked' : ''; ?>>
                                 <label class="form-check-label small" for="exp3">ค่าที่พัก</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="expense_types[]" value="ค่ายานพาหนะเดินทาง" id="exp4" <?php echo in_array('ค่ายานพาหนะเดินทาง', $saved_expenses) ? 'checked' : ''; ?>>
+                                <input class="form-check-input expense-item" type="checkbox" name="expense_types[]" value="ค่ายานพาหนะเดินทาง" id="exp4" <?php echo (in_array('ค่ายานพาหนะเดินทาง', $saved_expenses) || in_array('ค่าพาหนะ', $saved_expenses)) ? 'checked' : ''; ?>>
                                 <label class="form-check-label small" for="exp4">ค่าพาหนะ/รถรับจ้าง</label>
                             </div>
                         </div>
@@ -335,5 +347,20 @@ $departments = [
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleExpenseOptions() {
+    const budgetSelect = document.getElementById('budget_type');
+    const wrapper = document.getElementById('expense_options_wrapper');
+    const checkboxes = document.querySelectorAll('.expense-item');
+
+    if (budgetSelect.value === 'ไม่ขอเบิกงบประมาณ') {
+        wrapper.style.display = 'none';
+        // เคลียร์ checkbox ทั้งหมดออก เพื่อไม่ให้ส่งค่าค้างไปบันทึก
+        checkboxes.forEach(cb => cb.checked = false);
+    } else {
+        wrapper.style.display = 'block';
+    }
+}
+</script>
 </body>
 </html>
