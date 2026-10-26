@@ -96,8 +96,7 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ==================== ประมวลผลเรื่องงบประมาณ (อัปเกรดใหม่) ====================
-// ตรวจหาคอลัมน์ประเภทงบประมาณจากทุกชื่อที่เป็นไปได้
+// ประมวลผลเรื่องงบประมาณ
 $budget_type = '';
 $budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds', 'fund_type'];
 foreach ($budget_candidates as $bc) {
@@ -107,7 +106,6 @@ foreach ($budget_candidates as $bc) {
     }
 }
 
-// ตรวจหาคอลัมน์รายการค่าใช้จ่ายที่ขอเบิก
 $expense_types = '';
 $expense_candidates = ['expense_types', 'expenses', 'expense_list', 'costs'];
 foreach ($expense_candidates as $ec) {
@@ -117,15 +115,12 @@ foreach ($expense_candidates as $ec) {
     }
 }
 
-// เงื่อนไขตัดสินว่า "ไม่เบิก" จริงหรือไม่:
-// ต้องระบุชัดเจนว่า "ไม่ขอเบิกงบประมาณ" หรือ "ไม่เบิก" และต้องไม่มีการเลือกรายการค่าใช้จ่ายใดๆ ไว้
 $is_explicit_no_budget = in_array($budget_type, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0']);
 $has_expenses = (!empty($expense_types) && $expense_types !== '[]' && $expense_types !== 'ไม่มี');
 
 if ($is_explicit_no_budget && !$has_expenses) {
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 } else {
-    // กรณีขอเบิก: ตรวจสอบแหล่งเงินงบประมาณ
     $budget_source = "เงินงบประมาณหรือเงินนอกงบประมาณของสถานศึกษา";
     if ($budget_type === 'เงินงบประมาณสถานศึกษา') {
         $budget_source = "เงินงบประมาณของสถานศึกษา";
@@ -139,7 +134,7 @@ if ($is_explicit_no_budget && !$has_expenses) {
     $budget_text = "โดยข้าพเจ้าขอเบิกค่าใช้จ่ายตามสิทธิจาก{$budget_source} (ค่ายานพาหนะเดินทาง, ค่าเบี้ยเลี้ยง, ค่าที่พัก) ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย{$expense_detail} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
-// ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
+// ประมวลผลรายชื่อผู้ร่วมเดินทาง
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 foreach ($check_fields as $fld) {
@@ -443,14 +438,14 @@ if (!empty($raw_companions)) {
     </div>
     <div class="clear"></div>
 
-    <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
+    <!-- ความเห็นของผู้ช่วยผู้อำนวยการกลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
-        <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
+        <div><strong>ความเห็นของผู้ช่วยผู้อำนวยการกลุ่มงานบริหารวิชาการ:</strong></div>
         <div class="comment-space-line"></div>
         <div class="sign-block">
             <div>ลงชื่อ..........................................................</div>
             <div class="signature-gap">( นางศุภลักษณ์ ดำชุม )</div>
-            <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
+            <div>ผู้ช่วยผู้อำนวยการกลุ่มงานบริหารวิชาการ</div>
         </div>
         <div class="clear"></div>
     </div>
