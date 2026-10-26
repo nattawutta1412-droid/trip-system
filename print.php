@@ -6,24 +6,45 @@ if ($id <= 0) {
     die("ไม่พบรหัสคำร้อง");
 }
 
-// ตรวจสอบชื่อตารางคำร้อง (รองรับทั้ง official_trips, trip_requests หรือ requests เดิม)
-$table_name = "official_trips";
-$check_table = $conn->query("SHOW TABLES LIKE 'official_trips'");
-if ($check_table->num_rows == 0) {
-    $check_table2 = $conn->query("SHOW TABLES LIKE 'trip_requests'");
-    if ($check_table2->num_rows > 0) {
-        $table_name = "trip_requests";
+// ระบบค้นหาชื่อตารางคำร้องอัตโนมัติจากฐานข้อมูลจริงเพื่อป้องกัน Table doesn't exist
+$target_table = null;
+$possible_tables = ['official_trips', 'trip_requests', 'trips', 'trip_records', 'forms', 'requests'];
+
+// 1. ลองค้นหาตามชื่อมาตรฐานที่มีโอกาสใช้มากที่สุด
+foreach ($possible_tables as $tbl) {
+    $chk = $conn->query("SHOW TABLES LIKE '{$tbl}'");
+    if ($chk && $chk->num_rows > 0) {
+        $target_table = $tbl;
+        break;
     }
 }
 
-$stmt = $conn->prepare("SELECT * FROM {$table_name} WHERE id = ?");
+// 2. หากยังไม่พบ ให้ค้นหาตารางทั้งหมดในฐานข้อมูลที่ไม่ใช่ teachers/users
+if (!$target_table) {
+    $all_tables = $conn->query("SHOW TABLES");
+    if ($all_tables) {
+        while ($t_row = $all_tables->fetch_array()) {
+            $curr_tbl = $t_row[0];
+            if ($curr_tbl !== 'teachers' && $curr_tbl !== 'users' && $curr_tbl !== 'admins') {
+                $target_table = $curr_tbl;
+                break;
+            }
+        }
+    }
+}
+
+if (!$target_table) {
+    die("ไม่พบตารางข้อมูลคำร้องในฐานข้อมูล กรุณาตรวจสอบตารางในระบบ");
+}
+
+$stmt = $conn->prepare("SELECT * FROM {$target_table} WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
 $data = $result->fetch_assoc();
 
 if (!$data) {
-    die("ไม่พบข้อมูลคำร้องในระบบ");
+    die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
 function thai_date($date_str) {
@@ -34,23 +55,24 @@ function thai_date($date_str) {
         9 => 'กันยายน', 10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
     ];
     $time = strtotime($date_str);
+    if ($time === false) return "-";
     $d = date('j', $time);
     $m = $months[(int)date('n', $time)];
     $y = (int)date('Y', $time) + 543;
     return "$d $m $y";
 }
 
-$created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) : thai_date(date('Y-m-d'));
-$start_date_th = !empty($data['start_date']) ? thai_date($data['start_date']) : '';
-$end_date_th = !empty($data['end_date']) ? thai_date($data['end_date']) : '';
-
-// ตรวจสอบชื่อฟิลด์ผู้ขอและรายละเอียดคำร้องเพื่อรองรับทั้งสองแบบ
-$applicant_name = $data['applicant_name'] ?? $data['name'] ?? $data['teacher_name'] ?? '';
-$position_name = $data['position'] ?? 'ครู';
-$academic_standing = $data['academic_standing'] ?? '';
+// แมปค่าฟิลด์ให้รองรับหลายรูปแบบ
+$applicant_name = $data['applicant_name'] ?? $data['name'] ?? $data['fullname'] ?? $data['teacher_name'] ?? '';
+$position_name  = $data['position'] ?? 'ครู';
+$academic_standing = $data['academic_standing'] ?? 'ชำนาญการ';
 $department_name = $data['department'] ?? '';
-$topic_name = $data['topic'] ?? $data['title'] ?? $data['purpose'] ?? '';
-$destination_name = $data['destination'] ?? $data['location'] ?? '';
+$topic_name     = $data['topic'] ?? $data['title'] ?? $data['purpose'] ?? '';
+$destination_name = $data['destination'] ?? $data['location'] ?? $data['place'] ?? '';
+
+$created_date_th = !empty($data['created_at']) ? thai_date($data['created_at']) : thai_date(date('Y-m-d'));
+$start_date_th   = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
+$end_date_th     = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -196,7 +218,7 @@ $destination_name = $data['destination'] ?? $data['location'] ?? '';
     </div>
     <div class="clear"></div>
 
-    <!-- ความเห็นของหัวหน้ากลุ่มสาระฯ / กลุ่มงานบริหาร -->
+    <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 24px;"></div>
@@ -208,7 +230,7 @@ $destination_name = $data['destination'] ?? $data['location'] ?? '';
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการ -->
+    <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
         <div style="border-bottom: 1px dotted #000; height: 24px;"></div>
@@ -220,7 +242,7 @@ $destination_name = $data['destination'] ?? $data['location'] ?? '';
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุดตามระเบียบ) -->
+    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุด) -->
     <div class="order-box">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
         <table style="width: 100%; margin-top: 6px;">
