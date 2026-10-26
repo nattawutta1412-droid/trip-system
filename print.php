@@ -45,7 +45,7 @@ if (!$data) {
     die("ไม่พบข้อมูลคำร้องรหัส #{$id}");
 }
 
-// ฟังก์ชันแปลงวันที่ไทย (ป้องกันปี พ.ศ. บวกซ้ำ)
+// ฟังก์ชันแปลงวันที่ไทย
 function thai_date($date_str) {
     if (empty($date_str)) return "-";
     $months = [
@@ -72,7 +72,7 @@ $position_name     = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? '';
 $department_name   = $data['department'] ?? '';
 
-// ตรวจสอบฟิลด์วัตถุประสงค์ (ไปราชการเพื่อ)
+// ตรวจสอบฟิลด์วัตถุประสงค์
 $topic_name = '';
 $topic_fields = ['topic', 'objective', 'subject', 'purpose', 'title', 'reason', 'details', 'trip_topic'];
 foreach ($topic_fields as $tf) {
@@ -82,7 +82,7 @@ foreach ($topic_fields as $tf) {
     }
 }
 
-// ตรวจสอบฟิลด์สถานที่ปลายทาง
+// ตรวจสอบสถานที่ปลายทาง
 $destination_name = '';
 $dest_fields = ['destination', 'location', 'place', 'target', 'travel_place'];
 foreach ($dest_fields as $df) {
@@ -96,56 +96,87 @@ $created_date_th   = !empty($data['created_at']) ? thai_date($data['created_at']
 $start_date_th     = !empty($data['start_date']) ? thai_date($data['start_date']) : (!empty($data['go_date']) ? thai_date($data['go_date']) : '');
 $end_date_th       = !empty($data['end_date']) ? thai_date($data['end_date']) : (!empty($data['back_date']) ? thai_date($data['back_date']) : '');
 
-// ประมวลผลเรื่องงบประมาณ
-$raw_budget = '';
-$budget_candidates = ['budget_type', 'budget', 'budget_source', 'funds', 'fund_type'];
-foreach ($budget_candidates as $bc) {
-    if (isset($data[$bc]) && trim($data[$bc]) !== '') {
-        $raw_budget = trim($data[$bc]);
-        break;
+// =========================================================================
+// ตรวจสอบสถานะการเบิกงบประมาณเชิงลึก (แก้ปัญหาเบิก/ไม่เบิกไม่คงที่)
+// =========================================================================
+$found_budget_type = '';
+$found_expenses = [];
+$is_explicit_no = false;
+
+// 1. ตรวจสอบค่าในทุก Field ของ Record นี้
+foreach ($data as $key => $val) {
+    if (empty($val) || is_null($val)) continue;
+    $v_str = trim((string)$val);
+    $k_lower = strtolower($key);
+
+    // ตรวจสอบกรณีระบุชัดเจนว่าไม่ขอเบิก
+    if (in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', 'ไม่เบิกงบประมาณ', 'ไม่เบิกค่าใช้จ่าย'])) {
+        $is_explicit_no = true;
+    }
+
+    // ตรวจหาประเภทงบประมาณ
+    if (strpos($k_lower, 'budget') !== false || strpos($k_lower, 'fund') !== false) {
+        if (!in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', 'no', 'false', 'none', '-'])) {
+            $found_budget_type = $v_str;
+        }
+    }
+
+    // ตรวจหาคำสำคัญของรายการค่าใช้จ่าย
+    $check_items = ['ค่าน้ำมัน', 'ค่าเบี้ยเลี้ยง', 'ค่าที่พัก', 'ค่ายานพาหนะ', 'ค่าพาหนะ', 'ค่าลงทะเบียน', 'ค่าใช้จ่าย'];
+    foreach ($check_items as $item) {
+        if (mb_strpos($v_str, $item) !== false && !in_array($v_str, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
+            $found_expenses[] = $item;
+        }
     }
 }
 
-$raw_expenses = '';
-$expense_candidates = ['expense_types', 'expenses', 'expense_list', 'costs'];
-foreach ($expense_candidates as $ec) {
-    if (isset($data[$ec]) && trim($data[$ec]) !== '') {
-        $raw_expenses = trim($data[$ec]);
-        break;
+// 2. ตรวจสอบฟิลด์ expense_types โดยตรง
+if (!empty($data['expense_types'])) {
+    $exp_clean = trim($data['expense_types'], "[]'\" ");
+    if (!empty($exp_clean) && $exp_clean !== 'ไม่มี' && $exp_clean !== '-') {
+        $exp_arr = explode(',', $exp_clean);
+        foreach ($exp_arr as $e) {
+            $e_trim = trim($e);
+            if (!empty($e_trim) && !in_array($e_trim, $found_expenses)) {
+                $found_expenses[] = $e_trim;
+            }
+        }
     }
 }
 
-// ตรวจสอบเงื่อนไขไม่เบิกงบประมาณ
-$is_no_budget = false;
-if (empty($raw_budget) || in_array($raw_budget, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก', '0', '-'])) {
-    if (empty($raw_expenses) || in_array($raw_expenses, ['[]', 'ไม่มี', '-'])) {
-        $is_no_budget = true;
-    }
-}
+// 3. ตัดสินผล: ถ้ามีรายการค่าใช้จ่าย หรือ มีการระบุประเภทงบประมาณที่ต้องการเบิก จะถือว่า "ขอเบิก"
+$has_claim_items = (!empty($found_expenses) || (!empty($found_budget_type) && !$is_explicit_no));
 
-$budget_text = "";
-if ($is_no_budget) {
+if ($is_explicit_no && empty($found_expenses)) {
+    // กรณีระบุชัดเจนว่าไม่ขอเบิก และไม่มีรายการค่าใช้จ่าย
     $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
-} else {
+} elseif ($has_claim_items) {
+    // กรณีขอเบิกงบประมาณ
     $source_name = "เงินงบประมาณของสถานศึกษา";
-    if ($raw_budget === 'เงินนอกงบประมาณ') {
-        $source_name = "เงินนอกงบประมาณของสถานศึกษา";
-    } elseif ($raw_budget === 'งบประมาณจากหน่วยงานผู้จัด') {
-        $source_name = "งบประมาณจากหน่วยงานผู้จัด";
-    } elseif (!empty($raw_budget) && !in_array($raw_budget, ['ไม่ขอเบิกงบประมาณ', 'ไม่เบิก', 'ไม่ขอเบิก'])) {
-        $source_name = $raw_budget;
+    if (!empty($found_budget_type)) {
+        if ($found_budget_type === 'เงินงบประมาณสถานศึกษา') {
+            $source_name = "เงินงบประมาณของสถานศึกษา";
+        } elseif ($found_budget_type === 'เงินนอกงบประมาณ') {
+            $source_name = "เงินนอกงบประมาณของสถานศึกษา";
+        } elseif ($found_budget_type === 'งบประมาณจากหน่วยงานผู้จัด') {
+            $source_name = "งบประมาณจากหน่วยงานผู้จัด";
+        } else {
+            $source_name = $found_budget_type;
+        }
     }
 
-    $clean_expenses = trim($raw_expenses, "[]'\" ");
     $expense_part = "";
-    if (!empty($clean_expenses) && $clean_expenses !== 'ไม่มี') {
-        $expense_part = " ได้แก่ " . str_replace(',', ', ', $clean_expenses);
+    if (!empty($found_expenses)) {
+        $expense_part = " ได้แก่ " . implode(', ', array_unique($found_expenses));
     }
 
     $budget_text = "โดยข้าพเจ้าขออนุมัติเบิกค่าใช้จ่ายในการเดินทางไปราชการจาก{$source_name} ตามระเบียบกระทรวงการคลังว่าด้วยค่าใช้จ่ายในการเดินทางไปราชการ{$expense_part} (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
+} else {
+    // ค่าเริ่มต้นหากไม่มีการระบุข้อมูล
+    $budget_text = "โดยข้าพเจ้าไม่ขอเบิกค่าใช้จ่ายใดๆ ในการเดินทางไปราชการครั้งนี้ (รายละเอียดดังบัญชีรายชื่อแนบท้าย)";
 }
 
-// ประมวลผลรายชื่อผู้ร่วมเดินทาง
+// ==================== ประมวลผลรายชื่อผู้ร่วมเดินทาง ====================
 $raw_companions = '';
 $check_fields = ['companions', 'passengers', 'members', 'co_travelers', 'travelers', 'other_teachers', 'colleagues'];
 foreach ($check_fields as $fld) {
