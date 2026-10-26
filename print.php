@@ -6,11 +6,10 @@ if ($id <= 0) {
     die("ไม่พบรหัสคำร้อง");
 }
 
-// ระบบค้นหาชื่อตารางคำร้องอัตโนมัติจากฐานข้อมูลจริงเพื่อป้องกัน Table doesn't exist
+// ระบบค้นหาชื่อตารางคำร้องอัตโนมัติ
 $target_table = null;
 $possible_tables = ['official_trips', 'trip_requests', 'trips', 'trip_records', 'forms', 'requests'];
 
-// 1. ลองค้นหาตามชื่อมาตรฐานที่มีโอกาสใช้มากที่สุด
 foreach ($possible_tables as $tbl) {
     $chk = $conn->query("SHOW TABLES LIKE '{$tbl}'");
     if ($chk && $chk->num_rows > 0) {
@@ -19,7 +18,6 @@ foreach ($possible_tables as $tbl) {
     }
 }
 
-// 2. หากยังไม่พบ ให้ค้นหาตารางทั้งหมดในฐานข้อมูลที่ไม่ใช่ teachers/users
 if (!$target_table) {
     $all_tables = $conn->query("SHOW TABLES");
     if ($all_tables) {
@@ -34,7 +32,7 @@ if (!$target_table) {
 }
 
 if (!$target_table) {
-    die("ไม่พบตารางข้อมูลคำร้องในฐานข้อมูล กรุณาตรวจสอบตารางในระบบ");
+    die("ไม่พบตารางข้อมูลคำร้องในระบบ");
 }
 
 $stmt = $conn->prepare("SELECT * FROM {$target_table} WHERE id = ?");
@@ -62,7 +60,6 @@ function thai_date($date_str) {
     return "$d $m $y";
 }
 
-// แมปค่าฟิลด์ให้รองรับหลายรูปแบบ
 $applicant_name = $data['applicant_name'] ?? $data['name'] ?? $data['fullname'] ?? $data['teacher_name'] ?? '';
 $position_name  = $data['position'] ?? 'ครู';
 $academic_standing = $data['academic_standing'] ?? 'ชำนาญการ';
@@ -79,80 +76,150 @@ $end_date_th     = !empty($data['end_date']) ? thai_date($data['end_date']) : (!
 <head>
     <meta charset="UTF-8">
     <title>บันทึกข้อความขออนุมัติเดินทางไปราชการ - <?php echo htmlspecialchars($applicant_name); ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: local('TH Sarabun New'), local('THSarabunNew'),
+                 url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@v1.0.0/fonts/THSarabunNew/THSarabunNew.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'TH Sarabun New';
+            src: local('TH Sarabun New Bold'), local('THSarabunNew-Bold'),
+                 url('https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@v1.0.0/fonts/THSarabunNew/THSarabunNew-Bold.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm 2cm 1.5cm 2.5cm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Sarabun', sans-serif;
-            font-size: 15pt;
-            line-height: 1.5;
+            font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
+            font-size: 16pt;
+            line-height: 1.25;
             color: #000;
             background: #525659;
             margin: 0;
             padding: 20px;
         }
+
         .page {
             background: white;
             width: 210mm;
             min-height: 297mm;
-            padding: 20mm 20mm 15mm 25mm;
-            margin: auto;
+            max-height: 297mm;
+            padding: 1.5cm 2cm 1.2cm 2.5cm;
+            margin: 0 auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
         }
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
+
+        /* ตราครุฑ 1.5 ซม. */
+        .garuda-container {
+            position: absolute;
+            left: 2.5cm;
+            top: 1.5cm;
         }
         .garuda-img {
-            width: 1.3in;
-            height: auto;
+            height: 1.5cm;
+            width: auto;
+            display: block;
         }
+
         .title-memo {
-            font-size: 26pt;
+            font-size: 29pt;
             font-weight: bold;
             text-align: center;
-            vertical-align: bottom;
-            padding-bottom: 5px;
+            line-height: 1;
+            margin-bottom: 12px;
+            padding-top: 0.2cm;
         }
+
+        .header-info {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16pt;
+            margin-bottom: 8px;
+        }
+        .header-info td {
+            padding: 1px 0;
+            vertical-align: bottom;
+        }
+
         .content-body {
             text-align: justify;
-            text-indent: 2.2cm;
-            margin-top: 10px;
-            margin-bottom: 10px;
+            text-justify: inter-cluster;
+            text-indent: 2.5cm;
+            font-size: 16pt;
+            line-height: 1.3;
+            margin-top: 6px;
+            margin-bottom: 6px;
         }
+
         .sign-block {
             text-align: center;
             float: right;
-            width: 55%;
-            margin-top: 15px;
+            width: 58%;
+            margin-top: 8px;
+            line-height: 1.2;
         }
         .clear { clear: both; }
+
         .comment-section {
-            margin-top: 15px;
+            margin-top: 6px;
+            line-height: 1.2;
         }
+
         .order-box {
             border: 1px solid #000;
-            padding: 10px 15px;
-            margin-top: 15px;
+            padding: 6px 12px;
+            margin-top: 8px;
+            line-height: 1.2;
         }
+
         .no-print {
             text-align: center;
             margin-bottom: 15px;
         }
         .btn-print {
-            padding: 8px 20px;
-            font-size: 15px;
+            padding: 8px 24px;
+            font-size: 16px;
+            font-family: sans-serif;
             background: #0d6efd;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
+
         @media print {
-            body { background: white; padding: 0; }
-            .page { box-shadow: none; margin: 0; width: 100%; min-height: auto; padding: 15mm 15mm; }
-            .no-print { display: none; }
+            body {
+                background: white;
+                padding: 0;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                max-height: none;
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -163,24 +230,21 @@ $end_date_th     = !empty($data['end_date']) ? thai_date($data['end_date']) : (!
 </div>
 
 <div class="page">
-    <table class="header-table">
-        <tr>
-            <td style="width: 25%; vertical-align: top;">
-                <img src="garuda.png" alt="ครุฑ" class="garuda-img" onerror="this.src='../garuda.png';">
-            </td>
-            <td style="width: 75%; vertical-align: bottom;">
-                <div class="title-memo">บันทึกข้อความ</div>
-            </td>
-        </tr>
-    </table>
+    <!-- ครุฑ 1.5 ซม. -->
+    <div class="garuda-container">
+        <img src="garuda.png" alt="ครุฑ" class="garuda-img" onerror="this.src='../garuda.png';">
+    </div>
 
-    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <!-- บันทึกข้อความ 29pt ตัวหนา -->
+    <div class="title-memo">บันทึกข้อความ</div>
+
+    <table class="header-info">
         <tr>
             <td colspan="2"><strong>ส่วนราชการ:</strong> โรงเรียนย่านตาขาวรัฐชนูปถัมภ์</td>
         </tr>
         <tr>
-            <td style="width: 60%;"><strong>ที่:</strong> ............................................................................</td>
-            <td style="width: 40%;"><strong>วันที่:</strong> <?php echo $created_date_th; ?></td>
+            <td style="width: 58%;"><strong>ที่:</strong> ............................................................................</td>
+            <td style="width: 42%;"><strong>วันที่:</strong> <?php echo $created_date_th; ?></td>
         </tr>
         <tr>
             <td colspan="2"><strong>เรื่อง:</strong> ขออนุมัติเดินทางไปราชการ</td>
@@ -206,56 +270,56 @@ $end_date_th     = !empty($data['end_date']) ? thai_date($data['end_date']) : (!
         อีกทั้งขออนุมัติเบิกเฉพาะค่าใช้จ่าย ได้แก่ ค่าน้ำมัน, ค่าเบี้ยเลี้ยง, ค่าที่พัก (รายละเอียดดังบัญชีรายชื่อแนบท้าย)
     </div>
 
-    <div class="content-body" style="text-indent: 2.2cm;">
+    <div class="content-body" style="margin-top: 4px; margin-bottom: 4px;">
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
     <!-- ลายเซ็นผู้ขอ -->
-    <div class="sign-block">
+    <div class="sign-block" style="margin-top: 6px;">
         <div>ลงชื่อ..........................................................</div>
-        <div style="margin-top: 3px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
-        <div style="margin-top: 3px;">ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
+        <div style="margin-top: 2px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
+        <div>ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
     </div>
     <div class="clear"></div>
 
-    <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
+    <!-- ความเห็นของหัวหน้ากลุ่มสาระฯ / กลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 24px;"></div>
-        <div class="sign-block" style="margin-top: 8px;">
+        <div style="border-bottom: 1px dotted #000; height: 18px;"></div>
+        <div class="sign-block" style="margin-top: 4px;">
             <div>ลงชื่อ..........................................................</div>
-            <div style="margin-top: 3px;">( นางศุภลักษณ์ ดำชุม )</div>
-            <div style="margin-top: 3px;">หัวหน้ากลุ่มงานบริหารวิชาการ</div>
+            <div style="margin-top: 2px;">( นางศุภลักษณ์ ดำชุม )</div>
+            <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
         </div>
         <div class="clear"></div>
     </div>
 
-    <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
+    <!-- ความเห็นของรองผู้อำนวยการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
-        <div style="border-bottom: 1px dotted #000; height: 24px;"></div>
-        <div class="sign-block" style="margin-top: 8px;">
+        <div style="border-bottom: 1px dotted #000; height: 18px;"></div>
+        <div class="sign-block" style="margin-top: 4px;">
             <div>ลงชื่อ..........................................................</div>
-            <div style="margin-top: 3px;">( นางโรสนานีย์ บุญณะ )</div>
-            <div style="margin-top: 3px;">รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
+            <div style="margin-top: 2px;">( นางโรสนานีย์ บุญณะ )</div>
+            <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
         </div>
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดคำว่า 'ลงชื่อ' ออก เหลือเฉพาะยศนำหน้าเส้นจุด) -->
+    <!-- คำสั่ง / การพิจารณา ผอ. -->
     <div class="order-box">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
-        <table style="width: 100%; margin-top: 6px;">
+        <table style="width: 100%; margin-top: 2px;">
             <tr>
                 <td style="width: 25%; vertical-align: top;">[ &nbsp; ] อนุมัติ</td>
                 <td style="width: 75%; vertical-align: top;">[ &nbsp; ] ไม่อนุมัติ เนื่องจาก ............................................................</td>
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 15px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 8px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
-            <div style="margin-top: 4px;">(จักเพชร์ พรมยศ)</div>
-            <div style="margin-top: 2px;">ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
+            <div style="margin-top: 2px;">(จักเพชร์ พรมยศ)</div>
+            <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
         </div>
     </div>
 
