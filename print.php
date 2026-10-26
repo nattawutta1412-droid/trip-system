@@ -200,7 +200,7 @@ if (!empty($raw_companions)) {
             background: white;
             width: 210mm;
             height: 297mm;
-            padding: 1.0cm 2cm 0.5cm 2.5cm;
+            padding: 0.9cm 2cm 0.4cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -249,9 +249,9 @@ if (!empty($raw_companions)) {
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.18;
-            margin-top: 2px;
-            margin-bottom: 2px;
+            line-height: 1.16;
+            margin-top: 1px;
+            margin-bottom: 1px;
         }
 
         .sign-block {
@@ -263,25 +263,27 @@ if (!empty($raw_companions)) {
         }
         .clear { clear: both; }
 
+        /* เว้นระยะให้จรดปากกาเซ็นลายเซ็นสะดวก */
+        .signature-gap {
+            margin-top: 14px;
+        }
+
         .comment-section {
-            margin-top: 4px;
+            margin-top: 2px;
             line-height: 1.05;
         }
 
-        /* บรรทัดว่างสำหรับเขียนความเห็น เว้น 1 บรรทัดสวยงาม */
         .comment-space-line {
             border-bottom: 1px dotted #000;
-            height: 22px;
+            height: 18px;
             margin-bottom: 2px;
         }
 
-        /* ส่วนคำสั่ง/การพิจารณา ผอ. */
         .order-section {
-            margin-top: 4px;
-            line-height: 1.08;
+            margin-top: 2px;
+            line-height: 1.05;
         }
 
-        /* กล่องลงรับงานบุคคลด้านขวาล่าง */
         .receive-box-bottom-right {
             border: 1px solid #000;
             padding: 2px 6px;
@@ -338,7 +340,7 @@ if (!empty($raw_companions)) {
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 1.0cm 2cm 0.5cm 2.5cm;
+                padding: 0.9cm 2cm 0.4cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -403,10 +405,10 @@ if (!empty($raw_companions)) {
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลายเซ็นผู้ขอ -->
+    <!-- ลายเซ็นผู้ขอ (เว้นระยะเซ็น 14px) -->
     <div class="sign-block">
         <div>ลงชื่อ..........................................................</div>
-        <div style="margin-top: 1px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
+        <div class="signature-gap">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
         <div>ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
     </div>
     <div class="clear"></div>
@@ -414,11 +416,10 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ -->
     <div class="comment-section">
         <div><strong>ความเห็นของหัวหน้ากลุ่มงานบริหารวิชาการ:</strong></div>
-        <!-- เว้น 1 บรรทัดสำหรับเขียนความเห็น -->
         <div class="comment-space-line"></div>
         <div class="sign-block">
             <div>ลงชื่อ..........................................................</div>
-            <div style="margin-top: 1px;">( นางศุภลักษณ์ ดำชุม )</div>
+            <div class="signature-gap">( นางศุภลักษณ์ ดำชุม )</div>
             <div>หัวหน้ากลุ่มงานบริหารวิชาการ</div>
         </div>
         <div class="clear"></div>
@@ -427,11 +428,10 @@ if (!empty($raw_companions)) {
     <!-- ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล -->
     <div class="comment-section">
         <div><strong>ความเห็นของรองผู้อำนวยการกลุ่มงานบริหารบุคคล:</strong></div>
-        <!-- เว้น 1 บรรทัดสำหรับเขียนความเห็น -->
         <div class="comment-space-line"></div>
         <div class="sign-block">
             <div>ลงชื่อ..........................................................</div>
-            <div style="margin-top: 1px;">( นางโรสนานีย์ บุญณะ )</div>
+            <div class="signature-gap">( นางโรสนานีย์ บุญณะ )</div>
             <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
         </div>
         <div class="clear"></div>
@@ -440,25 +440,24 @@ if (!empty($raw_companions)) {
     <!-- คำสั่ง / การพิจารณา ผอ. -->
     <div class="order-section">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
-        <!-- เว้น 1 บรรทัดสำหรับเขียนคำสั่ง -->
         <div class="comment-space-line"></div>
         
-        <table style="width: 100%; margin-top: 2px;">
+        <table style="width: 100%; margin-top: 1px;">
             <tr>
                 <td style="width: 25%; vertical-align: top;">[ &nbsp; ] อนุมัติ</td>
                 <td style="width: 75%; vertical-align: top;">[ &nbsp; ] ไม่อนุมัติ เนื่องจาก ............................................................</td>
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 4px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 3px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
-            <div style="margin-top: 1px;">(จักเพชร์ พรมยศ)</div>
+            <div class="signature-gap">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
         </div>
     </div>
 
     <!-- กล่องลงรับของงานบุคคล ด้านขวาล่าง -->
-    <div style="margin-top: 4px;">
+    <div style="margin-top: 2px;">
         <div class="receive-box-bottom-right">
             <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
             <div>เลขรับ..................................................</div>
@@ -530,7 +529,7 @@ if (!empty($raw_companions)) {
 
     <div class="sign-block" style="margin-top: 35px; float: right; width: 50%;">
         <div>(ลงชื่อ)............................................................ผู้ขออนุมัติ</div>
-        <div style="margin-top: 2px;">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
+        <div class="signature-gap">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
         <div>ตำแหน่ง <?php echo htmlspecialchars($position_name); ?></div>
     </div>
     <div class="clear"></div>
