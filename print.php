@@ -268,22 +268,13 @@ if (!empty($raw_companions)) {
             line-height: 1.08;
         }
 
-        .order-box {
-            border: 1px solid #000;
-            padding: 4px 10px;
-            margin-top: 3px;
-            line-height: 1.08;
+        /* ส่วนคำสั่ง/การพิจารณา ผอ. แบบไร้กรอบ */
+        .order-section {
+            margin-top: 4px;
+            line-height: 1.1;
         }
 
-        /* ตารางวางกล่องลงรับงานบุคคลให้อยู่ขวาล่างสุดใต้กล่อง ผอ. */
-        .bottom-section {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 3px;
-        }
-        .bottom-section td {
-            padding: 0;
-        }
+        /* ตารางวางกล่องลงรับงานบุคคลด้านขวาล่าง */
         .receive-box-bottom-right {
             border: 1px solid #000;
             padding: 2px 6px;
@@ -437,17 +428,19 @@ if (!empty($raw_companions)) {
         <div class="clear"></div>
     </div>
 
-    <!-- คำสั่ง / การพิจารณา ผอ. -->
-    <div class="order-box">
+    <!-- คำสั่ง / การพิจารณา ผอ. (ตัดกรอบสี่เหลี่ยมออก ปรับเป็นเส้นประตามระเบียบ) -->
+    <div class="order-section">
         <div><strong>คำสั่ง / การพิจารณา:</strong></div>
-        <table style="width: 100%; margin-top: 1px;">
+        <div style="border-bottom: 1px dotted #000; height: 14px; margin-bottom: 4px;"></div>
+        
+        <table style="width: 100%; margin-top: 2px;">
             <tr>
                 <td style="width: 25%; vertical-align: top;">[ &nbsp; ] อนุมัติ</td>
                 <td style="width: 75%; vertical-align: top;">[ &nbsp; ] ไม่อนุมัติ เนื่องจาก ............................................................</td>
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 3px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 6px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
             <div style="margin-top: 1px;">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
@@ -455,7 +448,7 @@ if (!empty($raw_companions)) {
     </div>
 
     <!-- กล่องลงรับของงานบุคคล อยู่ล่างจากลายเซ็น ผอ. ด้านขวาล่าง -->
-    <div style="margin-top: 4px;">
+    <div style="margin-top: 6px;">
         <div class="receive-box-bottom-right">
             <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 1px;">กลุ่มงานบริหารบุคคล</div>
             <div>เลขรับ..................................................</div>
