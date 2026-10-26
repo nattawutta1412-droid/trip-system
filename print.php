@@ -200,7 +200,7 @@ if (!empty($raw_companions)) {
             background: white;
             width: 210mm;
             height: 297mm;
-            padding: 0.9cm 2cm 0.4cm 2.5cm;
+            padding: 0.8cm 2cm 0.4cm 2.5cm;
             margin: 0 auto 20px auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -249,38 +249,39 @@ if (!empty($raw_companions)) {
             text-justify: inter-cluster;
             text-indent: 2.5cm;
             font-size: 16pt;
-            line-height: 1.16;
+            line-height: 1.15;
             margin-top: 1px;
             margin-bottom: 1px;
         }
 
+        /* เคาะระยะลงมาจากบรรทัดบน */
         .sign-block {
             text-align: center;
             float: right;
             width: 58%;
-            margin-top: 2px;
+            margin-top: 14px;
             line-height: 1.05;
         }
         .clear { clear: both; }
 
-        /* เว้นระยะให้จรดปากกาเซ็นลายเซ็นสะดวก */
+        /* เว้นระยะระหว่างเส้นจุดลงชื่อกับวงเล็บชื่อ-สกุล */
         .signature-gap {
-            margin-top: 14px;
+            margin-top: 16px;
         }
 
         .comment-section {
-            margin-top: 2px;
+            margin-top: 4px;
             line-height: 1.05;
         }
 
         .comment-space-line {
             border-bottom: 1px dotted #000;
-            height: 18px;
+            height: 16px;
             margin-bottom: 2px;
         }
 
         .order-section {
-            margin-top: 2px;
+            margin-top: 4px;
             line-height: 1.05;
         }
 
@@ -340,7 +341,7 @@ if (!empty($raw_companions)) {
                 margin: 0;
                 width: 210mm;
                 height: 297mm;
-                padding: 0.9cm 2cm 0.4cm 2.5cm;
+                padding: 0.8cm 2cm 0.4cm 2.5cm;
             }
             .page-break {
                 page-break-before: always;
@@ -405,7 +406,7 @@ if (!empty($raw_companions)) {
         จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ
     </div>
 
-    <!-- ลายเซ็นผู้ขอ (เว้นระยะเซ็น 14px) -->
+    <!-- ลายเซ็นผู้ขอ (เคาะลงมาจากบรรทัดบน 14px + เว้นช่องเซ็น 16px) -->
     <div class="sign-block">
         <div>ลงชื่อ..........................................................</div>
         <div class="signature-gap">( <?php echo htmlspecialchars($applicant_name); ?> )</div>
@@ -449,7 +450,7 @@ if (!empty($raw_companions)) {
             </tr>
         </table>
         
-        <div style="text-align: center; margin-top: 3px; margin-left: 20%;">
+        <div style="text-align: center; margin-top: 14px; margin-left: 20%;">
             <div>ว่าที่ร้อยโท..........................................................</div>
             <div class="signature-gap">(จักเพชร์ พรมยศ)</div>
             <div>ผู้อำนวยการโรงเรียนย่านตาขาวรัฐชนูปถัมภ์</div>
