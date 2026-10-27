@@ -2,7 +2,7 @@
 session_start();
 require_once 'config.php';
 
-// ฟังก์ชันแปลงวันที่ให้แสดงเป็น วัน/เดือน/ปี พ.ศ.
+// ฟังก์ชันแปลงวันที่ให้แสดงเป็น วัน/เดือน/ปี พ.ศ. อย่างถูกต้อง
 function format_date_th($date_str) {
     if (empty($date_str) || in_array(trim($date_str), ['0000-00-00', '-', 'null', 'NULL', ''])) {
         return "-";
@@ -36,6 +36,7 @@ function format_date_th($date_str) {
     }
 
     if (!empty($d) && !empty($m) && $y > 0) {
+        // หากเป็น ค.ศ. (1900 - 2100) ให้แปลงเป็น พ.ศ. ด้วยการ +543
         if ($y >= 1900 && $y <= 2100) {
             $y += 543;
         }
@@ -56,6 +57,15 @@ if (!$chk_tbl || $chk_tbl->num_rows == 0) {
             $target_table = $pt;
             break;
         }
+    }
+}
+
+// ตรวจสอบคอลัมน์ทั้งหมดที่มีจริงในตาราง
+$table_cols = [];
+$c_res = $conn->query("SHOW COLUMNS FROM `{$target_table}`");
+if ($c_res) {
+    while ($c = $c_res->fetch_assoc()) {
+        $table_cols[] = $c['Field'];
     }
 }
 
@@ -81,12 +91,19 @@ $search = trim($_GET['admin_search'] ?? $_GET['search'] ?? '');
 $sql = "SELECT * FROM `{$target_table}`";
 if (!empty($search)) {
     $s_esc = $conn->real_escape_string($search);
-    $sql .= " WHERE (`name` LIKE '%{$s_esc}%' OR `department` LIKE '%{$s_esc}%' OR `position` LIKE '%{$s_esc}%' OR `phone` LIKE '%{$s_esc}%')";
+    $conds = [];
+    foreach ($table_cols as $tc) {
+        if (!in_array($tc, ['id', 'image', 'photo', 'sort_order'])) {
+            $conds[] = "`{$tc}` LIKE '%{$s_esc}%'";
+        }
+    }
+    if (!empty($conds)) {
+        $sql .= " WHERE " . implode(' OR ', $conds);
+    }
 }
 
-// จัดเรียงลำดับ
-$has_sort = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'sort_order'");
-if ($has_sort && $has_sort->num_rows > 0) {
+// การจัดเรียงลำดับ
+if (in_array('sort_order', $table_cols)) {
     $sql .= " ORDER BY sort_order ASC, id ASC";
 } else {
     $sql .= " ORDER BY id ASC";
@@ -114,7 +131,7 @@ $result = $conn->query($sql);
 </head>
 <body class="pb-5">
 
-<!-- แถบเมนูด้านบน (Navbar) รวมปุ่มฟังก์ชันหลักของระบบ -->
+<!-- แถบเมนูด้านบน (Navbar) -->
 <nav class="navbar navbar-expand-lg navbar-custom sticky-top mb-4 py-2">
     <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="admin_upload.php">
@@ -210,10 +227,50 @@ $result = $conn->query($sql);
                         <?php if ($result && $result->num_rows > 0): ?>
                             <?php while ($row = $result->fetch_assoc()): ?>
                                 <?php
-                                    $name_val = $row['name'] ?? $row['fullname'] ?? $row['teacher_name'] ?? '-';
-                                    $phone_val = $row['phone'] ?? $row['tel'] ?? $row['mobile'] ?? '-';
-                                    $birth_val = $row['birth_date'] ?? $row['birthday'] ?? $row['dob'] ?? '';
-                                    $assign_val = $row['assign_date'] ?? $row['start_date'] ?? $row['hire_date'] ?? '';
+                                    // 1. ตรวจสอบชื่อ-สกุล
+                                    $name_val = '';
+                                    foreach (['name', 'fullname', 'teacher_name', 'first_name'] as $k) {
+                                        if (!empty($row[$k]) && !preg_match('/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/', $row[$k])) {
+                                            $name_val = $row[$k];
+                                            break;
+                                        }
+                                    }
+
+                                    // 2. ตรวจสอบตำแหน่งและวิทยฐานะ
+                                    $pos_val = 'ครู';
+                                    foreach (['position', 'pos'] as $k) {
+                                        if (!empty($row[$k]) && !preg_match('/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/', $row[$k])) {
+                                            $pos_val = $row[$k];
+                                            break;
+                                        }
+                                    }
+                                    $academic_val = $row['academic_standing'] ?? $row['academic_position'] ?? $row['academic'] ?? '';
+
+                                    // 3. ตรวจสอบกลุ่มสาระฯ
+                                    $dept_val = '-';
+                                    foreach (['department', 'dept', 'learning_area', 'group_name'] as $k) {
+                                        if (!empty($row[$k]) && !in_array($row[$k], ['ครู', 'ครูผู้ช่วย'])) {
+                                            $dept_val = $row[$k];
+                                            break;
+                                        }
+                                    }
+
+                                    // 4. ตรวจสอบวันเกิดและวันบรรจุ (ป้องกันการดึงค่าสลับกับตำแหน่ง)
+                                    $birth_val = '';
+                                    foreach (['birth_date', 'birthday', 'dob'] as $k) {
+                                        if (!empty($row[$k])) { $birth_val = $row[$k]; break; }
+                                    }
+                                    $assign_val = '';
+                                    foreach (['assign_date', 'start_date', 'hire_date', 'appoint_date'] as $k) {
+                                        if (!empty($row[$k])) { $assign_val = $row[$k]; break; }
+                                    }
+
+                                    // 5. ตรวจสอบเบอร์โทร
+                                    $phone_val = '-';
+                                    foreach (['phone', 'tel', 'mobile', 'telephone'] as $k) {
+                                        if (!empty($row[$k])) { $phone_val = $row[$k]; break; }
+                                    }
+
                                     $img_src = $row['image'] ?? $row['photo'] ?? $row['picture'] ?? '';
                                 ?>
                                 <tr>
@@ -228,22 +285,24 @@ $result = $conn->query($sql);
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-start">
-                                        <strong><?php echo htmlspecialchars($name_val); ?></strong>
+                                        <strong><?php echo htmlspecialchars($name_val ?: '-'); ?></strong>
                                     </td>
                                     <td class="text-start">
-                                        <?php echo htmlspecialchars($row['position'] ?? 'ครู'); ?>
-                                        <?php if (!empty($row['academic_standing'])): ?>
+                                        <?php echo htmlspecialchars($pos_val); ?>
+                                        <?php if (!empty($academic_val)): ?>
                                             <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-academic ms-1">
-                                                <?php echo htmlspecialchars($row['academic_standing']); ?>
+                                                <?php echo htmlspecialchars($academic_val); ?>
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-start"><?php echo htmlspecialchars($row['department'] ?? '-'); ?></td>
+                                    <td class="text-start"><?php echo htmlspecialchars($dept_val); ?></td>
                                     
+                                    <!-- วันเกิด พ.ศ. -->
                                     <td class="text-center">
                                         <?php echo format_date_th($birth_val); ?>
                                     </td>
 
+                                    <!-- วันบรรจุ พ.ศ. -->
                                     <td class="text-center">
                                         <?php echo format_date_th($assign_val); ?>
                                     </td>
