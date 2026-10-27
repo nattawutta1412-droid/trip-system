@@ -585,3 +585,6 @@ function editTeacher(t) {
 </script>
 </body>
 </html>
+<a href="admin_users.php" class="btn btn-outline-warning">
+    <i class="bi bi-shield-lock"></i> จัดการผู้ดูแล / รีเซ็ตรหัสผ่าน
+</a>
