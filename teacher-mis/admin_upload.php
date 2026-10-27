@@ -11,48 +11,39 @@ function format_date_th($date_str) {
     $date_str = trim($date_str);
     $d = '';
     $m = '';
-    $y = '';
+    $y = 0;
 
-    // กรณีเป็นรูปแบบ วัน/เดือน/ปี หรือ เดือน/วัน/ปี ที่มีเครื่องหมาย /
+    // กรณีเป็นรูปแบบ วัน/เดือน/ปี
     if (strpos($date_str, '/') !== false) {
         $parts = explode('/', $date_str);
         if (count($parts) === 3) {
-            $d = str_pad($parts[0], 2, '0', STR_PAD_LEFT);
-            $m = str_pad($parts[1], 2, '0', STR_PAD_LEFT);
-            $y = intval($parts[2]);
+            $d = str_pad(trim($parts[0]), 2, '0', STR_PAD_LEFT);
+            $m = str_pad(trim($parts[1]), 2, '0', STR_PAD_LEFT);
+            $y = intval(trim($parts[2]));
         }
     } 
-    // กรณีเป็นรูปแบบ ปี-เดือน-วัน (MySQL Date: เช่น 1982-02-08 หรือ 2525-02-08)
+    // กรณีเป็นรูปแบบ ปี-เดือน-วัน (MySQL Date)
     elseif (strpos($date_str, '-') !== false) {
         $parts = explode('-', $date_str);
         if (count($parts) === 3) {
-            if (strlen($parts[0]) === 4) {
-                $y = intval($parts[0]);
-                $m = str_pad($parts[1], 2, '0', STR_PAD_LEFT);
-                $d = str_pad($parts[2], 2, '0', STR_PAD_LEFT);
+            if (strlen(trim($parts[0])) === 4) {
+                $y = intval(trim($parts[0]));
+                $m = str_pad(trim($parts[1]), 2, '0', STR_PAD_LEFT);
+                $d = str_pad(trim($parts[2]), 2, '0', STR_PAD_LEFT);
             } else {
-                $d = str_pad($parts[0], 2, '0', STR_PAD_LEFT);
-                $m = str_pad($parts[1], 2, '0', STR_PAD_LEFT);
-                $y = intval($parts[2]);
+                $d = str_pad(trim($parts[0]), 2, '0', STR_PAD_LEFT);
+                $m = str_pad(trim($parts[1]), 2, '0', STR_PAD_LEFT);
+                $y = intval(trim($parts[2]));
             }
         }
     }
 
-    // หากแยกตัวเลขได้สำเร็จ
-    if (!empty($d) && !empty($m) && !empty($y)) {
-        // ถ้าเป็น ค.ศ. (น้อยกว่า 2400) ให้บวก 543 เพื่อเป็น พ.ศ.
-        if ($y < 2400 && $y > 1800) {
+    if (!empty($d) && !empty($m) && $y > 0) {
+        // หากเป็น ค.ศ. (1900 - 2100) ให้แปลงเป็น พ.ศ. ด้วยการ +543
+        if ($y >= 1900 && $y <= 2100) {
             $y += 543;
         }
         return "{$d}/{$m}/{$y}";
-    }
-
-    // Fallback ใช้ strtotime
-    $time = strtotime($date_str);
-    if ($time !== false) {
-        $y = intval(date('Y', $time));
-        if ($y < 2400) $y += 543;
-        return date('d/m/', $time) . $y;
     }
 
     return htmlspecialchars($date_str);
@@ -90,13 +81,28 @@ if (isset($_GET['delete'])) {
 }
 
 // รับค่าคำค้นหา
-$search = trim($_GET['search'] ?? '');
+$search = trim($_GET['search'] ?? $_GET['admin_search'] ?? '');
 $sql = "SELECT * FROM `{$target_table}`";
 if (!empty($search)) {
     $s_esc = $conn->real_escape_string($search);
-    $sql .= " WHERE name LIKE '%{$s_esc}%' OR department LIKE '%{$s_esc}%' OR position LIKE '%{$s_esc}%' OR phone LIKE '%{$s_esc}%'";
+    $sql .= " WHERE 1=1 AND (";
+    $search_conditions = [];
+    $search_cols = ['name', 'fullname', 'teacher_name', 'first_name', 'department', 'position', 'phone', 'tel', 'mobile'];
+    foreach ($search_cols as $sc) {
+        $search_conditions[] = "`{$sc}` LIKE '%{$s_esc}%'";
+    }
+    // ใช้คอลัมน์ที่มีอยู่จริงในการค้นหา
+    $sql .= implode(' OR ', $search_conditions) . ")";
 }
-$sql .= " ORDER BY sort_order ASC, id ASC";
+
+// จัดเรียงลำดับ
+$has_sort = $conn->query("SHOW COLUMNS FROM `{$target_table}` LIKE 'sort_order'");
+if ($has_sort && $has_sort->num_rows > 0) {
+    $sql .= " ORDER BY sort_order ASC, id ASC";
+} else {
+    $sql .= " ORDER BY id ASC";
+}
+
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -136,9 +142,6 @@ $result = $conn->query($sql);
                     <div class="col-auto">
                         <button type="submit" class="btn btn-primary btn-sm">อัปโหลด CSV</button>
                     </div>
-                    <div class="col-auto">
-                        <a href="sample_teachers.csv" class="btn btn-outline-secondary btn-sm">ดาวน์โหลดไฟล์ตัวอย่าง CSV</a>
-                    </div>
                 </form>
             </div>
         </div>
@@ -159,7 +162,7 @@ $result = $conn->query($sql);
                 <i class="bi bi-people-fill text-primary me-1"></i> รายชื่อบุคลากรในระบบ (เรียงตามลำดับแสดงผล)
             </h6>
             <form action="admin_upload.php" method="GET" class="d-flex gap-2">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหาชื่อ, กลุ่มสาระฯ..." value="<?php echo htmlspecialchars($search); ?>">
+                <input type="text" name="admin_search" class="form-control form-control-sm" placeholder="ค้นหาชื่อ, กลุ่มสาระฯ..." value="<?php echo htmlspecialchars($search); ?>">
                 <button type="submit" class="btn btn-primary btn-sm px-3">ค้นหา</button>
                 <?php if (!empty($search)): ?>
                     <a href="admin_upload.php" class="btn btn-outline-secondary btn-sm">ล้างค่า</a>
@@ -186,9 +189,51 @@ $result = $conn->query($sql);
                         <?php if ($result && $result->num_rows > 0): ?>
                             <?php while ($row = $result->fetch_assoc()): ?>
                                 <?php
-                                    $birth_val  = $row['birth_date'] ?? $row['birthday'] ?? $row['dob'] ?? '';
-                                    $assign_val = $row['assign_date'] ?? $row['start_date'] ?? $row['hire_date'] ?? '';
-                                    $img_src    = !empty($row['image']) ? $row['image'] : (!empty($row['photo']) ? $row['photo'] : '');
+                                    // ค้นหาชื่อ-สกุลจากทุกคอลัมน์ที่เป็นไปได้
+                                    $name_val = '';
+                                    $name_keys = ['name', 'fullname', 'teacher_name', 'first_name', 'full_name'];
+                                    foreach ($name_keys as $nk) {
+                                        if (!empty($row[$nk])) {
+                                            $name_val = $row[$nk];
+                                            if (!empty($row['last_name'])) {
+                                                $name_val .= ' ' . $row['last_name'];
+                                            }
+                                            break;
+                                        }
+                                    }
+
+                                    // ค้นหาเบอร์โทรจากทุกคอลัมน์ที่เป็นไปได้
+                                    $phone_val = '-';
+                                    $phone_keys = ['phone', 'tel', 'mobile', 'telephone', 'phone_number', 'contact'];
+                                    foreach ($phone_keys as $pk) {
+                                        if (!empty($row[$pk])) {
+                                            $phone_val = $row[$pk];
+                                            break;
+                                        }
+                                    }
+
+                                    // ค้นหาวันเกิด
+                                    $birth_val = '';
+                                    $birth_keys = ['birth_date', 'birthday', 'dob', 'date_of_birth', 'birthdate'];
+                                    foreach ($birth_keys as $bk) {
+                                        if (!empty($row[$bk])) {
+                                            $birth_val = $row[$bk];
+                                            break;
+                                        }
+                                    }
+
+                                    // ค้นหาวันบรรจุ
+                                    $assign_val = '';
+                                    $assign_keys = ['assign_date', 'start_date', 'hire_date', 'work_date', 'appoint_date'];
+                                    foreach ($assign_keys as $ak) {
+                                        if (!empty($row[$ak])) {
+                                            $assign_val = $row[$ak];
+                                            break;
+                                        }
+                                    }
+
+                                    // รูปภาพ
+                                    $img_src = $row['image'] ?? $row['photo'] ?? $row['picture'] ?? $row['img'] ?? '';
                                 ?>
                                 <tr>
                                     <td class="text-center">
@@ -202,7 +247,7 @@ $result = $conn->query($sql);
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-start">
-                                        <strong><?php echo htmlspecialchars($row['name'] ?? $row['fullname'] ?? ''); ?></strong>
+                                        <strong><?php echo htmlspecialchars($name_val ?: '-'); ?></strong>
                                     </td>
                                     <td class="text-start">
                                         <?php echo htmlspecialchars($row['position'] ?? 'ครู'); ?>
@@ -224,7 +269,7 @@ $result = $conn->query($sql);
                                         <?php echo format_date_th($assign_val); ?>
                                     </td>
 
-                                    <td class="text-center"><?php echo htmlspecialchars($row['phone'] ?? $row['tel'] ?? '-'); ?></td>
+                                    <td class="text-center"><?php echo htmlspecialchars($phone_val); ?></td>
                                     <td class="text-center">
                                         <a href="edit_teacher.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-warning py-0 px-2" title="แก้ไข">
                                             <i class="bi bi-pencil-square"></i> แก้ไข
