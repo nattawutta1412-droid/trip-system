@@ -2,7 +2,7 @@
 session_start();
 require_once 'config.php';
 
-// ฟังก์ชันแปลงวันที่ให้แสดงเป็น วัน/เดือน/ปี พ.ศ. อย่างแม่นยำ
+// ฟังก์ชันแปลงวันที่ให้แสดงเป็น วัน/เดือน/ปี พ.ศ.
 function format_date_th($date_str) {
     if (empty($date_str) || in_array(trim($date_str), ['0000-00-00', '-', 'null', 'NULL', ''])) {
         return "-";
@@ -13,7 +13,6 @@ function format_date_th($date_str) {
     $m = '';
     $y = 0;
 
-    // กรณีเป็นรูปแบบ วัน/เดือน/ปี
     if (strpos($date_str, '/') !== false) {
         $parts = explode('/', $date_str);
         if (count($parts) === 3) {
@@ -21,9 +20,7 @@ function format_date_th($date_str) {
             $m = str_pad(trim($parts[1]), 2, '0', STR_PAD_LEFT);
             $y = intval(trim($parts[2]));
         }
-    } 
-    // กรณีเป็นรูปแบบ ปี-เดือน-วัน (MySQL Date)
-    elseif (strpos($date_str, '-') !== false) {
+    } elseif (strpos($date_str, '-') !== false) {
         $parts = explode('-', $date_str);
         if (count($parts) === 3) {
             if (strlen(trim($parts[0])) === 4) {
@@ -39,7 +36,6 @@ function format_date_th($date_str) {
     }
 
     if (!empty($d) && !empty($m) && $y > 0) {
-        // หากเป็น ค.ศ. (1900 - 2100) ให้แปลงเป็น พ.ศ. ด้วยการ +543
         if ($y >= 1900 && $y <= 2100) {
             $y += 543;
         }
@@ -81,18 +77,11 @@ if (isset($_GET['delete'])) {
 }
 
 // รับค่าคำค้นหา
-$search = trim($_GET['search'] ?? $_GET['admin_search'] ?? '');
+$search = trim($_GET['admin_search'] ?? $_GET['search'] ?? '');
 $sql = "SELECT * FROM `{$target_table}`";
 if (!empty($search)) {
     $s_esc = $conn->real_escape_string($search);
-    $sql .= " WHERE 1=1 AND (";
-    $search_conditions = [];
-    $search_cols = ['name', 'fullname', 'teacher_name', 'first_name', 'department', 'position', 'phone', 'tel', 'mobile'];
-    foreach ($search_cols as $sc) {
-        $search_conditions[] = "`{$sc}` LIKE '%{$s_esc}%'";
-    }
-    // ใช้คอลัมน์ที่มีอยู่จริงในการค้นหา
-    $sql .= implode(' OR ', $search_conditions) . ")";
+    $sql .= " WHERE (`name` LIKE '%{$s_esc}%' OR `department` LIKE '%{$s_esc}%' OR `position` LIKE '%{$s_esc}%' OR `phone` LIKE '%{$s_esc}%')";
 }
 
 // จัดเรียงลำดับ
@@ -110,23 +99,55 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการข้อมูลบุคลากร (Admin) - ระบบสารสนเทศบุคลากร</title>
+    <title>จัดการข้อมูลบุคลากร (Admin) - Teacher MIS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; }
         .card { border-radius: 12px; }
+        .navbar-custom { background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
         .table th { background-color: #f8f9fa; font-weight: 600; }
-        .user-avatar { width: 32px; height: 32px; object-fit: cover; border-radius: 50%; }
+        .user-avatar { width: 34px; height: 34px; object-fit: cover; border-radius: 50%; }
         .badge-academic { font-weight: normal; font-size: 0.85em; }
     </style>
 </head>
-<body class="py-3">
+<body class="pb-5">
+
+<!-- แถบเมนูด้านบน (Navbar) รวมปุ่มฟังก์ชันหลักของระบบ -->
+<nav class="navbar navbar-expand-lg navbar-custom sticky-top mb-4 py-2">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="admin_upload.php">
+            <i class="bi bi-person-workspace fs-4 me-2"></i> ระบบจัดการสารสนเทศบุคลากร
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <div class="navbar-nav ms-auto d-flex flex-wrap gap-2 align-items-center mt-2 mt-lg-0">
+                <a href="index.php" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-house-door me-1"></i> หน้าสารสนเทศ
+                </a>
+                <a href="retirement.php" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-hourglass-split me-1"></i> ตารางเกษียณอายุ
+                </a>
+                <a href="export_summary.php" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-file-earmark-excel me-1"></i> สรุปข้อมูล
+                </a>
+                <a href="export_word.php" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-word me-1"></i> ส่งออก Word
+                </a>
+                <a href="admin_users.php" class="btn btn-sm btn-outline-warning text-dark">
+                    <i class="bi bi-shield-lock me-1"></i> จัดการผู้ดูแล
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
 
 <div class="container-fluid px-4">
 
-    <!-- แถบนำเข้าข้อมูล CSV แบบพับได้ -->
+    <!-- แถบนำเข้าข้อมูล CSV -->
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-header bg-white py-2">
             <a class="text-decoration-none text-primary fw-bold small" data-bs-toggle="collapse" href="#importCollapse" role="button" aria-expanded="false">
@@ -147,7 +168,7 @@ $result = $conn->query($sql);
         </div>
     </div>
 
-    <!-- กล่องแจ้งเตือน -->
+    <!-- ข้อความแจ้งเตือน -->
     <?php if (!empty($message)): ?>
         <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show py-2">
             <?php echo htmlspecialchars($message); ?>
@@ -189,51 +210,11 @@ $result = $conn->query($sql);
                         <?php if ($result && $result->num_rows > 0): ?>
                             <?php while ($row = $result->fetch_assoc()): ?>
                                 <?php
-                                    // ค้นหาชื่อ-สกุลจากทุกคอลัมน์ที่เป็นไปได้
-                                    $name_val = '';
-                                    $name_keys = ['name', 'fullname', 'teacher_name', 'first_name', 'full_name'];
-                                    foreach ($name_keys as $nk) {
-                                        if (!empty($row[$nk])) {
-                                            $name_val = $row[$nk];
-                                            if (!empty($row['last_name'])) {
-                                                $name_val .= ' ' . $row['last_name'];
-                                            }
-                                            break;
-                                        }
-                                    }
-
-                                    // ค้นหาเบอร์โทรจากทุกคอลัมน์ที่เป็นไปได้
-                                    $phone_val = '-';
-                                    $phone_keys = ['phone', 'tel', 'mobile', 'telephone', 'phone_number', 'contact'];
-                                    foreach ($phone_keys as $pk) {
-                                        if (!empty($row[$pk])) {
-                                            $phone_val = $row[$pk];
-                                            break;
-                                        }
-                                    }
-
-                                    // ค้นหาวันเกิด
-                                    $birth_val = '';
-                                    $birth_keys = ['birth_date', 'birthday', 'dob', 'date_of_birth', 'birthdate'];
-                                    foreach ($birth_keys as $bk) {
-                                        if (!empty($row[$bk])) {
-                                            $birth_val = $row[$bk];
-                                            break;
-                                        }
-                                    }
-
-                                    // ค้นหาวันบรรจุ
-                                    $assign_val = '';
-                                    $assign_keys = ['assign_date', 'start_date', 'hire_date', 'work_date', 'appoint_date'];
-                                    foreach ($assign_keys as $ak) {
-                                        if (!empty($row[$ak])) {
-                                            $assign_val = $row[$ak];
-                                            break;
-                                        }
-                                    }
-
-                                    // รูปภาพ
-                                    $img_src = $row['image'] ?? $row['photo'] ?? $row['picture'] ?? $row['img'] ?? '';
+                                    $name_val = $row['name'] ?? $row['fullname'] ?? $row['teacher_name'] ?? '-';
+                                    $phone_val = $row['phone'] ?? $row['tel'] ?? $row['mobile'] ?? '-';
+                                    $birth_val = $row['birth_date'] ?? $row['birthday'] ?? $row['dob'] ?? '';
+                                    $assign_val = $row['assign_date'] ?? $row['start_date'] ?? $row['hire_date'] ?? '';
+                                    $img_src = $row['image'] ?? $row['photo'] ?? $row['picture'] ?? '';
                                 ?>
                                 <tr>
                                     <td class="text-center">
@@ -243,11 +224,11 @@ $result = $conn->query($sql);
                                         <?php if (!empty($img_src)): ?>
                                             <img src="<?php echo htmlspecialchars($img_src); ?>" alt="avatar" class="user-avatar border" onerror="this.src='../garuda.png';">
                                         <?php else: ?>
-                                            <i class="bi bi-person-fill text-muted fs-4"></i>
+                                            <i class="bi bi-person-circle text-muted fs-4"></i>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-start">
-                                        <strong><?php echo htmlspecialchars($name_val ?: '-'); ?></strong>
+                                        <strong><?php echo htmlspecialchars($name_val); ?></strong>
                                     </td>
                                     <td class="text-start">
                                         <?php echo htmlspecialchars($row['position'] ?? 'ครู'); ?>
@@ -259,12 +240,10 @@ $result = $conn->query($sql);
                                     </td>
                                     <td class="text-start"><?php echo htmlspecialchars($row['department'] ?? '-'); ?></td>
                                     
-                                    <!-- แสดงวันเกิดเป็น พ.ศ. -->
                                     <td class="text-center">
                                         <?php echo format_date_th($birth_val); ?>
                                     </td>
 
-                                    <!-- แสดงวันบรรจุเป็น พ.ศ. -->
                                     <td class="text-center">
                                         <?php echo format_date_th($assign_val); ?>
                                     </td>
@@ -289,13 +268,6 @@ $result = $conn->query($sql);
                 </table>
             </div>
         </div>
-    </div>
-
-    <!-- ปุ่มลิงก์การจัดการเพิ่มเติมมุมซ้ายล่าง -->
-    <div>
-        <a href="admin_users.php" class="btn btn-sm btn-outline-warning text-dark border-warning">
-            <i class="bi bi-gear-fill me-1"></i> จัดการผู้ดูแล / รีเซ็ตรหัสผ่าน
-        </a>
     </div>
 
 </div>
